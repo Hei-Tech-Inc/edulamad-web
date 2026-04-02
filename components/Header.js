@@ -4,12 +4,6 @@ import { Bell, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 
-const dummyNotifications = [
-  { id: 1, text: 'New member registered', read: false },
-  { id: 2, text: 'Feed inventory low', read: false },
-  { id: 3, text: 'Cage 3 needs attention', read: true },
-]
-
 const TopBar = ({ title }) => {
   const { user, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
@@ -53,7 +47,7 @@ const TopBar = ({ title }) => {
     await signOut()
   }
 
-  const unreadCount = dummyNotifications.filter(n => !n.read).length
+  const notifications = []
 
   const apiBase =
     typeof process.env.NEXT_PUBLIC_API_URL === 'string'
@@ -88,10 +82,10 @@ const TopBar = ({ title }) => {
             {notifDropdownOpen && (
               <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 py-1">
                 <div className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700">Notifications</div>
-                {dummyNotifications.length === 0 ? (
-                  <div className="px-4 py-2 text-sm text-gray-500">No notifications</div>
+                {notifications.length === 0 ? (
+                  <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No notifications yet</div>
                 ) : (
-                  dummyNotifications.map(n => (
+                  notifications.map(n => (
                     <div key={n.id} className={`px-4 py-2 text-sm ${n.read ? 'text-gray-400' : 'text-gray-800 dark:text-gray-100 font-medium'} hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer`}>
                       {n.text}
                     </div>

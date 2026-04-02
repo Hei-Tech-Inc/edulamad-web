@@ -25,6 +25,8 @@ export interface LegacyCageRow {
   mortality_rate: number | null;
   last_maintenance_date: string | null;
   next_maintenance_date: string | null;
+  /** From unit summary API when provided (kg). */
+  summaryBiomassKg?: number | null;
 }
 
 function mapApiUnitStatusToLegacy(status?: string | null): string {

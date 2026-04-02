@@ -29,7 +29,10 @@ import {
 import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
-import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import {
+  fetchLegacyUnitsForFarm,
+  enrichLegacyUnitsWithSummaries,
+} from '@/lib/cages-redux-api'
 import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
 import BiweeklyForm from './BiweeklyForm'
 import HarvestForm from './HarvestForm'
@@ -78,7 +81,11 @@ function Dashboard({ selectedCage }) {
           setWaterQualityData([])
           return
         }
-        const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        let { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        legacy = await enrichLegacyUnitsWithSummaries(farmId, legacy, {
+          maxUnits: 30,
+          concurrency: 5,
+        })
         setCages(legacy)
         setRecentStockings([])
 
@@ -304,11 +311,24 @@ function Dashboard({ selectedCage }) {
       }
     })
 
-    // Calculate total biomass and other metrics
+    // Total biomass: legacy stockings map, else unit summaries / count × weight
     let totalBiomass = 0
-    Object.values(recentStockingsMap).forEach((stocking) => {
-      totalBiomass += stocking.initial_biomass || 0
-    })
+    if (Object.keys(recentStockingsMap).length > 0) {
+      Object.values(recentStockingsMap).forEach((stocking) => {
+        totalBiomass += stocking.initial_biomass || 0
+      })
+    } else {
+      activeCages.forEach((c) => {
+        const fromSummary = Number(c.summaryBiomassKg) || 0
+        if (fromSummary > 0) {
+          totalBiomass += fromSummary
+          return
+        }
+        const cnt = Number(c.current_count) || 0
+        const wG = Number(c.current_weight) || 0
+        if (cnt > 0 && wG > 0) totalBiomass += (cnt * wG) / 1000
+      })
+    }
 
     const totalLosses = (dailyRecords || []).reduce(
       (s, r) => s + (Number(r.mortality) || 0),
