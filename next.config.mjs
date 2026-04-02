@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
+const apiProxyTarget =
+  (process.env.API_PROXY_TARGET || 'http://127.0.0.1:3000').replace(/\/$/, '')
+
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
     return [
       {
         source: '/api/backend/:path*',
-        destination: 'http://localhost:3000/:path*',
+        destination: `${apiProxyTarget}/:path*`,
       },
     ]
   },

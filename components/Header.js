@@ -49,16 +49,25 @@ const TopBar = ({ title }) => {
 
   const notifications = []
 
-  const apiBase =
+  const apiConfigured =
     typeof process.env.NEXT_PUBLIC_API_URL === 'string'
       ? process.env.NEXT_PUBLIC_API_URL
       : 'http://localhost:3000'
+  let apiDevNote = apiConfigured
+  try {
+    const { hostname } = new URL(apiConfigured)
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      apiDevNote = `browser → /api/backend → ${apiConfigured.replace(/\/$/, '')}`
+    }
+  } catch {
+    /* ignore */
+  }
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow sticky top-0 z-30">
       {process.env.NODE_ENV === 'development' && (
         <div className="px-4 py-1 text-[11px] font-mono bg-amber-50 text-amber-950 border-b border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-100 dark:border-amber-800/60">
-          Dev · Nsuo API: {apiBase}
+          Dev · Nsuo API: {apiDevNote}
         </div>
       )}
       <div className="flex justify-between items-center px-6 py-4">

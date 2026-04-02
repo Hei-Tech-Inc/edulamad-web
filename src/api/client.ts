@@ -15,8 +15,37 @@ declare module 'axios' {
   }
 }
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+/**
+ * Browser: use same-origin `/api/backend` when env points at localhost so Next
+ * rewrites avoid CORS (typical dev: Next on :3001, API on :3000).
+ * Server/SSR: call the API directly.
+ */
+function getApiBaseURL(): string {
+  const envRaw = process.env.NEXT_PUBLIC_API_URL?.trim();
+  const env = envRaw?.replace(/\/$/, '') ?? '';
+  const devDefault = 'http://127.0.0.1:3000';
+
+  if (typeof window === 'undefined') {
+    return env || devDefault;
+  }
+
+  if (!env) {
+    return '/api/backend';
+  }
+
+  try {
+    const { hostname } = new URL(env);
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return '/api/backend';
+    }
+  } catch {
+    return '/api/backend';
+  }
+
+  return env;
+}
+
+const baseURL = getApiBaseURL();
 
 function unwrapEnvelope<T>(raw: unknown): T {
   if (
@@ -111,7 +140,13 @@ apiClient.interceptors.response.use(
 
 function toAppError(error: AxiosError): AppApiError {
   if (!error.response) {
-    return new AppApiError(0, 'Cannot connect to server');
+    const code = error.code ?? '';
+    const viaProxy =
+      typeof window !== 'undefined' && baseURL.startsWith('/');
+    const msg = viaProxy
+      ? `Cannot reach API (dev proxy). ${code || error.message || 'No response'}. Is the backend running? For Docker, set API_PROXY_TARGET (see .env.example).`
+      : `Cannot connect to API (${code || error.message}). Check NEXT_PUBLIC_API_URL, CORS, and that the server is running.`;
+    return new AppApiError(0, msg);
   }
 
   const status = error.response.status;
