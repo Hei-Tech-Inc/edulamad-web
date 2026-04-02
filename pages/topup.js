@@ -25,9 +25,10 @@ export default function TopUpPage() {
 
           <div className="mb-6">
             <p className="text-gray-600">
-              Add additional fish to an existing stocked cage. Top-ups will be
-              recorded separately from the original stocking but tracked
-              together.
+              Record an in-cycle top-up: we append a dated block to the
+              active stock cycle&apos;s notes in Nsuo (and optional source
+              location). There is no separate top-up endpoint in the bundled
+              API spec.
             </p>
           </div>
 

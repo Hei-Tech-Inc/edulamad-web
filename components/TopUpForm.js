@@ -2,13 +2,19 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { AlertCircle } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
-import stockingService from '../lib/stockingService'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import {
+  fetchActiveStockCyclesForTopUp,
+  parseCycleSelectValue,
+  fetchStockCycleDetail,
+  mapCycleToSelectedStockingDisplay,
+  appendTopUpNoteToCycle,
+  buildTopUpNoteBlock,
+} from '@/lib/farm-topup-api'
 import { useToast } from './Toast'
 
 const TopUpForm = ({ onComplete }) => {
   const router = useRouter()
-  const { user } = useAuth()
   const { showToast } = useToast()
 
   const [loading, setLoading] = useState(false)
@@ -26,54 +32,74 @@ const TopUpForm = ({ onComplete }) => {
     notes: '',
   })
 
-  // Fetch active stockings that can be topped up
   useEffect(() => {
-    async function fetchStockings() {
+    let cancelled = false
+
+    async function load() {
       setFetchingData(true)
+      setError('')
       try {
-        const { data, error } = await stockingService.getActiveStockings()
-
-        if (error) throw error
-
-        console.log('Active stockings:', data)
-        setActiveStockings(data || [])
-      } catch (error) {
-        console.error('Error fetching active stockings:', error)
-        setError('Failed to load active stockings. Please try again.')
-        showToast('error', 'Failed to load active stockings')
+        const farmId = await resolveFarmIdForRedux()
+        if (!farmId) {
+          if (!cancelled) {
+            setError('No farm selected. Choose a farm or check your access.')
+            setActiveStockings([])
+          }
+          return
+        }
+        const options = await fetchActiveStockCyclesForTopUp(farmId)
+        if (!cancelled) setActiveStockings(options)
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err)
+          setError('Failed to load active stock cycles.')
+          showToast('Failed to load active stock cycles.', 'error')
+          setActiveStockings([])
+        }
       } finally {
-        setFetchingData(false)
+        if (!cancelled) setFetchingData(false)
       }
     }
 
-    fetchStockings()
+    load()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
   }, [])
 
-  // When a stocking is selected, fetch its details
   useEffect(() => {
-    async function fetchStockingDetails(id) {
+    let cancelled = false
+
+    async function loadDetail() {
+      const parsed = parseCycleSelectValue(formData.stocking_id)
+      if (!parsed) {
+        setSelectedStocking(null)
+        return
+      }
       try {
-        const { data, error } = await stockingService.getStockingById(id)
-
-        if (error) throw error
-
-        console.log('Selected stocking details:', data)
-        setSelectedStocking(data)
-      } catch (error) {
-        console.error('Error fetching stocking details:', error)
-        setError('Failed to load stocking details')
-        showToast('error', 'Failed to load stocking details')
+        const raw = await fetchStockCycleDetail(parsed.unitId, parsed.cycleId)
+        if (cancelled) return
+        setSelectedStocking(mapCycleToSelectedStockingDisplay(raw))
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err)
+          setSelectedStocking(null)
+          setError('Failed to load cycle details')
+          showToast('Failed to load cycle details', 'error')
+        }
       }
     }
 
-    if (formData.stocking_id) {
-      fetchStockingDetails(formData.stocking_id)
-    } else {
-      setSelectedStocking(null)
+    if (formData.stocking_id) loadDetail()
+    else setSelectedStocking(null)
+
+    return () => {
+      cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.stocking_id])
 
-  // Calculate estimated biomass based on fish count and ABW
   const calculateBiomass = () => {
     if (!formData.fish_count || !formData.abw) return 0
 
@@ -82,7 +108,6 @@ const TopUpForm = ({ onComplete }) => {
 
     if (isNaN(count) || isNaN(abw)) return 0
 
-    // Calculate biomass in kg (ABW in grams / 1000 * count)
     return (abw / 1000) * count
   }
 
@@ -97,12 +122,12 @@ const TopUpForm = ({ onComplete }) => {
     setError('')
 
     try {
-      // Validate inputs
-      if (!formData.stocking_id) {
-        throw new Error('Please select a batch to top up')
+      const parsed = parseCycleSelectValue(formData.stocking_id)
+      if (!parsed) {
+        throw new Error('Please select a stock cycle to top up')
       }
 
-      if (!formData.fish_count || parseInt(formData.fish_count) <= 0) {
+      if (!formData.fish_count || parseInt(formData.fish_count, 10) <= 0) {
         throw new Error('Please enter a valid fish count')
       }
 
@@ -110,33 +135,47 @@ const TopUpForm = ({ onComplete }) => {
         throw new Error('Please enter a valid average body weight')
       }
 
-      // Prepare submission data
-      const data = {
-        ...formData,
-        company_id: user?.company_id || '00000000-0000-0000-0000-000000000001', // Default company for now
-        created_by: user?.id,
-      }
+      const biomassKg = calculateBiomass()
+      const block = buildTopUpNoteBlock({
+        topup_date: formData.topup_date,
+        fish_count: formData.fish_count,
+        abw: formData.abw,
+        biomassKg,
+        source_location: formData.source_location,
+        transfer_supervisor: formData.transfer_supervisor,
+        notes: formData.notes,
+      })
 
-      // Submit top-up
-      const { data: result, error } = await stockingService.createTopUp(data)
-
-      if (error) throw error
+      await appendTopUpNoteToCycle(parsed.unitId, parsed.cycleId, block, {
+        sourceLocation: formData.source_location,
+      })
 
       showToast(
+        'Top-up recorded on the stock cycle notes in Nsuo.',
         'success',
-        'Top-up request submitted successfully. Awaiting approval.',
       )
 
-      // Reset form or redirect
+      setFormData({
+        stocking_id: '',
+        topup_date: new Date().toISOString().split('T')[0],
+        fish_count: '',
+        abw: '',
+        source_location: '',
+        transfer_supervisor: '',
+        notes: '',
+      })
+      setSelectedStocking(null)
+
       if (onComplete) {
-        onComplete(result)
+        onComplete({ unitId: parsed.unitId, cycleId: parsed.cycleId })
       } else {
         router.push('/stocking-management')
       }
-    } catch (error) {
-      console.error('Error creating top-up:', error)
-      setError(error.message)
-      showToast('error', error.message)
+    } catch (err) {
+      console.error(err)
+      const msg = err?.message || 'Failed to record top-up.'
+      setError(msg)
+      showToast(msg, 'error')
     } finally {
       setLoading(false)
     }
@@ -145,7 +184,7 @@ const TopUpForm = ({ onComplete }) => {
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="font-medium text-gray-700">Top-Up Existing Batch</h2>
+        <h2 className="font-medium text-gray-700">Top-up (stock cycle notes)</h2>
       </div>
 
       <div className="p-6">
@@ -157,17 +196,14 @@ const TopUpForm = ({ onComplete }) => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Batch Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Batch to Top-Up <span className="text-red-500">*</span>
+              Active stock cycle <span className="text-red-500">*</span>
             </label>
             {fetchingData ? (
               <div className="flex items-center space-x-2 h-10">
                 <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm text-gray-500">
-                  Loading batches...
-                </span>
+                <span className="text-sm text-gray-500">Loading…</span>
               </div>
             ) : (
               <>
@@ -179,62 +215,52 @@ const TopUpForm = ({ onComplete }) => {
                   required
                   disabled={activeStockings.length === 0}
                 >
-                  <option value="">Select a batch</option>
-                  {activeStockings.map((stocking) => (
-                    <option key={stocking.id} value={stocking.id}>
-                      {stocking.batch_number} - {stocking.cage.name} - Stocked:{' '}
-                      {new Date(stocking.stocking_date).toLocaleDateString()}
+                  <option value="">Select a cycle</option>
+                  {activeStockings.map((row) => (
+                    <option key={row.value} value={row.value}>
+                      {row.batch_number} — {row.cage.name} —{' '}
+                      {row.stocking_date
+                        ? new Date(row.stocking_date).toLocaleDateString()
+                        : '—'}
                     </option>
                   ))}
                 </select>
                 {activeStockings.length === 0 && !fetchingData && (
                   <p className="mt-1 text-xs text-red-500">
-                    No active batches found. You need an active stocking to
-                    perform a top-up.
+                    No active stock cycles. Start or approve a cycle in Nsuo
+                    first.
                   </p>
                 )}
               </>
             )}
           </div>
 
-          {/* Current Batch Info (if selected) */}
           {selectedStocking && (
             <div className="bg-blue-50 p-4 rounded-md">
               <h3 className="text-sm font-medium text-blue-800 mb-2">
-                Current Batch Information
+                Cycle snapshot (initial stocking)
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-blue-800">
                 <div>
-                  <span className="font-medium">Current Count:</span>{' '}
-                  {selectedStocking.fish_count.toLocaleString()} fish
+                  <span className="font-medium">Initial count:</span>{' '}
+                  {Number(selectedStocking.fish_count).toLocaleString()} fish
                 </div>
                 <div>
                   <span className="font-medium">Initial ABW:</span>{' '}
-                  {selectedStocking.initial_abw.toFixed(1)} g
+                  {Number(selectedStocking.initial_abw).toFixed(1)} g
                 </div>
                 <div>
-                  <span className="font-medium">Initial Biomass:</span>{' '}
-                  {selectedStocking.initial_biomass.toFixed(1)} kg
+                  <span className="font-medium">Initial biomass:</span>{' '}
+                  {Number(selectedStocking.initial_biomass).toFixed(1)} kg
                 </div>
               </div>
-              {selectedStocking.topups && selectedStocking.topups.length > 0 && (
-                <div className="mt-2 text-sm text-blue-800">
-                  <span className="font-medium">Previous Top-ups:</span>{' '}
-                  {selectedStocking.topups.length} (
-                  {selectedStocking.topups
-                    .reduce((sum, t) => sum + t.fish_count, 0)
-                    .toLocaleString()}{' '}
-                  fish)
-                </div>
-              )}
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Top-up Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Top-up Date <span className="text-red-500">*</span>
+                Top-up date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -246,10 +272,9 @@ const TopUpForm = ({ onComplete }) => {
               />
             </div>
 
-            {/* Fish Count */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Fish Count to Add <span className="text-red-500">*</span>
+                Fish count to add <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -263,10 +288,9 @@ const TopUpForm = ({ onComplete }) => {
               />
             </div>
 
-            {/* ABW */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Average Body Weight (g) <span className="text-red-500">*</span>
+                Average body weight (g) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -281,10 +305,9 @@ const TopUpForm = ({ onComplete }) => {
               />
             </div>
 
-            {/* Calculated Biomass */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Biomass to Add (kg)
+                Biomass to add (kg)
               </label>
               <input
                 type="text"
@@ -293,14 +316,13 @@ const TopUpForm = ({ onComplete }) => {
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none sm:text-sm"
               />
               <p className="mt-1 text-xs text-gray-500">
-                Auto-calculated: (ABW/1000) × Fish Count
+                (ABW / 1000) × fish count
               </p>
             </div>
 
-            {/* Source Location */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Source Location
+                Source location
               </label>
               <input
                 type="text"
@@ -308,14 +330,13 @@ const TopUpForm = ({ onComplete }) => {
                 value={formData.source_location}
                 onChange={handleChange}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Where the fish were sourced from"
+                placeholder="Optional — also updates cycle source location"
               />
             </div>
 
-            {/* Transfer Supervisor */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Transfer Supervisor
+                Transfer supervisor
               </label>
               <input
                 type="text"
@@ -323,12 +344,11 @@ const TopUpForm = ({ onComplete }) => {
                 value={formData.transfer_supervisor}
                 onChange={handleChange}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Person who supervised the transfer"
+                placeholder="Recorded in notes only"
               />
             </div>
           </div>
 
-          {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Notes
@@ -339,7 +359,7 @@ const TopUpForm = ({ onComplete }) => {
               onChange={handleChange}
               rows="3"
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              placeholder="Any additional information about this top-up"
+              placeholder="Appended to the stock cycle notes together with the top-up block"
             ></textarea>
           </div>
 
@@ -360,15 +380,16 @@ const TopUpForm = ({ onComplete }) => {
                   : 'bg-orange-600 hover:bg-orange-700'
               } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
             >
-              {loading ? 'Submitting...' : 'Submit Top-Up'}
+              {loading ? 'Saving…' : 'Append top-up to cycle'}
             </button>
           </div>
 
-          <div className="text-xs text-gray-500 mt-2">
-            <p>
-              Note: Top-up requests require admin approval before being applied.
-            </p>
-          </div>
+          <p className="text-xs text-gray-500">
+            Nsuo has no separate top-up API in this client. The server stores a
+            dated block on the cycle&apos;s notes (and may overwrite cycle
+            source location if you fill it). Confirm with your team whether
+            inventory figures are updated elsewhere.
+          </p>
         </form>
       </div>
     </div>
