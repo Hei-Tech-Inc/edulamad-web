@@ -1,4 +1,4 @@
-// components/Dashboard.js (Complete)
+// components/Dashboard.js — units + series from Nsuo API (legacy stockings list stubbed)
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
@@ -26,12 +26,11 @@ import {
   Cell,
   SparkLine
 } from 'recharts'
-import {
-  cageService,
-  stockingService,
-  dailyRecordService,
-  biweeklyRecordService,
-} from '../lib/databaseService'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
 import BiweeklyForm from './BiweeklyForm'
 import HarvestForm from './HarvestForm'
 import DailyEntryForm from './DailyEntryForm'
@@ -69,47 +68,25 @@ function Dashboard({ selectedCage }) {
     selectedCage,
   )
 
-  // Fetch data from database
+  // Load units for active farm (same source as Cages / Redux)
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
+      setError(null)
       try {
-        console.log('Fetching data for dashboard...')
-
-        // Fetch cages
-        const {
-          data: cagesData,
-          error: cagesError,
-        } = await cageService.getAllCages()
-        if (cagesError) throw cagesError
-        console.log('Fetched cages:', cagesData)
-        setCages(cagesData || [])
-
-        // Calculate total active cages
-        const activeCages =
-          cagesData?.filter((cage) => cage.status === 'active') || []
-
-        // Fetch recent stockings
-        const {
-          data: stockingsData,
-          error: stockingsError,
-        } = await stockingService.getAllStockings()
-        if (stockingsError) throw stockingsError
-        console.log('Fetched stockings:', stockingsData)
-
-        // Sort and get most recent stockings
-        const sortedStockings =
-          stockingsData?.sort(
-            (a, b) => new Date(b.stocking_date) - new Date(a.stocking_date),
-          ) || []
-
-        setRecentStockings(sortedStockings)
-
-        // Fetch other metrics as needed for dashboard
-        updateDashboardMetrics(cagesData, stockingsData)
+        const farmId = await resolveFarmIdForRedux()
+        if (!farmId) {
+          setCages([])
+          setRecentStockings([])
+          return
+        }
+        const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        setCages(legacy)
+        setRecentStockings([])
       } catch (error) {
         console.error('Error fetching data:', error.message)
         setError(error.message)
+        setCages([])
       } finally {
         setLoading(false)
       }
@@ -118,29 +95,124 @@ function Dashboard({ selectedCage }) {
     fetchData()
   }, [])
 
-  // Fetch data for specific cage when selected cage changes
+  // Per-unit daily + weight samples for charts (cap parallel requests)
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadSeries() {
+      if (!cages.length) {
+        setDailyRecords([])
+        setBiweeklyRecords([])
+        return
+      }
+      const active = cages
+        .filter(
+          (c) => c.status === 'active' || c.status === 'ready_to_harvest',
+        )
+        .slice(0, 25)
+
+      const dailyNested = await Promise.all(
+        active.map(async (cage) => {
+          try {
+            const { data } = await apiClient.get(
+              API.units.dailyRecords(cage.id),
+              { params: { limit: 150 } },
+            )
+            return normalizeDailyRecordList(data).map((r) => ({
+              cage_id: cage.id,
+              date: r.date,
+              feed_amount: Number(r.feedQuantityKg ?? 0),
+              feed_cost:
+                r.feedCostGhs != null ? Number(r.feedCostGhs) : 0,
+              mortality: Number(r.mortalityCount ?? 0),
+            }))
+          } catch {
+            return []
+          }
+        }),
+      )
+
+      const weightNested = await Promise.all(
+        active.map(async (cage) => {
+          try {
+            const { data } = await apiClient.get(
+              API.units.weightSamples(cage.id),
+              { params: { limit: 80 } },
+            )
+            const rows = Array.isArray(data) ? data : data?.items ?? []
+            return rows.map((w) => {
+              const raw = w.sampledAt || ''
+              const dateStr =
+                raw.length >= 10
+                  ? raw.slice(0, 10)
+                  : raw.split('T')[0] || ''
+              return {
+                cage_id: cage.id,
+                date: dateStr,
+                average_body_weight: Number(w.avgWeightG ?? 0),
+              }
+            })
+          } catch {
+            return []
+          }
+        }),
+      )
+
+      if (cancelled) return
+      setDailyRecords(dailyNested.flat())
+      setBiweeklyRecords(weightNested.flat())
+    }
+
+    loadSeries()
+    return () => {
+      cancelled = true
+    }
+  }, [cages])
+
+  useEffect(() => {
+    if (!cages.length) return
+    updateDashboardMetrics(cages, recentStockings)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- updateDashboardMetrics is defined below; deps already cover its closure inputs
+  }, [cages, dailyRecords, biweeklyRecords, recentStockings])
+
+  // Optional: narrow series to one unit when parent passes selectedCage (legacy)
   useEffect(() => {
     async function fetchCageSpecificData() {
       if (!selectedCage) return
 
       try {
-        console.log('Fetching data for selected cage:', selectedCage)
+        const { data: dailyRaw } = await apiClient.get(
+          API.units.dailyRecords(selectedCage),
+          { params: { limit: 200 } },
+        )
+        const dailyData = normalizeDailyRecordList(dailyRaw).map((r) => ({
+          cage_id: selectedCage,
+          date: r.date,
+          feed_amount: Number(r.feedQuantityKg ?? 0),
+          feed_cost:
+            r.feedCostGhs != null ? Number(r.feedCostGhs) : 0,
+          mortality: Number(r.mortalityCount ?? 0),
+        }))
+        setDailyRecords(dailyData)
 
-        // Fetch daily records
-        const {
-          data: dailyData,
-          error: dailyError,
-        } = await dailyRecordService.getDailyRecords(selectedCage)
-        if (dailyError) throw dailyError
-        setDailyRecords(dailyData || [])
-
-        // Fetch biweekly records
-        const {
-          data: biweeklyData,
-          error: biweeklyError,
-        } = await biweeklyRecordService.getBiweeklyRecords(selectedCage)
-        if (biweeklyError) throw biweeklyError
-        setBiweeklyRecords(biweeklyData || [])
+        const { data: weightRaw } = await apiClient.get(
+          API.units.weightSamples(selectedCage),
+          { params: { limit: 100 } },
+        )
+        const rows = Array.isArray(weightRaw)
+          ? weightRaw
+          : weightRaw?.items ?? []
+        const biweeklyData = rows.map((w) => {
+          const raw = w.sampledAt || ''
+          const dateStr =
+            raw.length >= 10 ? raw.slice(0, 10) : raw.split('T')[0] || ''
+          return {
+            cage_id: selectedCage,
+            date: dateStr,
+            average_body_weight: Number(w.avgWeightG ?? 0),
+          }
+        })
+        setBiweeklyRecords(biweeklyData)
       } catch (error) {
         console.error(
           `Error fetching data for cage ${selectedCage}:`,
@@ -149,9 +221,7 @@ function Dashboard({ selectedCage }) {
       }
     }
 
-    if (selectedCage) {
-      fetchCageSpecificData()
-    }
+    fetchCageSpecificData()
   }, [selectedCage])
 
   // Calculate dashboard metrics
@@ -1139,10 +1209,13 @@ function Dashboard({ selectedCage }) {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {cages.map((cage) => {
-                  // Calculate DOC (Days of Culture)
-                  const stockingDate = new Date(cage.stocking_date)
+                  const anchor = cage.stocking_date || cage.installation_date
                   const today = new Date()
-                  const doc = Math.floor((today - stockingDate) / (1000 * 60 * 60 * 24))
+                  const doc = anchor
+                    ? Math.floor(
+                        (today - new Date(anchor)) / (1000 * 60 * 60 * 24),
+                      )
+                    : null
 
                   return (
                     <tr key={cage.id}>
@@ -1150,19 +1223,25 @@ function Dashboard({ selectedCage }) {
                         {cage.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(cage.stocking_date).toLocaleDateString()}
+                        {anchor
+                          ? new Date(anchor).toLocaleDateString()
+                          : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {doc} days
+                        {doc != null ? `${doc} days` : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {cage.initial_count?.toLocaleString() || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {cage.initial_abw?.toFixed(1) || 'N/A'}
+                        {cage.initial_abw != null
+                          ? Number(cage.initial_abw).toFixed(1)
+                          : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {cage.initial_biomass?.toFixed(1) || 'N/A'}
+                        {cage.initial_biomass != null
+                          ? Number(cage.initial_biomass).toFixed(1)
+                          : 'N/A'}
                       </td>
                     </tr>
                   )
