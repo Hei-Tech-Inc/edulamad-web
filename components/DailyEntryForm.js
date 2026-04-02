@@ -1,106 +1,116 @@
-// components/DailyEntryForm.js (Fixed - Using cages_info table)
-import React, { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import { feedTypeService } from '../lib/feedTypeService'
+// DailyEntryForm — Nsuo POST /units/:unitId/daily-records (requires active stock cycle)
+import React, { useState, useEffect, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
+import { queryKeys } from '@/api/query-keys'
+import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
+import { fetchActiveCycleIdForUnit } from '@/lib/unit-cycles-api'
+
+const FEED_TYPE_SUGGESTIONS = [
+  'floating pellet 2mm',
+  'floating pellet 3mm',
+  'floating pellet 4mm',
+  'sinking pellet',
+  'crumble starter',
+]
 
 const DailyEntryForm = ({ cage }) => {
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     feed_amount: '',
-    feed_type_id: '',
+    feed_type: '',
     feed_price: '1.50',
     mortality: '0',
     notes: '',
   })
   const [recentRecords, setRecentRecords] = useState([])
-  const [feedTypes, setFeedTypes] = useState([])
-  const [lastUsedFeedType, setLastUsedFeedType] = useState(null)
+  const [activeCycleId, setActiveCycleId] = useState(null)
+  const [cycleLoading, setCycleLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  // Fetch cage, recent records and feed types
+  const reloadRecent = useCallback(async () => {
+    if (!cage?.id) return
+    const { data: raw } = await apiClient.get(API.units.dailyRecords(cage.id), {
+      params: { limit: 10 },
+    })
+    const rows = normalizeDailyRecordList(raw)
+    setRecentRecords(rows)
+    return rows
+  }, [cage?.id])
+
   useEffect(() => {
-    if (!cage) {
+    if (!cage?.id) {
       setLoading(false)
+      setCycleLoading(false)
+      setActiveCycleId(null)
       return
     }
 
-    async function fetchData() {
-      try {
-        // Fetch recent records
-        const { data: recordsData, error: recordsError } = await supabase
-          .from('daily_records')
-          .select(
-            `
-            *,
-            feed_types(*)
-          `,
-          )
-          .eq('cage_id', cage.id)
-          .order('date', { ascending: false })
-          .limit(10)
-
-        if (recordsError) throw recordsError
-        setRecentRecords(recordsData || [])
-
-        // Fetch feed types
-        const {
-          data: feedTypesData,
-          error: feedTypesError,
-        } = await feedTypeService.getActiveFeedTypes()
-
-        if (feedTypesError) throw feedTypesError
-        setFeedTypes(feedTypesData || [])
-
-        // Get last used feed type for this cage
-        const lastFeedType = await feedTypeService.getLastUsedFeedType(cage.id)
-
-        // Set default feed price from the most recent record if available
-        if (recordsData && recordsData.length > 0) {
-          setFormData((prev) => ({
-            ...prev,
-            feed_price:
-              recordsData[0].feed_price?.toString() || prev.feed_price,
-            feed_type_id: lastFeedType
-              ? lastFeedType.id
-              : feedTypesData && feedTypesData.length > 0
-              ? feedTypesData[0].id
-              : '',
-          }))
-
-          if (lastFeedType) {
-            setLastUsedFeedType(lastFeedType)
-          }
-        } else if (feedTypesData && feedTypesData.length > 0) {
-          // If no recent records, still set a default feed type if available
-          setFormData((prev) => ({
-            ...prev,
-            feed_type_id: feedTypesData[0].id,
-          }))
-        }
-      } catch (error) {
-        setError('Failed to load cage data: ' + error.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-
-    // Reset form when cage changes
+    let cancelled = false
+    setLoading(true)
+    setCycleLoading(true)
+    setError('')
+    setMessage('')
     setFormData({
       date: new Date().toISOString().split('T')[0],
       feed_amount: '',
-      feed_type_id: '',
+      feed_type: '',
       feed_price: '1.50',
       mortality: '0',
       notes: '',
     })
-    setMessage('')
-    setError('')
-  }, [cage])
+
+    async function load() {
+      try {
+        const cycleId = await fetchActiveCycleIdForUnit(cage.id)
+        if (cancelled) return
+        setActiveCycleId(cycleId)
+
+        const rows = await reloadRecent()
+        if (cancelled) return
+
+        if (rows?.length > 0) {
+          const last = rows[0]
+          const lastType = last.feedType || last.feed_type || ''
+          const lastCost =
+            last.feedCostGhs != null && last.feedQuantityKg > 0
+              ? (
+                  Number(last.feedCostGhs) / Number(last.feedQuantityKg)
+                ).toFixed(2)
+              : '1.50'
+          setFormData((prev) => ({
+            ...prev,
+            feed_price: lastCost,
+            feed_type: lastType || prev.feed_type,
+          }))
+        } else if (FEED_TYPE_SUGGESTIONS.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            feed_type: FEED_TYPE_SUGGESTIONS[0],
+          }))
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError('Failed to load unit data: ' + (e?.message || String(e)))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+          setCycleLoading(false)
+        }
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [cage?.id, reloadRecent])
 
   if (!cage) {
     return (
@@ -110,26 +120,24 @@ const DailyEntryForm = ({ cage }) => {
     )
   }
 
-  // Add validation for date before stocking date
+  const stockingAnchor = cage.stocking_date || cage.installation_date
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => {
-      const newFormData = { ...prev, [name]: value }
-      
-      // Check if the date is before stocking date
-      if (name === 'date' && cage && cage.stocking_date) {
+      const next = { ...prev, [name]: value }
+      if (name === 'date' && stockingAnchor) {
         const selectedDate = new Date(value)
-        const stockingDate = new Date(cage.stocking_date)
-        
-        if (selectedDate < stockingDate) {
-          setError(`Cannot enter data before stocking date (${cage.stocking_date}). This cage was not active before that date.`)
-          return prev // Keep the old date
-        } else {
-          setError('') // Clear any previous error
+        const anchor = new Date(stockingAnchor)
+        if (selectedDate < anchor) {
+          setError(
+            `Cannot enter data before reference date (${stockingAnchor}).`,
+          )
+          return prev
         }
+        setError('')
       }
-      
-      return newFormData
+      return next
     })
   }
 
@@ -140,121 +148,98 @@ const DailyEntryForm = ({ cage }) => {
     setMessage('')
 
     try {
-      // Validate input
+      if (!activeCycleId) {
+        throw new Error(
+          'No active stock cycle for this unit. Start a cycle in Nsuo before daily records.',
+        )
+      }
       if (!formData.feed_amount || parseFloat(formData.feed_amount) <= 0) {
         throw new Error('Please enter a valid feed amount')
       }
-
       if (!formData.feed_price || parseFloat(formData.feed_price) <= 0) {
-        throw new Error('Please enter a valid feed price')
+        throw new Error('Please enter a valid feed price per kg')
+      }
+      if (!formData.feed_type?.trim()) {
+        throw new Error('Please enter a feed type (e.g. pellet size)')
       }
 
-      if (!formData.feed_type_id) {
-        throw new Error('Please select a feed type')
-      }
-
-      // Check if the date is before stocking date
-      if (cage && cage.stocking_date) {
+      if (stockingAnchor) {
         const selectedDate = new Date(formData.date)
-        const stockingDate = new Date(cage.stocking_date)
-        
-        if (selectedDate < stockingDate) {
-          throw new Error(`Cannot enter data before stocking date (${cage.stocking_date}). This cage was not active before that date.`)
+        if (selectedDate < new Date(stockingAnchor)) {
+          throw new Error(
+            `Cannot enter data before reference date (${stockingAnchor}).`,
+          )
         }
       }
 
-      // Check for duplicate entry on the same date
-      const { data: existingRecord, error: checkError } = await supabase
-        .from('daily_records')
-        .select('id')
-        .eq('cage_id', cage.id)
-        .eq('date', formData.date)
-        .maybeSingle()
-
-      if (checkError) throw checkError
-
-      if (existingRecord) {
+      const rowsForDay = await apiClient
+        .get(API.units.dailyRecords(cage.id), {
+          params: { from: formData.date, to: formData.date, limit: 20 },
+        })
+        .then((r) => normalizeDailyRecordList(r.data))
+      if (rowsForDay.length > 0) {
         throw new Error(
-          'A record already exists for this date. Please choose a different date or update the existing record.',
+          'A record already exists for this date. Pick another date or update via Nsuo.',
         )
       }
 
-      // Calculate feed cost
       const calculatedFeedCost = calculateFeedCost()
+      await apiClient.post(API.units.dailyRecords(cage.id), {
+        date: formData.date,
+        feedType: formData.feed_type.trim(),
+        feedQuantityKg: parseFloat(formData.feed_amount),
+        cycleId: activeCycleId,
+        feedCostGhs: parseFloat(calculatedFeedCost),
+        mortalityCount: parseInt(formData.mortality, 10) || 0,
+        notes: formData.notes?.trim() || undefined,
+        source: 'web',
+      })
 
-      // Save to Supabase
-      const { data, error } = await supabase.from('daily_records').insert([
-        {
-          cage_id: cage.id,
-          date: formData.date,
-          feed_amount: parseFloat(formData.feed_amount),
-          feed_type_id: formData.feed_type_id,
-          feed_price: parseFloat(formData.feed_price),
-          feed_cost: parseFloat(calculatedFeedCost),
-          mortality: parseInt(formData.mortality),
-          notes: formData.notes,
-        },
-      ])
-
-      if (error) throw error
-
-      // Success message
       setMessage('Record saved successfully!')
+      queryClient.invalidateQueries({ queryKey: queryKeys.dailyRecords.all })
+      await reloadRecent()
 
-      // Refresh recent records
-      const { data: newRecords, error: fetchError } = await supabase
-        .from('daily_records')
-        .select(
-          `
-          *,
-          feed_types(*)
-        `,
-        )
-        .eq('cage_id', cage.id)
-        .order('date', { ascending: false })
-        .limit(10)
-
-      if (fetchError) throw fetchError
-      setRecentRecords(newRecords || [])
-
-      // Reset form (except date, feed type and price)
       setFormData({
         date: formData.date,
         feed_amount: '',
-        feed_type_id: formData.feed_type_id, // Keep the same feed type for next entry
+        feed_type: formData.feed_type,
         feed_price: formData.feed_price,
         mortality: '0',
         notes: '',
       })
-    } catch (error) {
-      console.error('Error saving record:', error.message)
-      setError(error.message)
+    } catch (err) {
+      console.error('Error saving record:', err)
+      setError(err?.message || 'Failed to save')
     } finally {
       setSubmitting(false)
     }
   }
 
-  // Calculate feed cost based on amount and price
   const calculateFeedCost = () => {
     if (!formData.feed_amount || !formData.feed_price) return 0
-
     const amount = parseFloat(formData.feed_amount)
     const price = parseFloat(formData.feed_price)
-
     return (amount * price).toFixed(2)
   }
 
   const feedCost = calculateFeedCost()
 
-  // Get feed type name to display in the table
   const getFeedTypeName = (record) => {
-    if (record.feed_types) {
-      return record.feed_types.name
-    }
-
-    // Fallback for old records without feed_type_id
-    return record.feed_type || 'Unknown'
+    if (record.feed_types?.name) return record.feed_types.name
+    return record.feedType || record.feed_type || '—'
   }
+
+  const displayCost = (record) => {
+    const c = record.feed_cost ?? record.feedCostGhs
+    if (c == null) return '—'
+    return `GHS ${Number(c).toFixed(2)}`
+  }
+
+  const displayAmount = (record) =>
+    record.feed_amount ?? record.feedQuantityKg ?? '—'
+
+  const displayMortality = (record) =>
+    record.mortality ?? record.mortalityCount ?? '—'
 
   if (loading) {
     return (
@@ -267,13 +252,24 @@ const DailyEntryForm = ({ cage }) => {
     )
   }
 
+  const titleRef = cage.code || cage.id?.slice(0, 8) || cage.id
+
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
         <h2 className="font-medium text-gray-700">
-          Daily Data Entry - {cage.name} <span className="text-xs text-gray-500">({cage.code})</span>
+          Daily Data Entry — {cage.name}{' '}
+          <span className="text-xs text-gray-500">({titleRef})</span>
         </h2>
-        <div className="text-xs text-gray-500">Location: {cage.location || 'N/A'} | Capacity: {cage.capacity || 'N/A'}</div>
+        <div className="text-xs text-gray-500">
+          Location: {cage.location || 'N/A'} |{' '}
+          {!cycleLoading && !activeCycleId && (
+            <span className="text-amber-700 font-medium">
+              No active cycle — daily records are disabled until a stock cycle
+              exists.
+            </span>
+          )}
+        </div>
       </div>
       <div className="p-6">
         {error && (
@@ -322,32 +318,28 @@ const DailyEntryForm = ({ cage }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Feed Type
+                Feed type
               </label>
-              <select
-                name="feed_type_id"
-                value={formData.feed_type_id}
+              <input
+                type="text"
+                name="feed_type"
+                value={formData.feed_type}
                 onChange={handleChange}
+                list="feed-type-suggestions"
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="e.g. floating pellet 2mm"
                 required
-              >
-                <option value="">Select a feed type</option>
-                {feedTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
+              />
+              <datalist id="feed-type-suggestions">
+                {FEED_TYPE_SUGGESTIONS.map((t) => (
+                  <option key={t} value={t} />
                 ))}
-              </select>
-              {lastUsedFeedType && (
-                <p className="mt-1 text-xs text-gray-500">
-                  Last used: {lastUsedFeedType.name}
-                </p>
-              )}
+              </datalist>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Feed Price/kg (GHc)
+                Feed Price/kg (GHS)
               </label>
               <input
                 type="number"
@@ -362,7 +354,7 @@ const DailyEntryForm = ({ cage }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Feed Cost (GHc)
+                Feed Cost (GHS)
               </label>
               <input
                 type="text"
@@ -398,16 +390,16 @@ const DailyEntryForm = ({ cage }) => {
               onChange={handleChange}
               rows="3"
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              placeholder="Optional notes about today's feeding, conditions, etc."
-            ></textarea>
+              placeholder="Optional notes"
+            />
           </div>
 
           <div>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !activeCycleId}
               className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                submitting
+                submitting || !activeCycleId
                   ? 'bg-indigo-400'
                   : 'bg-indigo-600 hover:bg-indigo-700'
               } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
@@ -426,34 +418,19 @@ const DailyEntryForm = ({ cage }) => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100">
               <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Feed (kg)
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Feed Type
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Feed type
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cost
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Mortality
                 </th>
               </tr>
@@ -466,16 +443,16 @@ const DailyEntryForm = ({ cage }) => {
                       {record.date}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {record.feed_amount}
+                      {displayAmount(record)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {getFeedTypeName(record)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${(record.feed_cost || 0).toFixed(2)}
+                      {displayCost(record)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {record.mortality}
+                      {displayMortality(record)}
                     </td>
                   </tr>
                 ))

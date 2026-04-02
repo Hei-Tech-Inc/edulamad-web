@@ -7,7 +7,8 @@ import type {
   DailyRecordListResponse,
 } from '@/api/types/unit-records.types';
 
-function normalizeDailyList(body: unknown): DailyRecordDto[] {
+/** Shared list normalizer for GET /units/:unitId/daily-records */
+export function normalizeDailyRecordList(body: unknown): DailyRecordDto[] {
   if (Array.isArray(body)) {
     return body as DailyRecordDto[];
   }
@@ -28,7 +29,7 @@ export function useDailyRecords(
       const { data: raw } = await apiClient.get<
         DailyRecordListResponse | DailyRecordDto[]
       >(API.units.dailyRecords(unitId as string), { params: filters });
-      return normalizeDailyList(raw);
+      return normalizeDailyRecordList(raw);
     },
     enabled: Boolean(unitId),
   });

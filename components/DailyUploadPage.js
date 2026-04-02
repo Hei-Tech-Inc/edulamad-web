@@ -1,5 +1,5 @@
 // components/DailyUploadPage.js
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { 
   ArrowLeft, 
@@ -14,13 +14,23 @@ import {
   Check
 } from 'lucide-react'
 import DailyEntryForm from './DailyEntryForm'
-import { cageService } from '../lib/databaseService'
-import { supabase } from '../lib/supabase'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
+
+function formatUnitStatus(status) {
+  if (!status) return 'Unknown'
+  if (status === 'ready_to_harvest') return 'Ready to harvest'
+  return status.charAt(0).toUpperCase() + status.slice(1)
+}
 
 const statusColors = {
   active: 'bg-green-100 text-green-800',
   harvested: 'bg-blue-100 text-blue-800',
   harvesting: 'bg-orange-100 text-orange-800',
+  ready_to_harvest: 'bg-orange-100 text-orange-800',
   maintenance: 'bg-yellow-100 text-yellow-800',
   fallow: 'bg-gray-100 text-gray-800',
   empty: 'bg-purple-100 text-purple-800',
@@ -30,6 +40,7 @@ const statusOptions = [
   { value: 'active', label: 'Active' },
   { value: 'harvested', label: 'Harvested' },
   { value: 'harvesting', label: 'Harvesting' },
+  { value: 'ready_to_harvest', label: 'Ready to harvest' },
   { value: 'maintenance', label: 'Maintenance' },
   { value: 'fallow', label: 'Fallow' },
   { value: 'empty', label: 'Empty' },
@@ -37,9 +48,9 @@ const statusOptions = [
 
 const sortOptions = [
   { value: 'name', label: 'Name' },
-  { value: 'code', label: 'Code' },
+  { value: 'id', label: 'ID' },
   { value: 'location', label: 'Location' },
-  { value: 'capacity', label: 'Capacity' },
+  { value: 'size', label: 'Size' },
 ]
 
 const DailyUploadPage = () => {
@@ -57,70 +68,98 @@ const DailyUploadPage = () => {
   const [dailyRecordStatus, setDailyRecordStatus] = useState({})
   const cagesPerPage = 12
 
-  useEffect(() => {
-    fetchCages()
-    checkDailyRecords()
+  const fetchCages = useCallback(async () => {
+    setLoading(true)
+    try {
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        setCages([])
+      } else {
+        const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        setCages(legacy)
+      }
+    } catch (e) {
+      console.error('Error loading units:', e)
+      setCages([])
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
-  const fetchCages = async () => {
-    setLoading(true)
-    const { data, error } = await cageService.getAllCages()
-    setCages(data || [])
-    setLoading(false)
-  }
+  useEffect(() => {
+    fetchCages()
+  }, [fetchCages])
 
-  const checkDailyRecords = async () => {
-    try {
-      const today = new Date().toISOString().split('T')[0]
-      const { data, error } = await supabase
-        .from('daily_records')
-        .select('cage_id, date')
-        .eq('date', today)
+  const filteredCages = useMemo(() => {
+    const q = searchQuery.toLowerCase()
+    return cages
+      .filter((cage) => {
+        const codeStr = (cage.code || cage.id || '').toString().toLowerCase()
+        const matchesSearch =
+          cage.name.toLowerCase().includes(q) ||
+          codeStr.includes(q) ||
+          (cage.location &&
+            cage.location.toLowerCase().includes(q))
 
-      if (error) throw error
+        const matchesStatus = selectedStatus.includes(cage.status)
 
-      const statusMap = {}
-      data.forEach(record => {
-        statusMap[record.cage_id] = true
+        return matchesSearch && matchesStatus
       })
-      setDailyRecordStatus(statusMap)
-    } catch (error) {
-      console.error('Error checking daily records:', error)
+      .sort((a, b) => {
+        const aValue = a[sortBy]
+        const bValue = b[sortBy]
+
+        if (aValue === null || aValue === undefined) return 1
+        if (bValue === null || bValue === undefined) return -1
+
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortDirection === 'asc' ? aValue - bValue : bValue - aValue
+        }
+
+        const aString = String(aValue).toLowerCase()
+        const bString = String(bValue).toLowerCase()
+
+        return sortDirection === 'asc'
+          ? aString.localeCompare(bString)
+          : bString.localeCompare(aString)
+      })
+  }, [cages, searchQuery, selectedStatus, sortBy, sortDirection])
+
+  useEffect(() => {
+    let cancelled = false
+    const today = new Date().toISOString().split('T')[0]
+    const start = (page - 1) * cagesPerPage
+    const slice = filteredCages.slice(start, start + cagesPerPage)
+    if (slice.length === 0) {
+      return
     }
-  }
 
-  const filteredCages = cages
-    .filter(cage => {
-      const matchesSearch = 
-        cage.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cage.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (cage.location && cage.location.toLowerCase().includes(searchQuery.toLowerCase()))
-      
-      const matchesStatus = selectedStatus.includes(cage.status)
-      
-      return matchesSearch && matchesStatus
-    })
-    .sort((a, b) => {
-      const aValue = a[sortBy]
-      const bValue = b[sortBy]
-
-      // Handle null/undefined values
-      if (aValue === null || aValue === undefined) return 1
-      if (bValue === null || bValue === undefined) return -1
-
-      // Handle different data types
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue
+    async function checkToday() {
+      const updates = {}
+      await Promise.all(
+        slice.map(async (cage) => {
+          try {
+            const { data } = await apiClient.get(
+              API.units.dailyRecords(cage.id),
+              { params: { from: today, to: today, limit: 5 } },
+            )
+            const rows = normalizeDailyRecordList(data)
+            updates[cage.id] = rows.length > 0
+          } catch {
+            updates[cage.id] = false
+          }
+        }),
+      )
+      if (!cancelled) {
+        setDailyRecordStatus((prev) => ({ ...prev, ...updates }))
       }
+    }
 
-      // Convert to strings for comparison
-      const aString = String(aValue).toLowerCase()
-      const bString = String(bValue).toLowerCase()
-      
-      return sortDirection === 'asc' 
-        ? aString.localeCompare(bString)
-        : bString.localeCompare(aString)
-    })
+    checkToday()
+    return () => {
+      cancelled = true
+    }
+  }, [filteredCages, page, cagesPerPage])
 
   const paginatedCages = filteredCages.slice(
     (page - 1) * cagesPerPage,
@@ -347,12 +386,15 @@ const DailyUploadPage = () => {
                           </span>
                         )}
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[cage.status] || 'bg-gray-100 text-gray-800'}`}>
-                          {cage.status.charAt(0).toUpperCase() + cage.status.slice(1)}
+                          {formatUnitStatus(cage.status)}
                         </span>
                       </div>
                     </div>
                     <div className="text-sm text-gray-500 mb-1">
-                      Code: <span className="font-mono">{cage.code}</span>
+                      ID:{' '}
+                      <span className="font-mono">
+                        {cage.code || cage.id?.slice(0, 8) || '—'}
+                      </span>
                     </div>
                     {!compactView && (
                       <>
@@ -380,7 +422,7 @@ const DailyUploadPage = () => {
                         Name
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Code
+                        ID
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
@@ -406,12 +448,12 @@ const DailyUploadPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {cage.name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {cage.code}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                          {cage.code || cage.id?.slice(0, 8) || '—'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[cage.status] || 'bg-gray-100 text-gray-800'}`}>
-                            {cage.status.charAt(0).toUpperCase() + cage.status.slice(1)}
+                            {formatUnitStatus(cage.status)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -501,7 +543,10 @@ const DailyUploadPage = () => {
             </button>
             <div className="mb-4">
               <div className="text-lg font-semibold text-gray-900">
-                {selectedCage.name} <span className="text-xs text-gray-500">({selectedCage.code})</span>
+                {selectedCage.name}{' '}
+                <span className="text-xs text-gray-500">
+                  ({selectedCage.code || selectedCage.id?.slice(0, 8)})
+                </span>
               </div>
               <div className="text-xs text-gray-500">
                 Location: {selectedCage.location || 'N/A'} | Capacity: {selectedCage.capacity || 'N/A'}
