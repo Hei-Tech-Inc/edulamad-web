@@ -52,7 +52,7 @@ const TopBar = ({ title }) => {
   const apiBase =
     typeof process.env.NEXT_PUBLIC_API_URL === 'string'
       ? process.env.NEXT_PUBLIC_API_URL
-      : 'http://localhost:3000/api/v1'
+      : 'http://localhost:3000'
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow sticky top-0 z-30">

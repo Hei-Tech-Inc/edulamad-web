@@ -1,6 +1,6 @@
 /**
  * Typed path helpers — must match OpenAPI `paths` in `contexts/api-docs.json`.
- * All paths are relative to `NEXT_PUBLIC_API_URL` (includes `/api/v1` if configured that way).
+ * All paths are relative to `NEXT_PUBLIC_API_URL` (include a global prefix in the env URL if your API uses one).
  */
 const API = {
   app: {
