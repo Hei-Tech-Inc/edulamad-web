@@ -65,8 +65,8 @@ function StockLevels() {
           <div className="py-12 px-6 text-center">
             <Package className="h-12 w-12 text-gray-400 mx-auto" />
             <p className="mt-4 text-gray-700 max-w-lg mx-auto">
-              This screen used Supabase <code className="text-sm bg-gray-100 px-1 rounded">feed_types</code> stock.
-              There is no matching feed-inventory route in the Nsuo OpenAPI snapshot wired to this app.
+              This screen used legacy feed-type warehouse stock from Supabase.
+              The Nsuo OpenAPI wired to this app does not yet expose feed inventory.
             </p>
             <p className="mt-2 text-sm text-gray-500 max-w-lg mx-auto">
               Daily feeding is still recorded per pond under daily records in Nsuo.
