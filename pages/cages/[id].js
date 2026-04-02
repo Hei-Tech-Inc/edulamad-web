@@ -1,16 +1,20 @@
-// pages/cage/[id].js
-import { useState, useEffect, Fragment } from 'react'
+// pages/cages/[id].js
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { ArrowLeft, Edit, AlertTriangle, Trash } from 'lucide-react'
+import { ArrowLeft, Edit, AlertTriangle } from 'lucide-react'
 import ProtectedRoute from '../../components/ProtectedRoute'
-import { supabase } from '../../lib/supabase'
+import { useUnit } from '@/hooks/farms/useUnit'
+import { useDailyRecords } from '@/hooks/units/useDailyRecords'
+import { useWeightSamples } from '@/hooks/units/useWeightSamples'
+import { useHarvests } from '@/hooks/units/useHarvests'
+import { useUiStore } from '@/stores/ui.store'
+import { mapUnitToLegacyCage } from '@/lib/map-unit-to-legacy-cage'
 import {
-  cageService,
-  dailyRecordService,
-  biweeklyRecordService,
-  harvestRecordService,
-} from '../../lib/databaseService'
+  mapDailyRecordToLegacy,
+  mapHarvestToLegacy,
+  mapWeightSampleToGrowthRow,
+} from '@/lib/map-unit-records-to-legacy'
 import {
   LineChart,
   Line,
@@ -32,65 +36,57 @@ export default function CageDetailPage() {
 
 function CageDetail() {
   const router = useRouter()
-  const { id } = router.query
-  const [cage, setCage] = useState(null)
-  const [dailyRecords, setDailyRecords] = useState([])
-  const [biweeklyRecords, setBiweeklyRecords] = useState([])
-  const [harvestRecord, setHarvestRecord] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { id, farmId: farmIdQuery } = router.query
+  const setActiveFarmId = useUiStore((s) => s.setActiveFarmId)
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
+
+  const unitId = typeof id === 'string' ? id : null
+  const farmIdFromQuery =
+    typeof farmIdQuery === 'string' ? farmIdQuery : null
+  const farmId = farmIdFromQuery || activeFarmId
+
   const [activeTab, setActiveTab] = useState('overview')
-  const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (id) {
-      fetchData()
+    if (router.isReady && farmIdFromQuery) {
+      setActiveFarmId(farmIdFromQuery)
     }
-  }, [id])
+  }, [router.isReady, farmIdFromQuery, setActiveFarmId])
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
-      // Fetch cage details
-      const {
-        data: cageData,
-        error: cageError,
-      } = await cageService.getCageById(id)
-      if (cageError) throw cageError
-      setCage(cageData)
+  const unitQuery = useUnit(farmId, unitId)
+  const dailyQuery = useDailyRecords(unitId, { limit: 500 })
+  const weightQuery = useWeightSamples(unitId, { limit: 200 })
+  const harvestQuery = useHarvests(unitId, { limit: 50 })
 
-      // Fetch daily records
-      const {
-        data: dailyData,
-        error: dailyError,
-      } = await dailyRecordService.getDailyRecords(id)
-      if (dailyError) throw dailyError
-      setDailyRecords(dailyData || [])
+  const cage = useMemo(() => {
+    if (!unitQuery.data || !farmId) return null
+    return mapUnitToLegacyCage(unitQuery.data, farmId)
+  }, [unitQuery.data, farmId])
 
-      // Fetch biweekly records
-      const {
-        data: biweeklyData,
-        error: biweeklyError,
-      } = await biweeklyRecordService.getBiweeklyRecords(id)
-      if (biweeklyError) throw biweeklyError
-      setBiweeklyRecords(biweeklyData || [])
+  const stockingAnchor = cage
+    ? cage.stocking_date || cage.installation_date
+    : null
 
-      // Fetch harvest record if available
-      const {
-        data: harvestData,
-        error: harvestError,
-      } = await harvestRecordService.getHarvestRecord(id)
-      if (harvestError) throw harvestError
-      setHarvestRecord(harvestData)
-    } catch (error) {
-      console.error('Error fetching cage data:', error.message)
-      setError(error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const dailyRecords = useMemo(
+    () => (dailyQuery.data ?? []).map(mapDailyRecordToLegacy),
+    [dailyQuery.data],
+  )
+  const biweeklyRecords = useMemo(
+    () => (weightQuery.data ?? []).map(mapWeightSampleToGrowthRow),
+    [weightQuery.data],
+  )
+  const harvestRecord = useMemo(() => {
+    const rows = harvestQuery.data ?? []
+    if (!rows.length) return null
+    const sorted = [...rows].sort((a, b) => {
+      const da = a.harvestDate ?? ''
+      const db = b.harvestDate ?? ''
+      return db.localeCompare(da)
+    })
+    return mapHarvestToLegacy(sorted[0])
+  }, [harvestQuery.data])
 
-  // Calculate metrics
-  const calculateMetrics = () => {
+  const metrics = useMemo(() => {
     if (!cage || dailyRecords.length === 0) {
       return {
         totalFeed: 0,
@@ -115,14 +111,13 @@ function CageDetail() {
       0,
     )
 
-    // Calculate days since stocking
-    const stockingDate = new Date(cage.stocking_date)
     const today = new Date()
-    const daysSinceStocking = Math.floor(
-      (today - stockingDate) / (1000 * 60 * 60 * 24),
-    )
+    const daysSinceStocking = stockingAnchor
+      ? Math.floor(
+          (today - new Date(stockingAnchor)) / (1000 * 60 * 60 * 24),
+        )
+      : 0
 
-    // Calculate survival rate
     const survivalRate =
       cage.initial_count > 0
         ? (
@@ -131,11 +126,9 @@ function CageDetail() {
           ).toFixed(1)
         : 'N/A'
 
-    // Calculate FCR (Feed Conversion Ratio)
-    // Only if we have biweekly records for current biomass estimation
     let fcr = 'N/A'
     if (biweeklyRecords.length > 0 && cage.initial_weight) {
-      const latestABW = biweeklyRecords.sort(
+      const latestABW = [...biweeklyRecords].sort(
         (a, b) => new Date(b.date) - new Date(a.date),
       )[0]
       if (latestABW) {
@@ -158,14 +151,11 @@ function CageDetail() {
       survivalRate,
       daysSinceStocking,
     }
-  }
+  }, [cage, dailyRecords, biweeklyRecords, stockingAnchor])
 
-  const metrics = calculateMetrics()
-
-  // Prepare growth chart data
-  const prepareGrowthData = () => {
+  const growthData = useMemo(() => {
     return biweeklyRecords
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .sort((a, b) => new Date(a.date) - new Date(a.date))
       .map((record) => ({
         date: new Date(record.date).toLocaleDateString('en-US', {
           month: 'short',
@@ -173,19 +163,23 @@ function CageDetail() {
         }),
         abw: record.average_body_weight,
       }))
-  }
+  }, [biweeklyRecords])
 
-  // Prepare feed chart data
-  const prepareFeedData = () => {
-    // Group by week
+  const feedData = useMemo(() => {
     const feedByWeek = {}
+    if (!cage || dailyRecords.length === 0) {
+      return []
+    }
+
+    const epochMs = stockingAnchor
+      ? new Date(stockingAnchor).getTime()
+      : Math.min(...dailyRecords.map((r) => new Date(r.date).getTime()))
 
     dailyRecords.forEach((record) => {
       const date = new Date(record.date)
       const weekNumber =
-        Math.floor(
-          (date - new Date(cage.stocking_date)) / (7 * 24 * 60 * 60 * 1000),
-        ) + 1
+        Math.floor((date.getTime() - epochMs) / (7 * 24 * 60 * 60 * 1000)) +
+        1
       const weekLabel = `Week ${weekNumber}`
 
       if (!feedByWeek[weekLabel]) {
@@ -201,14 +195,26 @@ function CageDetail() {
     })
 
     return Object.values(feedByWeek).sort((a, b) => {
-      const weekNumA = parseInt(a.week.split(' ')[1])
-      const weekNumB = parseInt(b.week.split(' ')[1])
+      const weekNumA = parseInt(a.week.split(' ')[1], 10)
+      const weekNumB = parseInt(b.week.split(' ')[1], 10)
       return weekNumA - weekNumB
     })
-  }
+  }, [cage, dailyRecords, stockingAnchor])
 
-  const growthData = prepareGrowthData()
-  const feedData = prepareFeedData()
+  const loading =
+    !router.isReady || (Boolean(farmId && unitId) && unitQuery.isPending)
+
+  const error =
+    router.isReady && unitId && !farmId
+      ? 'No farm selected. Open this unit from the cages list or choose a farm.'
+      : unitQuery.isError
+        ? unitQuery.error?.message ?? 'Failed to load unit'
+        : null
+
+  const farmQuerySuffix =
+    farmId && typeof farmId === 'string'
+      ? `?farmId=${encodeURIComponent(farmId)}`
+      : ''
 
   if (loading) {
     return (
@@ -244,7 +250,7 @@ function CageDetail() {
     )
   }
 
-  if (!cage) {
+  if (!loading && !error && !cage) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="max-w-md w-full bg-white shadow rounded-lg p-8">
@@ -305,12 +311,14 @@ function CageDetail() {
                 ? 'bg-green-100 text-green-800'
                 : cage.status === 'maintenance'
                 ? 'bg-yellow-100 text-yellow-800'
-                : cage.status === 'harvested'
+                : cage.status === 'harvested' || cage.status === 'ready_to_harvest'
                 ? 'bg-blue-100 text-blue-800'
                 : 'bg-gray-100 text-gray-800'
             }`}
           >
-            {cage.status.charAt(0).toUpperCase() + cage.status.slice(1)}
+            {cage.status === 'ready_to_harvest'
+              ? 'Ready to harvest'
+              : cage.status.charAt(0).toUpperCase() + cage.status.slice(1)}
           </span>
         </div>
 
@@ -322,7 +330,9 @@ function CageDetail() {
               {metrics.daysSinceStocking}
             </p>
             <p className="mt-1 text-sm text-gray-500">
-              Since {new Date(cage.stocking_date).toLocaleDateString()}
+              {stockingAnchor
+                ? `Since ${new Date(stockingAnchor).toLocaleDateString()}`
+                : 'Stocking date not set (cycle data not linked yet)'}
             </p>
           </div>
 
@@ -332,7 +342,7 @@ function CageDetail() {
               {metrics.totalFeed} kg
             </p>
             <p className="mt-1 text-sm text-gray-500">
-              Cost: ${metrics.totalCost}
+              Cost: GHS {metrics.totalCost}
             </p>
           </div>
 
@@ -419,7 +429,9 @@ function CageDetail() {
                         Stocking Date
                       </p>
                       <p className="mt-1 text-gray-900">
-                        {new Date(cage.stocking_date).toLocaleDateString()}
+                        {stockingAnchor
+                          ? new Date(stockingAnchor).toLocaleDateString()
+                          : '—'}
                       </p>
                     </div>
                     <div>
@@ -427,7 +439,9 @@ function CageDetail() {
                         Initial Count
                       </p>
                       <p className="mt-1 text-gray-900">
-                        {cage.initial_count.toLocaleString()} fish
+                        {cage.initial_count != null
+                          ? `${cage.initial_count.toLocaleString()} fish`
+                          : '—'}
                       </p>
                     </div>
                     <div>
@@ -435,14 +449,18 @@ function CageDetail() {
                         Initial Weight
                       </p>
                       <p className="mt-1 text-gray-900">
-                        {cage.initial_weight} kg
+                        {cage.initial_weight != null
+                          ? `${cage.initial_weight} kg`
+                          : '—'}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500">
                         Initial ABW
                       </p>
-                      <p className="mt-1 text-gray-900">{cage.initial_abw} g</p>
+                      <p className="mt-1 text-gray-900">
+                        {cage.initial_abw != null ? `${cage.initial_abw} g` : '—'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -548,7 +566,7 @@ function CageDetail() {
                   <h3 className="text-lg font-medium text-gray-900">
                     Daily Records
                   </h3>
-                  <Link href={`/daily-entry/${id}`}>
+                  <Link href={`/daily-entry/${id}${farmQuerySuffix}`}>
                     <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                       Add Record
                     </button>
@@ -613,7 +631,7 @@ function CageDetail() {
                                 {record.feed_type}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                ${record.feed_cost}
+                                GHS {record.feed_cost}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {record.mortality}
@@ -645,7 +663,7 @@ function CageDetail() {
                   <h3 className="text-lg font-medium text-gray-900">
                     Growth Records
                   </h3>
-                  <Link href={`/biweekly-entry/${id}`}>
+                  <Link href={`/biweekly-entry/${id}${farmQuerySuffix}`}>
                     <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                       Add Record
                     </button>
@@ -694,11 +712,16 @@ function CageDetail() {
                           .sort((a, b) => new Date(b.date) - new Date(a.date))
                           .map((record) => {
                             const recordDate = new Date(record.date)
-                            const stockingDate = new Date(cage.stocking_date)
-                            const daysSinceStocking = Math.floor(
-                              (recordDate - stockingDate) /
-                                (1000 * 60 * 60 * 24),
-                            )
+                            const anchorTime = stockingAnchor
+                              ? new Date(stockingAnchor).getTime()
+                              : null
+                            const daysSinceStocking =
+                              anchorTime != null
+                                ? Math.floor(
+                                    (recordDate.getTime() - anchorTime) /
+                                      (1000 * 60 * 60 * 24),
+                                  )
+                                : '—'
 
                             return (
                               <tr key={record.id}>

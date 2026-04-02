@@ -16,6 +16,8 @@ export interface LegacyCageRow {
   unitType?: string;
   installation_date: string | null;
   initial_weight: number | null;
+  /** g — not on unit payload until cycle/summary is wired */
+  initial_abw: number | null;
   current_weight: number | null;
   growth_rate: number | null;
   initial_count: number | null;
@@ -51,6 +53,7 @@ export function mapUnitToLegacyCage(unit: Unit, farmId: string): LegacyCageRow {
       ? `${unit.constructionYear}-01-01`
       : null,
     initial_weight: null,
+    initial_abw: null,
     current_weight: null,
     growth_rate: null,
     initial_count: null,

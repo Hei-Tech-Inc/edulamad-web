@@ -66,7 +66,10 @@ function CagesManagement() {
     error: farmsError,
   } = useFarms({ limit: 100 })
 
-  const farmItems = farmList?.items ?? []
+  const farmItems = React.useMemo(
+    () => farmList?.items ?? [],
+    [farmList?.items],
+  )
 
   useEffect(() => {
     if (farmItems.length > 0 && !activeFarmId) {
@@ -223,7 +226,7 @@ function CagesManagement() {
       searchable: true,
       cell: (row) => (
         <Link
-          href={`/cages/${row.id}`}
+          href={`/cages/${row.id}?farmId=${encodeURIComponent(row.farmId)}`}
           className="text-indigo-600 hover:text-indigo-900 font-medium"
         >
           {row.name}

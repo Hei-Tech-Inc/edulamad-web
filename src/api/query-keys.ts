@@ -16,7 +16,8 @@ export const queryKeys = {
     list: (filters: Record<string, unknown>) =>
       [...queryKeys.units.lists(), filters] as const,
     details: () => [...queryKeys.units.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.units.details(), id] as const,
+    detail: (farmId: string, id: string) =>
+      [...queryKeys.units.details(), farmId, id] as const,
     summary: (farmId: string, id: string) =>
       [...queryKeys.units.all, 'summary', farmId, id] as const,
   },
@@ -32,13 +33,15 @@ export const queryKeys = {
     all: ['daily-records'] as const,
     byUnit: (unitId: string) =>
       [...queryKeys.dailyRecords.all, unitId] as const,
-    list: (unitId: string, range: { from?: string; to?: string }) =>
-      [...queryKeys.dailyRecords.byUnit(unitId), 'list', range] as const,
+    list: (unitId: string, filters: Record<string, unknown>) =>
+      [...queryKeys.dailyRecords.byUnit(unitId), 'list', filters] as const,
   },
   weightSamples: {
     all: ['weight-samples'] as const,
     byUnit: (unitId: string) =>
       [...queryKeys.weightSamples.all, unitId] as const,
+    list: (unitId: string, filters: Record<string, unknown>) =>
+      [...queryKeys.weightSamples.byUnit(unitId), 'list', filters] as const,
   },
   feedingLogs: {
     all: ['feeding-logs'] as const,
@@ -48,6 +51,8 @@ export const queryKeys = {
   harvests: {
     all: ['harvests'] as const,
     byUnit: (unitId: string) => [...queryKeys.harvests.all, unitId] as const,
+    list: (unitId: string, filters: Record<string, unknown>) =>
+      [...queryKeys.harvests.byUnit(unitId), 'list', filters] as const,
   },
   feed: {
     all: ['feed'] as const,

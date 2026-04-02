@@ -1,20 +1,29 @@
-// Modified CreateCageForm.js with auto-generated cage code
-import React, { useState, useEffect } from 'react'
+// CreateCageForm — creates a farm unit via Nsuo API (POST /farms/:farmId/units)
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/router'
-import { cageService } from '../lib/databaseService'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
+import { queryKeys } from '@/api/query-keys'
+import { useFarms } from '@/hooks/farms/useFarms'
+import { useUnits } from '@/hooks/farms/useUnits'
+import { useUiStore } from '@/stores/ui.store'
 
 const CreateCageForm = () => {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [checkingName, setCheckingName] = useState(false)
+  const queryClient = useQueryClient()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
+  const setActiveFarmId = useUiStore((s) => s.setActiveFarmId)
+
+  const { data: farmList, isLoading: farmsLoading } = useFarms({ limit: 100 })
+  const farmItems = useMemo(() => farmList?.items ?? [], [farmList?.items])
+
+  const [selectedFarmId, setSelectedFarmId] = useState(null)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [nameError, setNameError] = useState('')
-  const [existingCages, setExistingCages] = useState([])
-  const [cageCode, setCageCode] = useState('')
   const [formData, setFormData] = useState({
     name: '',
-    code: '',
     location: '',
     size: '',
     capacity: '',
@@ -25,143 +34,49 @@ const CreateCageForm = () => {
     status: 'empty',
   })
 
-  // Fetch existing cages to check for name uniqueness and generate a code
   useEffect(() => {
-    async function fetchExistingCages() {
-      try {
-        // Ensure tables exist and fetch all cages
-        const { data, error } = await cageService.getAllCages()
-
-        if (error) {
-          console.error('Error fetching existing cages:', error)
-          throw error
-        }
-
-        console.log('Fetched existing cages:', data)
-        setExistingCages(data || [])
-
-        // Generate a new cage code
-        generateCageCode(data || [])
-      } catch (error) {
-        console.error('Error fetching existing cages:', error)
-      }
-    }
-
-    fetchExistingCages()
-  }, [])
-
-  // Function to generate a new unique cage code
-  const generateCageCode = (existingCages) => {
-    // Find the highest existing code number
-    let maxCodeNumber = 0
-
-    existingCages.forEach((cage) => {
-      if (cage.code && cage.code.startsWith('C')) {
-        const codeNumber = parseInt(cage.code.substring(1), 10)
-        if (!isNaN(codeNumber) && codeNumber > maxCodeNumber) {
-          maxCodeNumber = codeNumber
-        }
-      }
+    if (!farmItems.length) return
+    setSelectedFarmId((prev) => {
+      if (prev && farmItems.some((f) => f.id === prev)) return prev
+      const initial =
+        activeFarmId && farmItems.some((f) => f.id === activeFarmId)
+          ? activeFarmId
+          : farmItems[0].id
+      return initial
     })
+  }, [farmItems, activeFarmId])
 
-    // Generate the next code
-    const nextCodeNumber = maxCodeNumber + 1
-    const newCode = `C${nextCodeNumber.toString().padStart(3, '0')}`
+  const farmId = selectedFarmId
 
-    console.log('Generated new cage code:', newCode)
+  const { data: unitList } = useUnits(farmId || undefined, { limit: 500 })
+  const existingNames = useMemo(() => {
+    const items = unitList?.items ?? []
+    return new Set(items.map((u) => String(u.name).toLowerCase()))
+  }, [unitList])
 
-    // Set the code in the form data
-    setCageCode(newCode)
-    setFormData((prev) => ({ ...prev, code: newCode }))
-  }
-
-  // Check if cage name already exists when name field changes
   useEffect(() => {
-    // Clear previous name error
     setNameError('')
-
-    // Skip check if name is empty
     if (!formData.name) return
-
-    // Debounce check to avoid excessive validation
     const timer = setTimeout(() => {
-      const nameExists = existingCages.some(
-        (cage) => cage.name.toLowerCase() === formData.name.toLowerCase(),
-      )
-
-      if (nameExists) {
+      if (existingNames.has(formData.name.trim().toLowerCase())) {
         setNameError(
-          'This cage name already exists. Please choose a unique name.',
+          'This unit name already exists for the selected farm. Choose another name.',
         )
       }
-    }, 500)
-
+    }, 400)
     return () => clearTimeout(timer)
-  }, [formData.name, existingCages])
+  }, [formData.name, existingNames])
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    setMessage('')
-
-    try {
-      // Validate required fields
-      if (!formData.name) {
-        throw new Error('Cage name is required')
-      }
-
-      // Check for name uniqueness
-      const nameExists = existingCages.some(
-        (cage) => cage.name.toLowerCase() === formData.name.toLowerCase(),
-      )
-
-      if (nameExists) {
-        throw new Error(
-          'This cage name already exists. Please choose a unique name.',
-        )
-      }
-
-      // Prepare cage data with correct types
-      const cageData = {
-        name: formData.name.trim(),
-        code: formData.code, // Include the auto-generated code
-        location: formData.location ? formData.location.trim() : null,
-        size: formData.size ? parseFloat(formData.size) : null,
-        capacity: formData.capacity ? parseInt(formData.capacity) : null,
-        dimensions: formData.dimensions ? formData.dimensions.trim() : null,
-        material: formData.material ? formData.material.trim() : null,
-        installation_date: formData.installation_date || null,
-        notes: formData.notes ? formData.notes.trim() : null,
-        status: formData.status || 'empty',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-
-      console.log('Creating cage with data:', cageData)
-
-      // Create cage
-      const { data, error: createError } = await cageService.createCage(
-        cageData,
-      )
-
-      if (createError) {
-        console.error('Detailed create error:', createError)
-        throw createError
-      }
-
-      console.log('Cage created successfully:', data)
-      setMessage('Cage created successfully!')
-
-      // Reset form
+  const createMutation = useMutation({
+    mutationFn: async (payload) => {
+      const { data } = await apiClient.post(API.farms.units(farmId), payload)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.units.all })
+      setMessage('Unit created successfully.')
       setFormData({
         name: '',
-        code: '',
         location: '',
         size: '',
         capacity: '',
@@ -171,27 +86,106 @@ const CreateCageForm = () => {
         notes: '',
         status: 'empty',
       })
-
-      // Generate a new code for the next cage
-      const updatedCages = [...existingCages, data]
-      generateCageCode(updatedCages)
-
-      // Navigate to cages page after delay
       setTimeout(() => {
         router.push('/cages')
-      }, 2000)
-    } catch (error) {
-      console.error('Error creating cage:', error)
-      setError(error.message)
-    } finally {
-      setLoading(false)
+      }, 1500)
+    },
+    onError: (e) => {
+      setError(e?.message ?? 'Failed to create unit')
+    },
+  })
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const buildPayload = () => {
+    let gpsLatitude
+    let gpsLongitude
+    const loc = formData.location?.trim()
+    if (loc) {
+      const parts = loc.split(',').map((s) => s.trim())
+      if (parts.length === 2) {
+        const a = parseFloat(parts[0])
+        const b = parseFloat(parts[1])
+        if (!Number.isNaN(a) && !Number.isNaN(b)) {
+          gpsLatitude = a
+          gpsLongitude = b
+        }
+      }
     }
+
+    const extras = [
+      formData.capacity && `Capacity (fish): ${formData.capacity}`,
+      formData.dimensions && `Dimensions: ${formData.dimensions}`,
+      formData.material && `Material: ${formData.material}`,
+    ].filter(Boolean)
+    const combinedNotes = [formData.notes?.trim(), ...extras]
+      .filter(Boolean)
+      .join('\n')
+
+    const payload = {
+      name: formData.name.trim(),
+      unitType: 'cage',
+      areaM2: formData.size ? parseFloat(formData.size) : undefined,
+      constructionYear: formData.installation_date
+        ? parseInt(formData.installation_date.slice(0, 4), 10)
+        : undefined,
+      status: formData.status,
+      notes: combinedNotes || undefined,
+    }
+    if (gpsLatitude != null && gpsLongitude != null) {
+      payload.gpsLatitude = gpsLatitude
+      payload.gpsLongitude = gpsLongitude
+    }
+    return payload
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setMessage('')
+
+    if (!farmId) {
+      setError('Select a farm first.')
+      return
+    }
+    if (!formData.name?.trim()) {
+      setError('Unit name is required.')
+      return
+    }
+    if (existingNames.has(formData.name.trim().toLowerCase())) {
+      setError('This unit name already exists for the selected farm.')
+      return
+    }
+
+    setActiveFarmId(farmId)
+    createMutation.mutate(buildPayload())
+  }
+
+  const submitting = createMutation.isPending
+
+  if (farmsLoading && !farmItems.length) {
+    return (
+      <div className="bg-white shadow rounded-lg p-8 text-center text-gray-600">
+        Loading farms…
+      </div>
+    )
+  }
+
+  if (!farmItems.length) {
+    return (
+      <div className="bg-white shadow rounded-lg p-8 text-amber-800 bg-amber-50 rounded-md">
+        No farms available. Create a farm in the Nsuo system before adding units.
+      </div>
+    )
   }
 
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="font-medium text-gray-700">Create New Cage</h2>
+        <h2 className="font-medium text-gray-700">Create New Unit (Cage)</h2>
       </div>
 
       <div className="p-6">
@@ -208,29 +202,30 @@ const CreateCageForm = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Cage Code (Auto-generated, read-only) */}
+          {farmItems.length > 1 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cage Code <span className="text-red-500">*</span>
+                Farm <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="code"
-                value={cageCode}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-700 sm:text-sm"
-                placeholder="Auto-generated"
-                readOnly
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Auto-generated unique code for this cage
-              </p>
+              <select
+                value={farmId ?? ''}
+                onChange={(e) => setSelectedFarmId(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                required
+              >
+                {farmItems.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name ?? f.id}
+                  </option>
+                ))}
+              </select>
             </div>
+          )}
 
-            {/* Cage Name */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cage Name <span className="text-red-500">*</span>
+                Unit / cage name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -240,7 +235,7 @@ const CreateCageForm = () => {
                 className={`block w-full px-3 py-2 border ${
                   nameError ? 'border-red-300' : 'border-gray-300'
                 } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                placeholder="e.g., C1, Cage 2, etc."
+                placeholder="e.g. Cage 2, Unit A1"
                 required
               />
               {nameError && (
@@ -248,10 +243,9 @@ const CreateCageForm = () => {
               )}
             </div>
 
-            {/* Location */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location
+                GPS (latitude, longitude)
               </label>
               <input
                 type="text"
@@ -259,14 +253,13 @@ const CreateCageForm = () => {
                 value={formData.location}
                 onChange={handleChange}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="e.g., North Pond, Section A, etc."
+                placeholder="e.g. 5.6037, -0.187"
               />
             </div>
 
-            {/* Size */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Size (m³)
+                Area (m²)
               </label>
               <input
                 type="number"
@@ -275,11 +268,10 @@ const CreateCageForm = () => {
                 onChange={handleChange}
                 step="0.1"
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Volume in cubic meters"
+                placeholder="Surface area in square metres"
               />
             </div>
 
-            {/* Capacity */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Capacity (fish count)
@@ -290,11 +282,10 @@ const CreateCageForm = () => {
                 value={formData.capacity}
                 onChange={handleChange}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Maximum fish capacity"
+                placeholder="Stored in notes until cycles are linked"
               />
             </div>
 
-            {/* Dimensions */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Dimensions
@@ -305,11 +296,10 @@ const CreateCageForm = () => {
                 value={formData.dimensions}
                 onChange={handleChange}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="e.g., 5m x 5m x 3m"
+                placeholder="e.g. 5m × 5m"
               />
             </div>
 
-            {/* Material */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Material
@@ -320,14 +310,13 @@ const CreateCageForm = () => {
                 value={formData.material}
                 onChange={handleChange}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="e.g., HDPE, Metal frame, etc."
+                placeholder="e.g. HDPE net"
               />
             </div>
 
-            {/* Installation Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Installation Date
+                Construction year
               </label>
               <input
                 type="date"
@@ -336,9 +325,11 @@ const CreateCageForm = () => {
                 onChange={handleChange}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Year is taken from this date for the API.
+              </p>
             </div>
 
-            {/* Status */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status
@@ -357,7 +348,6 @@ const CreateCageForm = () => {
             </div>
           </div>
 
-          {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Notes
@@ -368,8 +358,8 @@ const CreateCageForm = () => {
               onChange={handleChange}
               rows="3"
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              placeholder="Optional notes about the cage"
-            ></textarea>
+              placeholder="Optional notes"
+            />
           </div>
 
           <div className="flex justify-end space-x-3">
@@ -382,14 +372,14 @@ const CreateCageForm = () => {
             </button>
             <button
               type="submit"
-              disabled={loading || nameError}
+              disabled={submitting || !!nameError}
               className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                loading || nameError
+                submitting || nameError
                   ? 'bg-indigo-400 cursor-not-allowed'
                   : 'bg-indigo-600 hover:bg-indigo-700'
               } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
             >
-              {loading ? 'Creating...' : 'Create Cage'}
+              {submitting ? 'Creating…' : 'Create unit'}
             </button>
           </div>
         </form>
