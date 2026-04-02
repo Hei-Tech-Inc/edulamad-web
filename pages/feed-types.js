@@ -288,8 +288,8 @@ function FeedTypes() {
                       colSpan="6"
                       className="px-6 py-12 text-center text-gray-500"
                     >
-                      No feed types found. Click "Add Feed Type" to create your
-                      first feed type.
+                      No feed types found. Click &quot;Add Feed Type&quot; to
+                      create your first feed type.
                     </td>
                   </tr>
                 )}

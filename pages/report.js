@@ -358,7 +358,7 @@ function Reports() {
                     </p>
                     <p className="text-sm mt-2">
                       Select report type, date range, and cages, then click
-                      "Generate Report"
+                      &quot;Generate Report&quot;
                     </p>
                   </div>
                 ) : (

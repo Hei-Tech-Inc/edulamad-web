@@ -4,7 +4,7 @@ import { CloudUpload, Info } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import BulkUploadModal from './BulkUploadModal'
 import { useToast } from './Toast'
-import feedTypeService from '../lib/feedTypeService'
+import { feedTypeService } from '../lib/feedTypeService'
 
 // Excel serial number to YYYY-MM-DD string
 const excelSerialDateToJSDate = (serial) => {
@@ -321,7 +321,7 @@ const BulkDailyUploadForm = () => {
               </li>
               <li>
                 <strong>feed_price</strong>: Price per kg (defaults to the feed
-                type's price if not provided)
+                type&apos;s price if not provided)
               </li>
               <li>
                 <strong>mortality</strong>: Number of mortalities (defaults to

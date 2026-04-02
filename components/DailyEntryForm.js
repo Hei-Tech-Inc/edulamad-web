@@ -20,15 +20,6 @@ const DailyEntryForm = ({ cage }) => {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  // If no cage is provided, show a message
-  if (!cage) {
-    return (
-      <div className="bg-white shadow rounded-lg p-8">
-        <p className="text-center text-gray-600">Please select a cage first</p>
-      </div>
-    )
-  }
-
   // Fetch cage, recent records and feed types
   useEffect(() => {
     if (!cage) {
@@ -110,6 +101,14 @@ const DailyEntryForm = ({ cage }) => {
     setMessage('')
     setError('')
   }, [cage])
+
+  if (!cage) {
+    return (
+      <div className="bg-white shadow rounded-lg p-8">
+        <p className="text-center text-gray-600">Please select a cage first</p>
+      </div>
+    )
+  }
 
   // Add validation for date before stocking date
   const handleChange = (e) => {

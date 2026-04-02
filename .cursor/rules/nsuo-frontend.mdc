@@ -1,0 +1,42 @@
+---
+description: Nsuo frontend stack, API discipline, and UI tooling (Pro Max, motion, icons, 21st)
+alwaysApply: true
+---
+
+# Nsuo (aquaFarm-web) — frontend rules
+
+## Product context
+
+- Platform: Nsuo — aquaculture farm management (`Prompt-main.md`, `prompt.md`).
+- Backend contract: `contexts/api-docs.json` (Swagger). Do not invent endpoints or fields.
+
+## Core stack (from project rules)
+
+- Next.js 15 Pages Router, TypeScript where used, Tailwind, TanStack Query v5, Zustand, TanStack Table v8, RHF + Zod, Axios via `apiClient`, Recharts, existing Redux until migrated.
+- Non‑negotiables: no `any`; no raw axios; no `useEffect` for server data (use Query); orgId only from auth store; permissions via `hasPermission`.
+
+## UI / UX Pro Max (Cursor skill)
+
+- Project skill: `.cursor/skills/ui-ux-pro-max/SKILL.md`.
+- For UI/UX work, run design-system search from repo root, for example:
+  `python3 .cursor/skills/ui-ux-pro-max/scripts/search.py "<product> <industry> <keywords>" --design-system -p "Nsuo"`
+- Prefer persisted design docs only when the user wants a long-lived design system (`--persist` per that skill).
+
+## Motion (Framer Motion)
+
+- Use `framer-motion` for enter/exit, layout, and micro-interactions.
+- Avoid hydration mismatches: gate client-only motion with `use client` boundaries if migrating to App Router; in Pages Router, avoid animating from random or time-based initial state on the server; prefer `initial={false}` or mount-gated animation when SSR output must match first paint.
+
+## Icons
+
+- Default: `lucide-react` (aligned with existing app).
+- Also available: `react-icons` for sets not in Lucide (e.g. brand icons). Keep imports tree-shake friendly (named imports per icon family).
+
+## 21st.dev
+
+- Package: `@21st-sdk/react` — chat/agent UI primitives; see https://21st.dev/agents
+- When using those components, import styles once (e.g. in `pages/_app.js`): `@21st-sdk/react/styles.css` or `./styles/index.css` per package docs.
+
+## Ship gate
+
+- Do not push if `npm run build` fails or if ESLint reports errors. Fix hydration warnings on critical paths before merging UI changes.

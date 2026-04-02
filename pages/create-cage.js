@@ -26,7 +26,8 @@ export default function CreateCagePage() {
           <div className="mb-6">
             <p className="text-gray-600">
               Create a new cage by filling out the form below. This creates only
-              the physical cage structure. You'll be able to stock it with fish
+              the physical cage structure. You&apos;ll be able to stock it with
+              fish
               in a separate step.
             </p>
           </div>

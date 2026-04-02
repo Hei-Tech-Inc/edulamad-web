@@ -80,7 +80,7 @@ export default function BulkUploadPage() {
                       Biweekly ABW Bulk Upload
                     </h3>
                     <p className="mb-4">
-                      This feature is coming soon. You'll be able to upload
+                      This feature is coming soon. You&apos;ll be able to upload
                       multiple biweekly average body weight records at once.
                     </p>
                   </div>

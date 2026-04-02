@@ -1,5 +1,5 @@
 // pages/cage/[id].js
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { ArrowLeft, Edit, AlertTriangle, Trash } from 'lucide-react'
@@ -254,8 +254,8 @@ function CageDetail() {
               Cage Not Found
             </h2>
             <p className="mt-2 text-gray-600">
-              The cage you are looking for doesn't exist or you don't have
-              permission to view it.
+              The cage you are looking for doesn&apos;t exist or you don&apos;t
+              have permission to view it.
             </p>
             <div className="mt-6">
               <Link href="/cages">
@@ -799,12 +799,12 @@ function CageDetail() {
                           </div>
 
                           {harvestRecord.size_breakdown.map((size, index) => (
-                            <React.Fragment key={index}>
+                            <Fragment key={index}>
                               <div className="text-gray-900">{size.range}</div>
                               <div className="text-gray-900">
                                 {size.percentage}%
                               </div>
-                            </React.Fragment>
+                            </Fragment>
                           ))}
                         </div>
                       </div>

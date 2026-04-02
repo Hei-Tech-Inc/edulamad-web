@@ -14,6 +14,7 @@ import {
   Mail,
   Phone,
   MapPin,
+  Globe,
 } from 'lucide-react'
 import ProtectedRoute from '../components/ProtectedRoute'
 import { useToast } from '../components/Toast'
