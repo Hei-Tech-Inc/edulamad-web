@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import ProtectedRoute from '../../components/ProtectedRoute'
 import Layout from '../../components/Layout'
@@ -17,7 +17,6 @@ import {
   Cell,
   Legend,
 } from 'recharts'
-import { analyticsService } from '../../lib/databaseService'
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
@@ -34,50 +33,25 @@ export default function CageAnalyticsPage() {
 function CageAnalytics() {
   const dispatch = useDispatch()
   const { cages, loading: reduxLoading, error: reduxError } = useSelector((state) => state.cages)
-  const [analyticsData, setAnalyticsData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
+    dispatch(fetchCages({ page: 1, pageSize: 100 }))
+  }, [dispatch])
 
-        // Fetch cages if not already loaded
-        if (!cages || cages.length === 0) {
-          await dispatch(fetchCages({ page: 1, pageSize: 100 }))
-        }
-
-        // Fetch analytics data
-        const { data, error: analyticsError } = await analyticsService.getCageSummaryStats()
-        
-        if (analyticsError) {
-          console.error('Analytics service error:', analyticsError)
-          // Don't throw error, use fallback data
-          setAnalyticsData({
-            totalCages: cages?.length || 0,
-            activeCages: cages?.filter(c => c.status === 'active').length || 0,
-            harvestedCages: cages?.filter(c => c.status === 'harvested').length || 0,
-            maintenanceCages: cages?.filter(c => c.status === 'maintenance').length || 0,
-            fallowCages: cages?.filter(c => c.status === 'fallow').length || 0,
-            emptyCages: cages?.filter(c => c.status === 'empty').length || 0,
-          })
-        } else {
-          setAnalyticsData(data)
-        }
-      } catch (error) {
-        console.error('Error loading analytics:', error)
-        setError('Failed to load analytics data. Please try again.')
-      } finally {
-        setLoading(false)
-      }
+  const summaryStats = React.useMemo(() => {
+    if (!cages?.length) return null
+    return {
+      totalCages: cages.length,
+      activeCages: cages.filter((c) => c.status === 'active').length,
+      harvestedCages: cages.filter(
+        (c) => c.status === 'harvested' || c.status === 'ready_to_harvest',
+      ).length,
+      maintenanceCages: cages.filter((c) => c.status === 'maintenance').length,
+      fallowCages: cages.filter((c) => c.status === 'fallow').length,
+      emptyCages: cages.filter((c) => c.status === 'empty').length,
     }
+  }, [cages])
 
-    loadData()
-  }, [dispatch, cages])
-
-  // Calculate analytics from cages data if analytics service fails
   const analytics = React.useMemo(() => {
     if (!cages || cages.length === 0) {
       return {
@@ -119,13 +93,15 @@ function CageAnalytics() {
       value
     }))
 
-    // Harvest readiness
+    const cultureAnchor = (cage) => cage.stocking_date || cage.installation_date
+
+    // Harvest readiness (DOC from stocking or installation date when stocking unknown)
     const harvestReadiness = cages
-      .filter(cage => cage.status === 'active' && cage.stocking_date)
-      .map(cage => {
-        const stockingDate = new Date(cage.stocking_date)
+      .filter((cage) => cage.status === 'active' && cultureAnchor(cage))
+      .map((cage) => {
+        const anchor = new Date(cultureAnchor(cage))
         const today = new Date()
-        const doc = Math.floor((today - stockingDate) / (1000 * 60 * 60 * 24))
+        const doc = Math.floor((today - anchor) / (1000 * 60 * 60 * 24))
         const daysToHarvest = Math.max(0, 120 - doc) // 120 days is the harvest threshold
 
         return {
@@ -140,11 +116,11 @@ function CageAnalytics() {
 
     // Calculate growth trends
     const growthTrends = cages
-      .filter(cage => cage.status === 'active' && cage.stocking_date)
-      .map(cage => {
-        const stockingDate = new Date(cage.stocking_date)
+      .filter((cage) => cage.status === 'active' && cultureAnchor(cage))
+      .map((cage) => {
+        const anchor = new Date(cultureAnchor(cage))
         const today = new Date()
-        const doc = Math.floor((today - stockingDate) / (1000 * 60 * 60 * 24))
+        const doc = Math.floor((today - anchor) / (1000 * 60 * 60 * 24))
         return {
           cageId: cage.id,
           cageName: cage.name,
@@ -163,7 +139,7 @@ function CageAnalytics() {
     }
   }, [cages])
 
-  if (loading || reduxLoading) {
+  if (reduxLoading) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
         <div className="max-w-7xl mx-auto">
@@ -176,7 +152,7 @@ function CageAnalytics() {
     )
   }
 
-  if (error || reduxError) {
+  if (reduxError) {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
         <div className="max-w-7xl mx-auto">
@@ -190,7 +166,7 @@ function CageAnalytics() {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800">Error</h3>
                 <div className="mt-2 text-sm text-red-700">
-                  <p>{error || reduxError}</p>
+                  <p>{reduxError}</p>
                 </div>
               </div>
             </div>
@@ -216,47 +192,47 @@ function CageAnalytics() {
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Cage Analytics</h1>
         
         {/* Summary Cards */}
-        {analyticsData && (
+        {summaryStats && (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow p-4">
               <div className="text-sm font-medium text-gray-500">Total Cages</div>
               <div className="mt-2 text-2xl font-semibold text-blue-600">
-                {analyticsData.totalCages}
+                {summaryStats.totalCages}
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4">
               <div className="text-sm font-medium text-gray-500">Active</div>
               <div className="mt-2 text-2xl font-semibold text-green-600">
-                {analyticsData.activeCages}
+                {summaryStats.activeCages}
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-sm font-medium text-gray-500">Harvested</div>
+              <div className="text-sm font-medium text-gray-500">Harvest ready / harvested</div>
               <div className="mt-2 text-2xl font-semibold text-blue-600">
-                {analyticsData.harvestedCages}
+                {summaryStats.harvestedCages}
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4">
               <div className="text-sm font-medium text-gray-500">Maintenance</div>
               <div className="mt-2 text-2xl font-semibold text-yellow-600">
-                {analyticsData.maintenanceCages}
+                {summaryStats.maintenanceCages}
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4">
               <div className="text-sm font-medium text-gray-500">Fallow</div>
               <div className="mt-2 text-2xl font-semibold text-gray-600">
-                {analyticsData.fallowCages}
+                {summaryStats.fallowCages}
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4">
               <div className="text-sm font-medium text-gray-500">Empty</div>
               <div className="mt-2 text-2xl font-semibold text-purple-600">
-                {analyticsData.emptyCages}
+                {summaryStats.emptyCages}
               </div>
             </div>
           </div>

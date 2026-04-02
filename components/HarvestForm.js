@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { harvestRecordService, cageService } from '../lib/databaseService'
+import { useQueryClient } from '@tanstack/react-query'
 import { useToast } from './Toast'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
+import { queryKeys } from '@/api/query-keys'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { fetchActiveCycleIdForUnit } from '@/lib/unit-cycles-api'
 
 const SIZE_CATEGORIES = [
   { category: 'S3', range: '800g above' },
@@ -14,6 +20,7 @@ const SIZE_CATEGORIES = [
 ]
 
 const HarvestForm = ({ onComplete }) => {
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     harvestDate: new Date().toISOString().split('T')[0],
     cageId: '',
@@ -34,20 +41,30 @@ const HarvestForm = ({ onComplete }) => {
   const [showPreview, setShowPreview] = useState(false)
   const { showToast } = useToast()
 
-  // Fetch active cages
   useEffect(() => {
-    const fetchCages = async () => {
+    const loadCages = async () => {
       try {
-        const { data, error } = await cageService.getActiveCages()
-        if (error) throw error
-        setCages(data || [])
+        const farmId = await resolveFarmIdForRedux()
+        if (!farmId) {
+          setCages([])
+          return
+        }
+        const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        const eligible = legacy
+          .filter(
+            (c) => c.status === 'active' || c.status === 'ready_to_harvest',
+          )
+          .sort((a, b) => a.name.localeCompare(b.name))
+        setCages(eligible)
       } catch (error) {
         console.error('Error fetching cages:', error)
         showToast('Error fetching cages', 'error')
+        setCages([])
       }
     }
 
-    fetchCages()
+    loadCages()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only farm/unit load
   }, [])
 
   const handleChange = (e) => {
@@ -103,38 +120,50 @@ const HarvestForm = ({ onComplete }) => {
   }
 
   const handleConfirmSave = async () => {
-     setLoading(true)
-     try {
-       const harvestData = {
-         cage_id: formData.cageId,
-         harvest_date: formData.harvestDate,
-         harvest_type: formData.harvestType,
-         status: formData.harvestType === 'complete' ? 'completed' : 'in_progress',
-         total_weight: parseFloat(formData.totalWeight),
-         average_body_weight: parseFloat(formData.averageBodyWeight),
-         estimated_count: parseInt(formData.estimatedCount, 10),
-         fcr: parseFloat(formData.fcr),
-         size_breakdown: formData.sizeBreakdown.map(size => ({
-           range: size.range,
-           weight: parseFloat(size.weight)
-         })),
-         notes: formData.notes
-       }
+    setLoading(true)
+    try {
+      const cycleId = await fetchActiveCycleIdForUnit(formData.cageId)
+      if (!cycleId) {
+        throw new Error(
+          'No active stock cycle for this unit. Start or select a cycle in Nsuo before recording a harvest.',
+        )
+      }
 
-       const { error } = await harvestRecordService.createHarvestRecord(harvestData)
-       if (error) throw error
+      const sizeNote = formData.sizeBreakdown
+        .map((s) => `${s.category}: ${s.weight} kg`)
+        .join('; ')
+      const notesBlock = [formData.notes?.trim(), `Size breakdown (kg): ${sizeNote}`]
+        .filter(Boolean)
+        .join('\n\n')
 
-       showToast('Harvest record saved successfully', 'success')
-       if (onComplete) {
-         onComplete()
-       }
-     } catch (error) {
-       console.error('Error saving harvest record:', error)
-       showToast(error.message || 'Error saving harvest record', 'error')
-       setLoading(false)
-       setShowPreview(false)
-     }
-   }
+      await apiClient.post(API.units.harvests(formData.cageId), {
+        cycleId,
+        harvestDate: formData.harvestDate,
+        harvestMethod: 'seine_net',
+        harvestType: formData.harvestType === 'complete' ? 'full' : 'partial',
+        totalWeightKg: parseFloat(formData.totalWeight),
+        estimatedCount: parseInt(formData.estimatedCount, 10),
+        avgWeightG: parseFloat(formData.averageBodyWeight),
+        fcr: parseFloat(formData.fcr),
+        notes: notesBlock || undefined,
+        source: 'web',
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.harvests.byUnit(formData.cageId),
+      })
+
+      showToast('Harvest record saved successfully', 'success')
+      setShowPreview(false)
+      if (onComplete) onComplete()
+    } catch (error) {
+      console.error('Error saving harvest record:', error)
+      showToast(error.message || 'Error saving harvest record', 'error')
+      setShowPreview(false)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleEdit = () => {
     setShowPreview(false)
@@ -144,12 +173,14 @@ const HarvestForm = ({ onComplete }) => {
 
   // Calculate Days of Culture (DOC)
   const calculateDoc = () => {
-    if (!selectedCageObject || !selectedCageObject.stocking_date || !formData.harvestDate) return 'N/A'
-    const stockingDate = new Date(selectedCageObject.stocking_date)
+    const anchor =
+      selectedCageObject?.stocking_date || selectedCageObject?.installation_date
+    if (!selectedCageObject || !anchor || !formData.harvestDate) return 'N/A'
+    const start = new Date(anchor)
     const harvestDate = new Date(formData.harvestDate)
-    const timeDiff = harvestDate.getTime() - stockingDate.getTime()
+    const timeDiff = harvestDate.getTime() - start.getTime()
     const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24))
-    return dayDiff >= 0 ? dayDiff : 'N/A' // Ensure DOC is not negative
+    return dayDiff >= 0 ? dayDiff : 'N/A'
   }
 
   const cageDoc = calculateDoc()
