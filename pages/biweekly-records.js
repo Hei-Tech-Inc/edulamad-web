@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import ProtectedRoute from '../components/ProtectedRoute'
 import Layout from '../components/Layout'
-import { biweeklyRecordService } from '../lib/databaseService'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { fetchLegacyBiweeklyRowsForFarm } from '@/lib/farm-weight-samples-legacy'
 import {
   Search,
-  Filter,
   Calendar,
   Fish,
   Scale,
@@ -31,8 +30,7 @@ export default function BiweeklyRecords() {
   const [selectedCage, setSelectedCage] = useState('all')
   const [dateFilter, setDateFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 20
   const [selectedRecord, setSelectedRecord] = useState(null)
   const [showDetails, setShowDetails] = useState(false)
   const [stats, setStats] = useState({
@@ -45,7 +43,11 @@ export default function BiweeklyRecords() {
 
   useEffect(() => {
     fetchData()
-  }, [currentPage, selectedCage, dateFilter])
+  }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedCage, dateFilter, searchTerm])
 
   const fetchData = async () => {
     try {
@@ -56,26 +58,15 @@ export default function BiweeklyRecords() {
       if (farmId) {
         const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
         setCages(legacy)
+        const rows = await fetchLegacyBiweeklyRowsForFarm(farmId, {
+          units: legacy,
+          samplesPerUnit: 200,
+        })
+        setRecords(rows)
       } else {
         setCages([])
+        setRecords([])
       }
-
-      // Fetch biweekly records with pagination
-      const { data, error, totalCount: count, totalPages: pages } = 
-        await biweeklyRecordService.getBiweeklyRecordsPaginated(currentPage, 20)
-
-      if (error) {
-        console.error('Error fetching biweekly records:', error)
-        setError('Failed to load biweekly records')
-        return
-      }
-
-      setRecords(data || [])
-      setTotalCount(count || 0)
-      setTotalPages(pages || 1)
-
-      // Calculate stats
-      calculateStats(data || [])
     } catch (error) {
       console.error('Error fetching biweekly records:', error)
       setError('Failed to load biweekly records')
@@ -84,37 +75,70 @@ export default function BiweeklyRecords() {
     }
   }
 
-  const calculateStats = (recordsData) => {
+  const filteredRecords = useMemo(
+    () =>
+      records.filter((record) => {
+        const matchesSearch =
+          searchTerm === '' ||
+          record.batch_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          record.cages?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+
+        const matchesCage = selectedCage === 'all' || record.cage_id === selectedCage
+
+        const matchesDate =
+          dateFilter === 'all' ||
+          (dateFilter === 'recent' &&
+            new Date(record.date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) ||
+          (dateFilter === 'month' &&
+            new Date(record.date).getMonth() === new Date().getMonth() &&
+            new Date(record.date).getFullYear() === new Date().getFullYear())
+
+        return matchesSearch && matchesCage && matchesDate
+      }),
+    [records, searchTerm, selectedCage, dateFilter],
+  )
+
+  const totalCount = filteredRecords.length
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+
+  useEffect(() => {
+    setCurrentPage((p) => Math.min(p, totalPages))
+  }, [totalPages])
+
+  useEffect(() => {
+    const recordsData = filteredRecords
     const totalRecords = recordsData.length
-    const totalFish = recordsData.reduce((sum, record) => sum + (record.total_fish_count || 0), 0)
-    const totalWeight = recordsData.reduce((sum, record) => sum + (record.total_weight || 0), 0)
-    const averageABW = recordsData.length > 0 
-      ? recordsData.reduce((sum, record) => sum + (record.average_body_weight || 0), 0) / recordsData.length 
-      : 0
-    const activeCages = new Set(recordsData.map(record => record.cage_id)).size
+    const totalFish = recordsData.reduce(
+      (sum, record) => sum + (record.total_fish_count || 0),
+      0,
+    )
+    const totalWeight = recordsData.reduce(
+      (sum, record) => sum + (record.total_weight || 0),
+      0,
+    )
+    const averageABW =
+      recordsData.length > 0
+        ? recordsData.reduce(
+            (sum, record) => sum + (record.average_body_weight || 0),
+            0,
+          ) / recordsData.length
+        : 0
+    const activeCages = new Set(recordsData.map((record) => record.cage_id)).size
 
     setStats({
       totalRecords,
       totalFish,
       totalWeight,
       averageABW,
-      activeCages
+      activeCages,
     })
-  }
+  }, [filteredRecords])
 
-  const filteredRecords = records.filter(record => {
-    const matchesSearch = searchTerm === '' || 
-      record.batch_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.cages?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesCage = selectedCage === 'all' || record.cage_id === selectedCage
-    
-    const matchesDate = dateFilter === 'all' || 
-      (dateFilter === 'recent' && new Date(record.date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) ||
-      (dateFilter === 'month' && new Date(record.date).getMonth() === new Date().getMonth())
-
-    return matchesSearch && matchesCage && matchesDate
-  })
+  const paginatedRecords = useMemo(() => {
+    const page = Math.min(currentPage, totalPages)
+    const start = (page - 1) * pageSize
+    return filteredRecords.slice(start, start + pageSize)
+  }, [filteredRecords, currentPage, totalPages, pageSize])
 
   const handleViewDetails = (record) => {
     setSelectedRecord(record)
@@ -396,7 +420,7 @@ export default function BiweeklyRecords() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredRecords.map((record) => (
+                      {paginatedRecords.map((record) => (
                         <tr key={record.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
