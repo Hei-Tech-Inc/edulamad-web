@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
-import { harvestRecordService } from '../lib/databaseService'
+import { useQueryClient } from '@tanstack/react-query'
 import { useToast } from './Toast'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
+import { queryKeys } from '@/api/query-keys'
 
 const SIZE_CATEGORIES = [
   { category: 'S3', range: '800g above' },
@@ -13,7 +16,8 @@ const SIZE_CATEGORIES = [
   { category: 'Rej', range: 'less than 200g' }
 ]
 
-const SamplingForm = ({ harvestId, onComplete }) => {
+const SamplingForm = ({ unitId, harvestId, onComplete }) => {
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     crateSize: '50', // Default to 50kg crate
     samples: SIZE_CATEGORIES.map(category => ({
@@ -58,23 +62,39 @@ const SamplingForm = ({ harvestId, onComplete }) => {
 
     setLoading(true)
     try {
-      const samplingData = {
-        harvest_id: harvestId,
-        crate_size: parseInt(formData.crateSize),
-        samples: formData.samples
-          .filter(sample => sample.quantity && sample.abw)
-          .map(sample => ({
-            size: sample.category,
-            range: sample.range,
-            quantity: parseInt(sample.quantity),
-            abw: parseFloat(sample.abw)
-          }))
+      if (!unitId || !harvestId) {
+        throw new Error('Missing unit or harvest record.')
       }
 
-      const { error } = await harvestRecordService.addSamplingData(samplingData)
-      if (error) throw error
+      const lines = formData.samples
+        .filter((sample) => sample.quantity && sample.abw)
+        .map(
+          (sample) =>
+            `${sample.category} (${sample.range}): ${sample.quantity} fish/crate, ${sample.abw} g ABW`,
+        )
+      const block = [
+        `Post-harvest sampling — crate ${formData.crateSize} kg`,
+        ...lines,
+      ].join('\n')
 
-      showToast('Sampling data saved successfully', 'success')
+      let prevNotes = ''
+      try {
+        const { data: existing } = await apiClient.get(
+          API.units.harvest(unitId, harvestId),
+        )
+        if (existing?.notes != null) prevNotes = String(existing.notes)
+      } catch {
+        /* optional read */
+      }
+
+      const notes = [prevNotes, block].filter(Boolean).join('\n\n')
+      await apiClient.patch(API.units.harvest(unitId, harvestId), { notes })
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.harvests.byUnit(unitId),
+      })
+
+      showToast('Sampling details saved on harvest record', 'success')
       if (onComplete) {
         onComplete()
       }

@@ -4,8 +4,9 @@ import ProtectedRoute from '../components/ProtectedRoute'
 import Layout from '../components/Layout'
 import HarvestForm from '../components/HarvestForm'
 import SamplingForm from '../components/SamplingForm'
-import { harvestRecordService } from '../lib/databaseService'
 import { useToast } from '../components/Toast'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchLegacyHarvestRowsForFarm } from '@/lib/farm-harvests-legacy'
 import { PlusCircle } from 'lucide-react'
 
 const HarvestPage = () => {
@@ -25,18 +26,27 @@ const HarvestPage = () => {
 
   useEffect(() => {
     fetchHarvestRecords()
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
   }, [])
 
   const fetchHarvestRecords = async () => {
     try {
       setLoading(true)
-      const { data, error } = await harvestRecordService.getHarvestRecords()
-      if (error) throw error
-      setHarvestRecords(data || [])
+      setError(null)
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        setHarvestRecords([])
+        return
+      }
+      const rows = await fetchLegacyHarvestRowsForFarm(farmId, {
+        limitPerUnit: 100,
+      })
+      setHarvestRecords(rows)
     } catch (error) {
       console.error('Error fetching harvest records:', error)
       setError('Failed to fetch harvest records')
       showToast('Error fetching harvest records', 'error')
+      setHarvestRecords([])
     } finally {
       setLoading(false)
     }
@@ -65,24 +75,36 @@ const HarvestPage = () => {
     fetchHarvestRecords()
   }
 
-  const handleExport = async () => {
+  const handleExport = () => {
     try {
-      const { data, error } = await harvestRecordService.exportHarvestRecords()
-      if (error) throw error
-
-      // Convert to CSV
+      if (!harvestRecords.length) {
+        showToast('No harvest records to export', 'error')
+        return
+      }
+      const data = harvestRecords.map((record) => ({
+        cage_name: record.cages?.name ?? '',
+        cage_code: record.cages?.code ?? '',
+        harvest_date: record.harvest_date,
+        harvest_type: record.harvest_type,
+        status: record.status,
+        total_weight_kg: record.total_weight ?? '',
+      }))
       const headers = Object.keys(data[0])
       const csvContent = [
         headers.join(','),
-        ...data.map(row => headers.map(header => row[header]).join(','))
+        ...data.map((row) =>
+          headers.map((header) => JSON.stringify(row[header] ?? '')).join(','),
+        ),
       ].join('\n')
 
-      // Create and download file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement('a')
       const url = URL.createObjectURL(blob)
       link.setAttribute('href', url)
-      link.setAttribute('download', `harvest_records_${new Date().toISOString().split('T')[0]}.csv`)
+      link.setAttribute(
+        'download',
+        `harvest_records_${new Date().toISOString().split('T')[0]}.csv`,
+      )
       link.style.visibility = 'hidden'
       document.body.appendChild(link)
       link.click()
@@ -94,9 +116,10 @@ const HarvestPage = () => {
   }
 
   const filteredRecords = harvestRecords.filter(record => {
-    const matchesSearch = 
-      record.cages.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.cages.code.toLowerCase().includes(searchTerm.toLowerCase())
+    const name = (record.cages?.name || '').toLowerCase()
+    const code = (record.cages?.code || '').toLowerCase()
+    const q = searchTerm.toLowerCase()
+    const matchesSearch = name.includes(q) || code.includes(q)
     
     const matchesDateRange = 
       (!dateRange.start || new Date(record.harvest_date) >= new Date(dateRange.start)) &&
@@ -108,7 +131,8 @@ const HarvestPage = () => {
   const columns = [
     {
       header: 'Cage',
-      accessor: record => `${record.cages.name} (${record.cages.code})`
+      accessor: (record) =>
+        `${record.cages?.name ?? '—'} (${record.cages?.code ?? '—'})`,
     },
     {
       header: 'Harvest Date',
@@ -229,6 +253,7 @@ const HarvestPage = () => {
           ) : showSamplingForm ? (
             <div className="bg-white shadow rounded-lg p-6">
               <SamplingForm
+                unitId={selectedHarvest.unitId}
                 harvestId={selectedHarvest.id}
                 onComplete={handleSamplingComplete}
               />
