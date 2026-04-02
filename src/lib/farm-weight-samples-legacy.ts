@@ -88,6 +88,9 @@ export async function fetchLegacyBiweeklyRowsForFarm(
     unitsLimit?: number;
     samplesPerUnit?: number;
     units?: LegacyCageRow[];
+    /** YYYY-MM-DD — passed to API when set */
+    from?: string;
+    to?: string;
   },
 ): Promise<LegacyBiweeklyRecordRow[]> {
   const unitsLimit = options?.unitsLimit ?? 500;
@@ -100,11 +103,21 @@ export async function fetchLegacyBiweeklyRowsForFarm(
   const nested = await Promise.all(
     units.map(async (unit) => {
       try {
-        const { data } = await apiClient.get(API.units.weightSamples(unit.id), {
-          params: { limit: samplesPerUnit, page: 1 },
-        });
-        const rows = normalizeWeightSampleList(data);
-        return rows.map((w) => mapWeightSampleToLegacyRow(unit, w));
+        const out: LegacyBiweeklyRecordRow[] = [];
+        for (let page = 1; ; page++) {
+          const { data } = await apiClient.get(API.units.weightSamples(unit.id), {
+            params: {
+              limit: samplesPerUnit,
+              page,
+              ...(options?.from ? { from: options.from } : {}),
+              ...(options?.to ? { to: options.to } : {}),
+            },
+          });
+          const rows = normalizeWeightSampleList(data);
+          for (const w of rows) out.push(mapWeightSampleToLegacyRow(unit, w));
+          if (rows.length < samplesPerUnit) break;
+        }
+        return out;
       } catch {
         return [];
       }

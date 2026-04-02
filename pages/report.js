@@ -4,7 +4,8 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { ArrowLeft, FileText, BarChart, Download, Printer } from 'lucide-react'
 import ProtectedRoute from '../components/ProtectedRoute'
-import { supabase } from '../lib/supabase'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 
 export default function ReportsPage() {
   return (
@@ -33,14 +34,19 @@ function Reports() {
   useEffect(() => {
     async function fetchCages() {
       try {
-        const { data, error } = await supabase
-          .from('cages')
-          .select('id, name, status')
-          .order('name')
-
-        if (error) throw error
-
-        setCages(data || [])
+        const farmId = await resolveFarmIdForRedux()
+        if (!farmId) {
+          throw new Error(
+            'No farm selected. Choose a farm in the app or ensure you have farm access.',
+          )
+        }
+        const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        const sorted = [...legacy].sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+        )
+        setCages(
+          sorted.map((u) => ({ id: u.id, name: u.name, status: u.status })),
+        )
       } catch (error) {
         console.error('Error fetching cages:', error.message)
         setError(error.message)

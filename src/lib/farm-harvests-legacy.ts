@@ -53,6 +53,9 @@ export async function fetchLegacyHarvestRowsForFarm(
   options?: {
     units?: LegacyCageRow[];
     limitPerUnit?: number;
+    /** YYYY-MM-DD — passed to API when set */
+    from?: string;
+    to?: string;
   },
 ): Promise<LegacyHarvestListRow[]> {
   const limitPerUnit = options?.limitPerUnit ?? 80;
@@ -63,12 +66,21 @@ export async function fetchLegacyHarvestRowsForFarm(
   const nested = await Promise.all(
     units.map(async (unit) => {
       try {
-        const { data } = await apiClient.get(API.units.harvests(unit.id), {
-          params: { limit: limitPerUnit, page: 1 },
-        });
-        return normalizeHarvestList(data).map((h) =>
-          mapHarvestToLegacyRow(unit, h),
-        );
+        const rows: LegacyHarvestListRow[] = [];
+        for (let page = 1; ; page++) {
+          const { data } = await apiClient.get(API.units.harvests(unit.id), {
+            params: {
+              limit: limitPerUnit,
+              page,
+              ...(options?.from ? { from: options.from } : {}),
+              ...(options?.to ? { to: options.to } : {}),
+            },
+          });
+          const batch = normalizeHarvestList(data);
+          for (const h of batch) rows.push(mapHarvestToLegacyRow(unit, h));
+          if (batch.length < limitPerUnit) break;
+        }
+        return rows;
       } catch {
         return [];
       }

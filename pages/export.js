@@ -4,7 +4,8 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { ArrowLeft, Download, Database, FileDown } from 'lucide-react'
 import ProtectedRoute from '../components/ProtectedRoute'
-import { supabase } from '../lib/supabase'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchExportDataset } from '@/lib/farm-export-data'
 
 export default function ExportPage() {
   return (
@@ -46,58 +47,14 @@ function ExportData() {
         throw new Error('Please select a date range')
       }
 
-      // Fetch data based on export type
-      let data = []
-
-      switch (exportType) {
-        case 'cages':
-          const { data: cagesData, error: cagesError } = await supabase
-            .from('cages')
-            .select('*')
-
-          if (cagesError) throw cagesError
-          data = cagesData
-          break
-
-        case 'daily':
-          const { data: dailyData, error: dailyError } = await supabase
-            .from('daily_records')
-            .select('*')
-            .gte('date', dateRange.startDate)
-            .lte('date', dateRange.endDate)
-
-          if (dailyError) throw dailyError
-          data = dailyData
-          break
-
-        case 'biweekly':
-          const {
-            data: biweeklyData,
-            error: biweeklyError,
-          } = await supabase
-            .from('biweekly_records')
-            .select('*')
-            .gte('date', dateRange.startDate)
-            .lte('date', dateRange.endDate)
-
-          if (biweeklyError) throw biweeklyError
-          data = biweeklyData
-          break
-
-        case 'harvest':
-          const {
-            data: harvestData,
-            error: harvestError,
-          } = await supabase
-            .from('harvest_records')
-            .select('*')
-            .gte('harvest_date', dateRange.startDate)
-            .lte('harvest_date', dateRange.endDate)
-
-          if (harvestError) throw harvestError
-          data = harvestData
-          break
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        throw new Error(
+          'No farm selected. Choose a farm in the app or ensure you have farm access.',
+        )
       }
+
+      const data = await fetchExportDataset(exportType, farmId, dateRange)
 
       // Create file based on format
       let content, blob, filename
