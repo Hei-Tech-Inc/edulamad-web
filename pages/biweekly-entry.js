@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import ProtectedRoute from '../components/ProtectedRoute'
 import Layout from '../components/Layout'
@@ -6,6 +6,7 @@ import BiweeklyEntryForm from '../components/BiweeklyEntryForm'
 import { Search, Filter, X, Calendar, MapPin, Fish, TrendingUp, Activity } from 'lucide-react'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { useUiStore } from '@/stores/ui.store'
 
 export default function BiweeklyEntryPage() {
   return (
@@ -17,6 +18,7 @@ export default function BiweeklyEntryPage() {
 
 function BiweeklyEntry() {
   const router = useRouter()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [cages, setCages] = useState([])
   const [selectedCage, setSelectedCage] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -29,14 +31,10 @@ function BiweeklyEntry() {
   const [sortOrder, setSortOrder] = useState('asc')
   const [showFilters, setShowFilters] = useState(false)
 
-  useEffect(() => {
-    fetchCages()
-  }, [])
-
-  const fetchCages = async () => {
+  const fetchCages = useCallback(async () => {
     setLoading(true)
     try {
-      const farmId = await resolveFarmIdForRedux()
+      const farmId = activeFarmId || (await resolveFarmIdForRedux())
       if (!farmId) {
         setCages([])
         return
@@ -49,7 +47,15 @@ function BiweeklyEntry() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeFarmId])
+
+  useEffect(() => {
+    fetchCages()
+  }, [fetchCages])
+
+  useEffect(() => {
+    setSelectedCage(null)
+  }, [activeFarmId])
 
   // Calculate Days of Culture (DOC)
   const calculateDOC = (stockingDate) => {

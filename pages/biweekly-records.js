@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import ProtectedRoute from '../components/ProtectedRoute'
@@ -6,6 +6,7 @@ import Layout from '../components/Layout'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 import { fetchLegacyBiweeklyRowsForFarm } from '@/lib/farm-weight-samples-legacy'
+import { useUiStore } from '@/stores/ui.store'
 import {
   Search,
   Calendar,
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react'
 
 export default function BiweeklyRecords() {
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [records, setRecords] = useState([])
   const [cages, setCages] = useState([])
   const [loading, setLoading] = useState(true)
@@ -42,19 +44,15 @@ export default function BiweeklyRecords() {
   })
 
   useEffect(() => {
-    fetchData()
-  }, [])
-
-  useEffect(() => {
     setCurrentPage(1)
   }, [selectedCage, dateFilter, searchTerm])
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const farmId = await resolveFarmIdForRedux()
+      const farmId = activeFarmId || (await resolveFarmIdForRedux())
       if (farmId) {
         const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
         setCages(legacy)
@@ -73,7 +71,17 @@ export default function BiweeklyRecords() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeFarmId])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  useEffect(() => {
+    setSelectedCage('all')
+    setSelectedRecord(null)
+    setShowDetails(false)
+  }, [activeFarmId])
 
   const filteredRecords = useMemo(
     () =>

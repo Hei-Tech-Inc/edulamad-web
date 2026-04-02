@@ -17,6 +17,7 @@ import DailyEntryForm from './DailyEntryForm'
 import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { useUiStore } from '@/stores/ui.store'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
 
@@ -54,6 +55,7 @@ const sortOptions = [
 ]
 
 const DailyUploadPage = () => {
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [cages, setCages] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedCage, setSelectedCage] = useState(null)
@@ -71,7 +73,7 @@ const DailyUploadPage = () => {
   const fetchCages = useCallback(async () => {
     setLoading(true)
     try {
-      const farmId = await resolveFarmIdForRedux()
+      const farmId = activeFarmId || (await resolveFarmIdForRedux())
       if (!farmId) {
         setCages([])
       } else {
@@ -84,11 +86,16 @@ const DailyUploadPage = () => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeFarmId])
 
   useEffect(() => {
     fetchCages()
   }, [fetchCages])
+
+  useEffect(() => {
+    setSelectedCage(null)
+    setPage(1)
+  }, [activeFarmId])
 
   const filteredCages = useMemo(() => {
     const q = searchQuery.toLowerCase()

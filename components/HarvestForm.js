@@ -6,6 +6,7 @@ import API from '@/api/endpoints'
 import { queryKeys } from '@/api/query-keys'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { useUiStore } from '@/stores/ui.store'
 import { fetchActiveCycleIdForUnit } from '@/lib/unit-cycles-api'
 
 const SIZE_CATEGORIES = [
@@ -21,6 +22,7 @@ const SIZE_CATEGORIES = [
 
 const HarvestForm = ({ onComplete }) => {
   const queryClient = useQueryClient()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [formData, setFormData] = useState({
     harvestDate: new Date().toISOString().split('T')[0],
     cageId: '',
@@ -42,14 +44,17 @@ const HarvestForm = ({ onComplete }) => {
   const { showToast } = useToast()
 
   useEffect(() => {
+    let cancelled = false
+
     const loadCages = async () => {
       try {
-        const farmId = await resolveFarmIdForRedux()
+        const farmId = activeFarmId || (await resolveFarmIdForRedux())
         if (!farmId) {
-          setCages([])
+          if (!cancelled) setCages([])
           return
         }
         const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        if (cancelled) return
         const eligible = legacy
           .filter(
             (c) => c.status === 'active' || c.status === 'ready_to_harvest',
@@ -57,6 +62,7 @@ const HarvestForm = ({ onComplete }) => {
           .sort((a, b) => a.name.localeCompare(b.name))
         setCages(eligible)
       } catch (error) {
+        if (cancelled) return
         console.error('Error fetching cages:', error)
         showToast('Error fetching cages', 'error')
         setCages([])
@@ -64,8 +70,14 @@ const HarvestForm = ({ onComplete }) => {
     }
 
     loadCages()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only farm/unit load
-  }, [])
+    return () => {
+      cancelled = true
+    }
+  }, [activeFarmId, showToast])
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, cageId: '' }))
+  }, [activeFarmId])
 
   const handleChange = (e) => {
     const { name, value } = e.target

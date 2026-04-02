@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { ArrowLeft, Eye, CheckCircle, AlertTriangle, Info, Fish, Scale, Calendar, Calculator, BarChart3 } from 'lucide-react'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { useUiStore } from '@/stores/ui.store'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 
 const SIZE_CATEGORIES = [
@@ -17,6 +18,7 @@ const SIZE_CATEGORIES = [
 
 export default function HarvestSampling() {
   const router = useRouter()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [cages, setCages] = useState([])
   const [form, setForm] = useState({
     cageId: '',
@@ -33,27 +35,39 @@ export default function HarvestSampling() {
   const [sizeSumWarning, setSizeSumWarning] = useState('')
 
   useEffect(() => {
+    let cancelled = false
+
     async function loadCages() {
       setLoading(true)
       try {
-        const farmId = await resolveFarmIdForRedux()
+        const farmId = activeFarmId || (await resolveFarmIdForRedux())
         if (!farmId) {
-          setCages([])
+          if (!cancelled) setCages([])
         } else {
           const { legacy } = await fetchLegacyUnitsForFarm(farmId, {
             limit: 500,
             status: 'active',
           })
-          setCages(legacy)
+          if (!cancelled) setCages(legacy)
         }
       } catch {
-        setCages([])
+        if (!cancelled) setCages([])
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     loadCages()
-  }, [])
+    return () => {
+      cancelled = true
+    }
+  }, [activeFarmId])
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      cageId: '',
+    }))
+  }, [activeFarmId])
 
   // Calculate DOC and ABW
   useEffect(() => {

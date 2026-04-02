@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { AlertCircle } from 'lucide-react'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { useUiStore } from '@/stores/ui.store'
 import {
   fetchActiveStockCyclesForTopUp,
   parseCycleSelectValue,
@@ -16,6 +17,7 @@ import { useToast } from './Toast'
 const TopUpForm = ({ onComplete }) => {
   const router = useRouter()
   const { showToast } = useToast()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
 
   const [loading, setLoading] = useState(false)
   const [fetchingData, setFetchingData] = useState(true)
@@ -39,7 +41,7 @@ const TopUpForm = ({ onComplete }) => {
       setFetchingData(true)
       setError('')
       try {
-        const farmId = await resolveFarmIdForRedux()
+        const farmId = activeFarmId || (await resolveFarmIdForRedux())
         if (!farmId) {
           if (!cancelled) {
             setError('No farm selected. Choose a farm or check your access.')
@@ -65,8 +67,15 @@ const TopUpForm = ({ onComplete }) => {
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
-  }, [])
+  }, [activeFarmId, showToast])
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      stocking_id: '',
+    }))
+    setSelectedStocking(null)
+  }, [activeFarmId])
 
   useEffect(() => {
     let cancelled = false

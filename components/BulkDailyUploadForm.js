@@ -8,6 +8,7 @@ import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 import { queryKeys } from '@/api/query-keys'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { useUiStore } from '@/stores/ui.store'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 import { fetchActiveCycleIdForUnit } from '@/lib/unit-cycles-api'
 
@@ -60,6 +61,7 @@ function parseRowDate(row, rowIndex) {
 
 const BulkDailyUploadForm = () => {
   const queryClient = useQueryClient()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [cages, setCages] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -92,32 +94,38 @@ const BulkDailyUploadForm = () => {
   }
 
   useEffect(() => {
+    let cancelled = false
+
     const fetchData = async () => {
       setLoading(true)
       try {
-        const farmId = await resolveFarmIdForRedux()
+        const farmId = activeFarmId || (await resolveFarmIdForRedux())
         if (!farmId) {
-          setCages([])
+          if (!cancelled) setCages([])
           return
         }
         const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        if (cancelled) return
         const withCode = legacy
           .map((u) => ({ ...u, code: u.name }))
           .sort((a, b) => a.name.localeCompare(b.name))
         setCages(withCode)
       } catch (error) {
+        if (cancelled) return
         console.error('Error fetching data:', error)
         setError('Failed to load required data. Please try again.')
         showToast('Failed to load units', 'error')
         setCages([])
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only farm load
-  }, [])
+    return () => {
+      cancelled = true
+    }
+  }, [activeFarmId, showToast])
 
   const handleUpload = async (parsedData) => {
     try {

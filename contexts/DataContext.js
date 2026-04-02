@@ -1,7 +1,14 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react'
 import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { useUiStore } from '@/stores/ui.store'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
 import { fetchLegacyBiweeklyRowsForUnit } from '@/lib/farm-weight-samples-legacy'
@@ -9,6 +16,7 @@ import { fetchLegacyBiweeklyRowsForUnit } from '@/lib/farm-weight-samples-legacy
 const DataContext = createContext()
 
 export function DataProvider({ children }) {
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [cages, setCages] = useState([])
   const [stockings, setStockings] = useState([])
   const [dailyRecords, setDailyRecords] = useState([])
@@ -20,7 +28,7 @@ export function DataProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const farmId = await resolveFarmIdForRedux()
+      const farmId = activeFarmId || (await resolveFarmIdForRedux())
       if (!farmId) {
         setCages([])
         return []
@@ -35,7 +43,11 @@ export function DataProvider({ children }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeFarmId])
+
+  useEffect(() => {
+    refreshCages()
+  }, [activeFarmId, refreshCages])
 
   /** Stocking batches not yet backed by Nsuo in this app — keep empty for compatibility. */
   const refreshStockings = useCallback(async () => {
@@ -81,7 +93,7 @@ export function DataProvider({ children }) {
     setError(null)
     try {
       let unitRef = { id: cageId, name: cageId.slice(0, 8) }
-      const farmId = await resolveFarmIdForRedux()
+      const farmId = activeFarmId || (await resolveFarmIdForRedux())
       if (farmId) {
         const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
         const found = legacy.find((c) => c.id === cageId)
@@ -99,7 +111,7 @@ export function DataProvider({ children }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeFarmId])
 
   const refreshAll = useCallback(async () => {
     setLoading(true)

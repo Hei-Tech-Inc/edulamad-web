@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import ProtectedRoute from '../components/ProtectedRoute'
 import Layout from '../components/Layout'
@@ -7,6 +7,7 @@ import SamplingForm from '../components/SamplingForm'
 import { useToast } from '../components/Toast'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchLegacyHarvestRowsForFarm } from '@/lib/farm-harvests-legacy'
+import { useUiStore } from '@/stores/ui.store'
 import { PlusCircle } from 'lucide-react'
 
 const HarvestPage = () => {
@@ -23,17 +24,13 @@ const HarvestPage = () => {
   })
   const { showToast } = useToast()
   const router = useRouter()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
 
-  useEffect(() => {
-    fetchHarvestRecords()
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
-  }, [])
-
-  const fetchHarvestRecords = async () => {
+  const fetchHarvestRecords = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const farmId = await resolveFarmIdForRedux()
+      const farmId = activeFarmId || (await resolveFarmIdForRedux())
       if (!farmId) {
         setHarvestRecords([])
         return
@@ -50,7 +47,11 @@ const HarvestPage = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeFarmId, showToast])
+
+  useEffect(() => {
+    fetchHarvestRecords()
+  }, [fetchHarvestRecords])
 
   const handleAddHarvest = () => {
     setShowHarvestForm(true)

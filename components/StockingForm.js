@@ -5,6 +5,7 @@ import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { useUiStore } from '@/stores/ui.store'
 import { fetchAllStockCyclesForUnit } from '@/lib/unit-cycles-api'
 import { buildCreateStockCycleBody } from '@/lib/build-create-stock-cycle-payload'
 
@@ -16,6 +17,7 @@ function isAvailableForStocking(unit) {
 
 const StockingForm = () => {
   const router = useRouter()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [loading, setLoading] = useState(false)
   const [fetchingData, setFetchingData] = useState(true)
   const [message, setMessage] = useState('')
@@ -44,7 +46,7 @@ const StockingForm = () => {
       setFetchingData(true)
       setError('')
       try {
-        const farmId = await resolveFarmIdForRedux()
+        const farmId = activeFarmId || (await resolveFarmIdForRedux())
         if (!farmId) {
           if (!cancelled) {
             setError('No farm selected. Choose a farm or check your access.')
@@ -78,7 +80,15 @@ const StockingForm = () => {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [activeFarmId])
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      cageId: '',
+      batchNumber: '',
+    }))
+  }, [activeFarmId])
 
   useEffect(() => {
     if (formData.fishCount && formData.initialABW) {
@@ -134,7 +144,7 @@ const StockingForm = () => {
 
   const reloadCagesAfterStock = async () => {
     try {
-      const farmId = await resolveFarmIdForRedux()
+      const farmId = activeFarmId || (await resolveFarmIdForRedux())
       if (!farmId) return
       const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
       const mapped = legacy
