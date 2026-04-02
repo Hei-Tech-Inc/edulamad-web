@@ -1,4 +1,8 @@
-import type { OrgRole, Permission, RequestUser } from './common.types';
+import type {
+  OrgRole,
+  Permission,
+  RequestUser,
+} from './common.types';
 
 export interface LoginDto {
   email: string;
@@ -66,5 +70,34 @@ export function mapAuthUserToRequestUser(user: AuthUserDto): RequestUser {
     emailVerified: user.emailVerified,
     isActive: user.isActive,
     createdAt: user.createdAt,
+  };
+}
+
+/**
+ * GET /auth/me — OpenAPI does not publish a full schema; normalize defensively.
+ */
+export function mapMeResponseToRequestUser(data: unknown): RequestUser {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid /auth/me response');
+  }
+  const d = data as Record<string, unknown>;
+  const id = d.id;
+  if (typeof id !== 'string') {
+    throw new Error('Invalid /auth/me response: missing id');
+  }
+  const roleRaw = typeof d.role === 'string' ? d.role : 'viewer';
+  const permsRaw = Array.isArray(d.permissions) ? d.permissions : [];
+  const permissions = permsRaw.filter((p): p is Permission => typeof p === 'string');
+  return {
+    id,
+    email: typeof d.email === 'string' ? d.email : undefined,
+    name: typeof d.name === 'string' ? d.name : null,
+    orgId: typeof d.orgId === 'string' ? d.orgId : null,
+    role: roleRaw as OrgRole,
+    permissions,
+    emailVerified:
+      typeof d.emailVerified === 'boolean' ? d.emailVerified : undefined,
+    isActive: typeof d.isActive === 'boolean' ? d.isActive : undefined,
+    createdAt: typeof d.createdAt === 'string' ? d.createdAt : undefined,
   };
 }

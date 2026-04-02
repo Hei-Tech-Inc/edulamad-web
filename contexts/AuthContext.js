@@ -1,162 +1,148 @@
-// contexts/AuthContext.js
-import React, { createContext, useState, useEffect, useContext } from 'react'
-import { supabase } from '../lib/supabase'
+// contexts/AuthContext.js — Nsuo API + Zustand (replaces Supabase session)
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
+import {
+  mapAuthUserToRequestUser,
+  mapMeResponseToRequestUser,
+} from '@/api/types/auth.types'
+import { toCompatUser } from '@/lib/auth-compat'
+import { AppApiError } from '@/lib/api-error'
+import { queryClient } from '@/lib/query-client'
+import { useAuthStore } from '@/stores/auth.store'
+import { store } from '../store'
+import { fetchUser, resetState } from '../store/slices/authSlice'
 
-// Create auth context
 const AuthContext = createContext()
 
-// Auth provider component
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
+  const requestUser = useAuthStore((s) => s.user)
   const [loading, setLoading] = useState(true)
   const [initialized, setInitialized] = useState(false)
 
-  // Initialize auth state
+  const user = useMemo(() => toCompatUser(requestUser), [requestUser])
+
   useEffect(() => {
-    const initializeAuth = async () => {
+    let alive = true
+    ;(async () => {
+      await useAuthStore.persist.rehydrate()
       try {
-        // Get current session
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession()
-
-        if (error) {
-          console.error('Error getting session:', error)
-          setLoading(false)
-          return
-        }
-
-        // Set user if session exists
-        if (session?.user) {
-          setUser(session.user)
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error)
-      } finally {
+        await store.dispatch(fetchUser()).unwrap()
+      } catch {
+        // fetchUser clears session on auth failure
+      }
+      if (alive) {
         setLoading(false)
         setInitialized(true)
       }
-    }
-
-    // Initialize auth state
-    initializeAuth()
-
-    // Subscribe to auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event)
-
-        if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user)
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-        } else if (event === 'USER_UPDATED' && session?.user) {
-          setUser(session.user)
-        }
-
-        setLoading(false)
-      },
-    )
-
-    // Cleanup subscription
+    })()
     return () => {
-      authListener.subscription.unsubscribe()
+      alive = false
     }
   }, [])
 
-  // Sign in with email and password
   const signInWithEmail = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (!error) {
-      // Redirect to dashboard after successful login
-      window.location.href = '/dashboard'
+    try {
+      const { data } = await apiClient.post(API.auth.login, {
+        email,
+        password,
+      })
+      useAuthStore.getState().setTokens(data.accessToken, data.refreshToken)
+      useAuthStore.getState().setUser(mapAuthUserToRequestUser(data.user))
+      await store.dispatch(fetchUser()).unwrap()
+      return { data, error: null }
+    } catch (e) {
+      const message = e instanceof AppApiError ? e.message : 'Login failed'
+      return { data: null, error: { message } }
     }
-
-    return { data, error }
   }
 
-  // Sign in with Google
   const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+    return {
+      data: null,
+      error: {
+        message:
+          'Google sign-in is not available for Nsuo yet. Use email and password.',
       },
-    })
-
-    return { data, error }
-  }
-
-  // Sign up with email and password
-  const signUpWithEmail = async (email, password, fullName) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
-    })
-
-    if (!error) {
-      // Redirect to dashboard after successful signup
-      window.location.href = '/dashboard'
     }
-
-    return { data, error }
   }
 
-  // Sign out
+  const signUpWithEmail = async (email, password, fullName) => {
+    try {
+      const orgName = `${String(fullName || 'User').trim()}'s Organisation`
+      const { data } = await apiClient.post(API.auth.register, {
+        email,
+        password,
+        name: fullName,
+        orgName,
+      })
+      useAuthStore.getState().setTokens(data.accessToken, data.refreshToken)
+      useAuthStore.getState().setUser(mapAuthUserToRequestUser(data.user))
+      await store.dispatch(fetchUser()).unwrap()
+      return { data, error: null }
+    } catch (e) {
+      const message =
+        e instanceof AppApiError ? e.message : 'Registration failed'
+      return { data: null, error: { message } }
+    }
+  }
+
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    return { error }
+    const refreshToken = useAuthStore.getState().refreshToken
+    try {
+      if (refreshToken) {
+        await apiClient.post(API.auth.logout, { refreshToken })
+      }
+    } catch {
+      // still clear local session
+    }
+    useAuthStore.getState().clearAuth()
+    store.dispatch(resetState())
+    void queryClient.clear()
+    return { error: null }
   }
 
-  // Update user metadata
   const updateUserMetadata = async (metadata) => {
     try {
-      const { data, error } = await supabase.auth.updateUser({
-        data: metadata,
-      })
-
-      if (error) throw error
-
-      // Update user in state
-      if (data && data.user) {
-        setUser(data.user)
-        return { data: data.user, error: null }
+      const body = {}
+      if (metadata?.full_name != null) {
+        const parts = String(metadata.full_name).trim().split(/\s+/)
+        body.firstName = parts[0] || undefined
+        body.lastName = parts.length > 1 ? parts.slice(1).join(' ') : undefined
       }
-
-      return {
-        data: null,
-        error: new Error('No user data returned after update'),
+      if (Object.keys(body).length > 0) {
+        await apiClient.patch(API.users.profile, body)
       }
+      const { data } = await apiClient.get(API.auth.me)
+      const ru = mapMeResponseToRequestUser(data)
+      useAuthStore.getState().setUser(ru)
+      await store.dispatch(fetchUser()).unwrap()
+      const u = useAuthStore.getState().user
+      return { data: toCompatUser(u), error: null }
     } catch (error) {
       console.error('Error updating user metadata:', error)
       return { data: null, error }
     }
   }
 
-  // Get user role
   const getUserRole = () => {
-    return user?.user_metadata?.role || 'user'
+    const u = useAuthStore.getState().user
+    return u?.role ?? 'user'
   }
 
-  // Check if user has a specific role
   const hasRole = (role) => {
-    const userRole = getUserRole()
-
-    // Admin roles should include access to lesser roles
-    if (userRole === 'super_admin') return true
-    if (userRole === 'admin' && role !== 'super_admin') return true
-
-    return userRole === role
+    const r = useAuthStore.getState().user?.role
+    if (!r) return false
+    if (role === 'super_admin') return r === 'owner'
+    if (role === 'admin') return ['owner', 'admin', 'manager'].includes(r)
+    if (role === 'user') return true
+    return r === role
   }
 
   const authValue = {
@@ -170,14 +156,12 @@ export function AuthProvider({ children }) {
     updateUserMetadata,
     getUserRole,
     hasRole,
-    // For compatibility with code expecting a profile
+    hasPermission: (permission) =>
+      useAuthStore.getState().hasPermission(permission),
     profile: user,
     refreshUserDetails: async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) setUser(user)
-      return user
+      await store.dispatch(fetchUser()).unwrap()
+      return toCompatUser(useAuthStore.getState().user)
     },
   }
 
@@ -186,7 +170,6 @@ export function AuthProvider({ children }) {
   )
 }
 
-// Custom hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {
