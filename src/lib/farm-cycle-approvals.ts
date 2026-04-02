@@ -2,17 +2,7 @@ import { apiClient } from '@/api/client';
 import API from '@/api/endpoints';
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api';
 import type { LegacyCageRow } from '@/lib/map-unit-to-legacy-cage';
-
-const PAGE_SIZE = 100;
-
-function normalizeCycleList(body: unknown): Record<string, unknown>[] {
-  if (Array.isArray(body)) return body as Record<string, unknown>[];
-  if (body && typeof body === 'object' && 'items' in body) {
-    const items = (body as { items?: unknown }).items;
-    if (Array.isArray(items)) return items as Record<string, unknown>[];
-  }
-  return [];
-}
+import { fetchAllStockCyclesForUnit } from '@/lib/unit-cycles-api';
 
 function isPendingCycle(c: Record<string, unknown>): boolean {
   const s = String(c.status ?? '').toLowerCase();
@@ -34,21 +24,6 @@ function isPendingCycle(c: Record<string, unknown>): boolean {
   }
   if (c.isApproved === false) return true;
   return false;
-}
-
-async function fetchAllCyclesForUnit(
-  unitId: string,
-): Promise<Record<string, unknown>[]> {
-  const all: Record<string, unknown>[] = [];
-  for (let page = 1; ; page++) {
-    const { data: raw } = await apiClient.get(API.units.cycles(unitId), {
-      params: { limit: PAGE_SIZE, page },
-    });
-    const batch = normalizeCycleList(raw);
-    all.push(...batch);
-    if (batch.length < PAGE_SIZE) break;
-  }
-  return all;
 }
 
 /** Table row shape matches legacy `stockingService.getPendingApprovals` stocking entries. */
@@ -144,7 +119,7 @@ export async function fetchPendingStockCycleApprovals(
   const nested = await Promise.all(
     units.map(async (unit) => {
       try {
-        const cycles = await fetchAllCyclesForUnit(unit.id);
+        const cycles = await fetchAllStockCyclesForUnit(unit.id);
         return cycles
           .map((c) => mapCycleToRow(unit, c))
           .filter((r): r is PendingCycleApprovalRow => r != null);

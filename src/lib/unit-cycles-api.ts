@@ -6,13 +6,36 @@ export interface StockCycleRef {
   status?: string;
 }
 
-function normalizeCycles(body: unknown): StockCycleRef[] {
-  if (Array.isArray(body)) {
-    return body as StockCycleRef[];
+const CYCLE_PAGE_SIZE = 100;
+
+/** Normalized list items from GET /units/:unitId/cycles (array or paginated envelope). */
+export function normalizeStockCycleList(body: unknown): Record<string, unknown>[] {
+  if (Array.isArray(body)) return body as Record<string, unknown>[];
+  if (body && typeof body === 'object' && 'items' in body) {
+    const items = (body as { items?: unknown }).items;
+    if (Array.isArray(items)) return items as Record<string, unknown>[];
   }
-  const b = body as { items?: StockCycleRef[] } | null;
-  if (b && Array.isArray(b.items)) return b.items;
   return [];
+}
+
+function normalizeCycles(body: unknown): StockCycleRef[] {
+  return normalizeStockCycleList(body) as unknown as StockCycleRef[];
+}
+
+/** All stock cycles for a unit (paginated server-side until exhausted). */
+export async function fetchAllStockCyclesForUnit(
+  unitId: string,
+): Promise<Record<string, unknown>[]> {
+  const all: Record<string, unknown>[] = [];
+  for (let page = 1; ; page++) {
+    const { data: raw } = await apiClient.get(API.units.cycles(unitId), {
+      params: { limit: CYCLE_PAGE_SIZE, page },
+    });
+    const batch = normalizeStockCycleList(raw);
+    all.push(...batch);
+    if (batch.length < CYCLE_PAGE_SIZE) break;
+  }
+  return all;
 }
 
 /** First active (or most recently listed) cycle for daily-record `cycleId`. */

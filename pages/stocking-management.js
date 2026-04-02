@@ -1,6 +1,5 @@
 // pages/stocking-management.js
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -12,7 +11,11 @@ import {
   Plus,
 } from 'lucide-react'
 import ProtectedRoute from '../components/ProtectedRoute'
-import { stockingService } from '../lib/databaseService'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import {
+  fetchLegacyStockManagementRowsForFarm,
+  patchStockCycleEditableFields,
+} from '@/lib/farm-stock-management-rows'
 
 export default function StockingManagementPage() {
   return (
@@ -23,7 +26,6 @@ export default function StockingManagementPage() {
 }
 
 function StockingManagement() {
-  const router = useRouter()
   const [stockings, setStockings] = useState([])
   const [filteredStockings, setFilteredStockings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,24 +60,23 @@ function StockingManagement() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const { data, error } = await stockingService.getAllStockings()
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        setStockings([])
+        setUniqueCages([])
+        setAvailableYears([])
+        return
+      }
 
-      if (error) throw error
+      const data = await fetchLegacyStockManagementRowsForFarm(farmId)
+      setStockings(data)
 
-      console.log('Fetched stockings:', data)
-      setStockings(data || [])
-
-      // Extract unique cages for filtering
-      const cages = [...new Set(data.map((s) => s.cage?.name || 'Unknown'))]
-        .map((name) => ({
-          name,
-          id: data.find((s) => s.cage?.name === name)?.cage_id,
-        }))
+      const cages = [...new Map(data.map((s) => [s.cage_id, s.cage?.name]))]
+        .map(([id, name]) => ({ id, name: name || 'Unknown' }))
         .sort((a, b) => a.name.localeCompare(b.name))
 
       setUniqueCages(cages)
 
-      // Extract available years for filtering
       const years = [
         ...new Set(data.map((s) => new Date(s.stocking_date).getFullYear())),
       ].sort((a, b) => b - a)
@@ -83,6 +84,7 @@ function StockingManagement() {
       setAvailableYears(years)
     } catch (error) {
       console.error('Error fetching stockings:', error)
+      setStockings([])
     } finally {
       setLoading(false)
     }
@@ -164,8 +166,13 @@ function StockingManagement() {
 
   const handleEditStocking = (stocking) => {
     setEditingStocking(stocking)
+    const dateStr =
+      typeof stocking.stocking_date === 'string' &&
+      stocking.stocking_date.length >= 10
+        ? stocking.stocking_date.slice(0, 10)
+        : String(stocking.stocking_date).split('T')[0] || ''
     setFormData({
-      stocking_date: stocking.stocking_date,
+      stocking_date: dateStr,
       fish_count: stocking.fish_count,
       initial_abw: stocking.initial_abw,
       source_location: stocking.source_location || '',
@@ -201,43 +208,16 @@ function StockingManagement() {
     try {
       if (!editingStocking) return
 
-      // Validate input
-      if (!formData.stocking_date) {
-        throw new Error('Stocking date is required')
-      }
-
-      if (!formData.fish_count || parseFloat(formData.fish_count) <= 0) {
-        throw new Error('Valid fish count is required')
-      }
-
-      if (!formData.initial_abw || parseFloat(formData.initial_abw) <= 0) {
-        throw new Error('Valid average body weight is required')
-      }
-
-      // Calculate initial biomass
-      const initial_biomass = calculateBiomass()
-
-      // Prepare update data
-      const updateData = {
-        stocking_date: formData.stocking_date,
-        fish_count: parseInt(formData.fish_count),
-        initial_abw: parseFloat(formData.initial_abw),
-        initial_biomass,
-        source_location: formData.source_location || null,
-        notes: formData.notes || null,
-      }
-
-      console.log('Updating stocking with data:', updateData)
-
-      // Update stocking
-      const { data, error } = await stockingService.updateStocking(
+      await patchStockCycleEditableFields(
+        editingStocking.cage_id,
         editingStocking.id,
-        updateData,
+        {
+          sourceLocation: formData.source_location,
+          notes: formData.notes,
+        },
       )
 
-      if (error) throw error
-
-      setSuccess('Stocking updated successfully')
+      setSuccess('Stock cycle details saved')
 
       // Refresh data after short delay
       setTimeout(() => {
@@ -285,8 +265,8 @@ function StockingManagement() {
             </Link>
           </div>
           <p className="text-gray-600">
-            View and manage fish stockings. Each stocking represents a batch of
-            fish added to a cage.
+            Stock cycles from Nsuo for each pond (unit). Edit only updates
+            source location and notes; counts and dates are managed in Nsuo.
           </p>
         </div>
 
@@ -557,9 +537,13 @@ function StockingManagement() {
             onClick={() => setShowEditModal(false)}
           ></div>
           <div className="relative bg-white rounded-lg max-w-md w-full mx-4 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Edit Stocking: {editingStocking.batch_number}
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
+              Edit stock cycle: {editingStocking.batch_number}
             </h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Date, fish count, and ABW are read-only. Only source location and
+              notes are saved to Nsuo.
+            </p>
 
             {error && (
               <div className="mb-4 bg-red-50 text-red-700 p-3 rounded-md text-sm">
@@ -582,9 +566,8 @@ function StockingManagement() {
                   type="date"
                   name="stocking_date"
                   value={formData.stocking_date}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
+                  readOnly
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 sm:text-sm"
                 />
               </div>
 
@@ -596,10 +579,8 @@ function StockingManagement() {
                   type="number"
                   name="fish_count"
                   value={formData.fish_count}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  min="1"
-                  required
+                  readOnly
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 sm:text-sm"
                 />
               </div>
 
@@ -611,11 +592,9 @@ function StockingManagement() {
                   type="number"
                   name="initial_abw"
                   value={formData.initial_abw}
-                  onChange={handleChange}
+                  readOnly
                   step="0.1"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  min="0.1"
-                  required
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 sm:text-sm"
                 />
               </div>
 
@@ -673,7 +652,7 @@ function StockingManagement() {
                   type="submit"
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                 >
-                  Save Changes
+                  Save source and notes
                 </button>
               </div>
             </form>
