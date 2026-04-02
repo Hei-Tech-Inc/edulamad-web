@@ -1,7 +1,9 @@
 // pages/_app.js - Simplified without company registration flow
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { SettingsProvider } from '../contexts/SettingsContext'
@@ -11,29 +13,41 @@ import { AnalyticsProvider } from '../contexts/AnalyticsContext'
 import { ToastProvider } from '../components/Toast'
 import { Provider } from 'react-redux'
 import { store } from '../store'
+import { queryClient } from '@/lib/query-client'
 import '../styles/globals.css'
+
+const ReactQueryDevtools = dynamic(
+  () =>
+    import('@tanstack/react-query-devtools').then((m) => m.ReactQueryDevtools),
+  { ssr: false },
+)
 
 // This HOC (Higher-Order Component) wraps the entire app
 function AppWrapper({ Component, pageProps }) {
   return (
     <Provider store={store}>
-      <ThemeProvider>
-        <SettingsProvider>
-          <AuthProvider>
-            <DataProvider>
-              <ToastProvider>
-                <NotificationProvider>
-                  <AnalyticsProvider>
-                    <AuthWrapper>
-                      <Component {...pageProps} />
-                    </AuthWrapper>
-                  </AnalyticsProvider>
-                </NotificationProvider>
-              </ToastProvider>
-            </DataProvider>
-          </AuthProvider>
-        </SettingsProvider>
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <SettingsProvider>
+            <AuthProvider>
+              <DataProvider>
+                <ToastProvider>
+                  <NotificationProvider>
+                    <AnalyticsProvider>
+                      <AuthWrapper>
+                        <Component {...pageProps} />
+                      </AuthWrapper>
+                    </AnalyticsProvider>
+                  </NotificationProvider>
+                </ToastProvider>
+              </DataProvider>
+            </AuthProvider>
+          </SettingsProvider>
+        </ThemeProvider>
+        {process.env.NODE_ENV === 'development' ? (
+          <ReactQueryDevtools initialIsOpen={false} />
+        ) : null}
+      </QueryClientProvider>
     </Provider>
   )
 }
