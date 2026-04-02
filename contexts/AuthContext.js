@@ -73,15 +73,27 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const signUpWithEmail = async (email, password, fullName) => {
+  const signUpWithEmail = async (email, password, fullName, orgOptions = {}) => {
     try {
-      const orgName = `${String(fullName || 'User').trim()}'s Organisation`
-      const { data } = await apiClient.post(API.auth.register, {
+      const explicitOrg =
+        typeof orgOptions.orgName === 'string' && orgOptions.orgName.trim()
+          ? orgOptions.orgName.trim()
+          : null
+      const orgName =
+        explicitOrg || `${String(fullName || 'User').trim()}'s Organisation`
+      const body = {
         email,
         password,
         name: fullName,
         orgName,
-      })
+      }
+      if (
+        typeof orgOptions.orgSlug === 'string' &&
+        orgOptions.orgSlug.trim()
+      ) {
+        body.orgSlug = orgOptions.orgSlug.trim()
+      }
+      const { data } = await apiClient.post(API.auth.register, body)
       useAuthStore.getState().setTokens(data.accessToken, data.refreshToken)
       useAuthStore.getState().setUser(mapAuthUserToRequestUser(data.user))
       await store.dispatch(fetchUser()).unwrap()

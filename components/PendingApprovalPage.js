@@ -1,48 +1,16 @@
-// components/PendingApprovalPage.js
+// components/PendingApprovalPage.js — legacy Supabase registration lookup removed
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { ArrowLeft, Mail } from 'lucide-react'
 
 const PendingApprovalPage = () => {
-  const [loading, setLoading] = useState(true)
-  const [registration, setRegistration] = useState(null)
-  const [error, setError] = useState('')
+  const [refId, setRefId] = useState(null)
 
   useEffect(() => {
-    // Check URL for registration ID
-    const urlParams = new URLSearchParams(window.location.search)
-    const registrationId = urlParams.get('id')
-
-    if (registrationId) {
-      fetchRegistrationStatus(registrationId)
-    } else {
-      setLoading(false)
-      setError('No registration ID provided')
-    }
+    if (typeof window === 'undefined') return
+    const id = new URLSearchParams(window.location.search).get('id')
+    setRefId(id)
   }, [])
-
-  const fetchRegistrationStatus = async (id) => {
-    try {
-      setLoading(true)
-
-      // Fetch registration status
-      const { data, error } = await supabase
-        .from('company_registrations')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (error) throw error
-
-      setRegistration(data)
-    } catch (error) {
-      console.error('Error fetching registration status:', error)
-      setError('Failed to fetch registration status')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 font-montserrat">
@@ -56,66 +24,40 @@ const PendingApprovalPage = () => {
         </Link>
 
         <div className="bg-white shadow rounded-lg p-8">
-          {loading ? (
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            </div>
-          ) : error ? (
-            <div className="text-center">
-              <div className="bg-red-50 text-red-800 p-4 rounded-md mb-6">
-                {error}
-              </div>
-              <Link href="/register-company">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                  Register a Company
-                </button>
-              </Link>
-            </div>
-          ) : registration ? (
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <h2 className="text-lg font-medium text-gray-900 mb-2">
-                Registration Received
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Your company registration for{' '}
-                <strong>{registration.name}</strong> has been received and is
-                pending approval by our administrators. You will receive an
-                email when your registration is approved.
-              </p>
-              <div className="bg-gray-50 p-4 rounded-md text-sm text-left mb-6">
-                <p>
-                  <strong>Status:</strong> {registration.status || 'Pending'}
-                </p>
-                <p>
-                  <strong>Submitted:</strong>{' '}
-                  {new Date(registration.created_at).toLocaleString()}
-                </p>
-                {registration.approved_at && (
-                  <p>
-                    <strong>Approved:</strong>{' '}
-                    {new Date(registration.approved_at).toLocaleString()}
-                  </p>
-                )}
-              </div>
-              <Link href="/login">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                  Go to Login
-                </button>
-              </Link>
-            </div>
-          ) : (
-            <div className="text-center">
-              <p className="text-gray-600 mb-6">No registration found.</p>
-              <Link href="/register-company">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                  Register a Company
-                </button>
-              </Link>
-            </div>
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 mb-4">
+            <Mail className="h-6 w-6 text-indigo-600" />
+          </div>
+          <h2 className="text-lg font-medium text-gray-900 mb-2 text-center">
+            Check your email
+          </h2>
+          <p className="text-gray-600 mb-6 text-center">
+            Nsuo confirms new organisations when you complete signup and verify
+            your email. If you just registered, open the verification link we
+            sent you, then sign in.
+          </p>
+          {refId && (
+            <p className="text-sm text-gray-500 text-center mb-6 font-mono">
+              Reference: {refId}
+            </p>
           )}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/login">
+              <button
+                type="button"
+                className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                Go to Login
+              </button>
+            </Link>
+            <Link href="/register-company">
+              <button
+                type="button"
+                className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Register organisation
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

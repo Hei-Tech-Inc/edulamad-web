@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { supabase } from '../lib/supabase'
 import { Building, Mail, Phone, User, ArrowLeft } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 const CompanyRegistrationPage = () => {
   const router = useRouter()
+  const { signUpWithEmail } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -30,59 +31,33 @@ const CompanyRegistrationPage = () => {
     setLoading(true)
     setError('')
 
+    const slugRaw = String(formData.abbreviation || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
     try {
-      // 1. Create company record
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .insert([
-          {
-            name: formData.name,
-            abbreviation: formData.abbreviation,
-            address: formData.address,
-            contact_email: formData.contact_email,
-            contact_phone: formData.contact_phone,
-          },
-        ])
-        .select()
-
-      if (companyError) throw companyError
-
-      const companyId = companyData[0].id
-
-      // 2. Create admin user
-      const {
-        data: userData,
-        error: userError,
-      } = await supabase.auth.admin.createUser({
-        email: formData.admin_email,
-        password: formData.admin_password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: formData.admin_name,
+      const { error: regError } = await signUpWithEmail(
+        formData.admin_email,
+        formData.admin_password,
+        formData.admin_name,
+        {
+          orgName: formData.name.trim(),
+          orgSlug: slugRaw || undefined,
         },
-      })
+      )
 
-      if (userError) throw userError
+      if (regError) {
+        setError(regError.message || 'Registration failed')
+        return
+      }
 
-      // 3. Update profile with company ID and admin role
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          company_id: companyId,
-          role: 'admin',
-        })
-        .eq('id', userData.user.id)
-
-      if (profileError) throw profileError
-
-      // Success
       setSuccess(true)
-      setTimeout(() => {
-        router.push('/login')
-      }, 3000)
-    } catch (error) {
-      console.error('Error registering company:', error)
-      setError(error.message)
+      router.push('/dashboard')
+    } catch (err) {
+      console.error('Error registering company:', err)
+      setError(err?.message || 'Registration failed')
     } finally {
       setLoading(false)
     }
@@ -126,12 +101,12 @@ const CompanyRegistrationPage = () => {
               Registration Successful!
             </h2>
             <p className="text-gray-600 mb-4">
-              Your company has been registered successfully. You will be
-              redirected to the login page shortly.
+              Your organisation and owner account are ready. Continue to the
+              dashboard.
             </p>
-            <Link href="/login">
+            <Link href="/dashboard">
               <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                Go to Login
+                Open dashboard
               </button>
             </Link>
           </div>
