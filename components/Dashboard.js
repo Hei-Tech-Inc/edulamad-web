@@ -49,12 +49,14 @@ function Dashboard({ selectedCage }) {
     totalActiveCages: 0,
     totalBiomass: 0,
     averageFCR: 'N/A',
-    mortalityRate: '0.0',
+    mortalityRate: 'N/A',
+    totalRecordedLosses: 0,
     avgDailyGrowth: 'N/A',
     daysToHarvest: 'N/A',
     feedCostPerKg: 'N/A',
     survivalRate: 'N/A',
   })
+  const [harvestFcrValues, setHarvestFcrValues] = useState([])
   const [expandedSections, setExpandedSections] = useState({
     metrics: true,
     charts: true,
@@ -62,11 +64,6 @@ function Dashboard({ selectedCage }) {
   })
   const [timeRange, setTimeRange] = useState('30d') // '7d', '30d', '90d', '1y'
   const [waterQualityData, setWaterQualityData] = useState([])
-
-  console.log(
-    'Dashboard rendered with selectedCage:',
-    selectedCage,
-  )
 
   // Load units for active farm (same source as Cages / Redux)
   useEffect(() => {
@@ -158,9 +155,26 @@ function Dashboard({ selectedCage }) {
         }),
       )
 
+      const harvestFcrNested = await Promise.all(
+        active.map(async (cage) => {
+          try {
+            const { data } = await apiClient.get(API.units.harvests(cage.id), {
+              params: { limit: 40, page: 1 },
+            })
+            const rows = Array.isArray(data) ? data : data?.items ?? []
+            return rows
+              .map((h) => Number(h.fcr))
+              .filter((n) => Number.isFinite(n) && n > 0)
+          } catch {
+            return []
+          }
+        }),
+      )
+
       if (cancelled) return
       setDailyRecords(dailyNested.flat())
       setBiweeklyRecords(weightNested.flat())
+      setHarvestFcrValues(harvestFcrNested.flat())
     }
 
     loadSeries()
@@ -173,7 +187,7 @@ function Dashboard({ selectedCage }) {
     if (!cages.length) return
     updateDashboardMetrics(cages, recentStockings)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- updateDashboardMetrics is defined below; deps already cover its closure inputs
-  }, [cages, dailyRecords, biweeklyRecords, recentStockings])
+  }, [cages, dailyRecords, biweeklyRecords, recentStockings, harvestFcrValues])
 
   // Optional: narrow series to one unit when parent passes selectedCage (legacy)
   useEffect(() => {
@@ -249,12 +263,17 @@ function Dashboard({ selectedCage }) {
       totalBiomass += stocking.initial_biomass || 0
     })
 
-    // Set metrics
+    const totalLosses = (dailyRecords || []).reduce(
+      (s, r) => s + (Number(r.mortality) || 0),
+      0,
+    )
+
     setMetrics({
       totalActiveCages: activeCages.length,
       totalBiomass: Math.round(totalBiomass),
-      averageFCR: calculateAverageFCR(cages, dailyRecords, biweeklyRecords),
+      averageFCR: calculateAverageFCR(harvestFcrValues),
       mortalityRate: calculateMortalityRate(cages, dailyRecords),
+      totalRecordedLosses: totalLosses,
       avgDailyGrowth: calculateAvgDailyGrowth(cages, dailyRecords, biweeklyRecords),
       daysToHarvest: calculateDaysToHarvest(cages, dailyRecords, biweeklyRecords),
       feedCostPerKg: calculateFeedCostPerKg(cages, dailyRecords, biweeklyRecords),
@@ -262,16 +281,27 @@ function Dashboard({ selectedCage }) {
     })
   }
 
-  // Helper function to calculate FCR - placeholder logic
-  const calculateAverageFCR = (cages, dailyRecords, biweeklyRecords) => {
-    // This would normally require complex calculation with real data
-    return '1.45' // Placeholder
+  const calculateAverageFCR = (fcrs) => {
+    if (!fcrs || fcrs.length === 0) return 'N/A'
+    const mean = fcrs.reduce((a, b) => a + b, 0) / fcrs.length
+    return mean.toFixed(2)
   }
 
-  // Helper function to calculate mortality rate - placeholder logic
+  /** % of starting headcount when units expose initial_count; otherwise N/A. */
   const calculateMortalityRate = (cages, dailyRecords) => {
-    // This would normally require complex calculation with real data
-    return '2.8' // Placeholder
+    const active = (cages || []).filter(
+      (c) => c.status === 'active' || c.status === 'ready_to_harvest',
+    )
+    let headcount = 0
+    active.forEach((c) => {
+      headcount += Number(c.initial_count) || 0
+    })
+    const mort = (dailyRecords || []).reduce(
+      (s, r) => s + (Number(r.mortality) || 0),
+      0
+    )
+    if (headcount <= 0) return 'N/A'
+    return ((mort / headcount) * 100).toFixed(1)
   }
 
   // Helper function to calculate average daily growth
@@ -335,20 +365,23 @@ function Dashboard({ selectedCage }) {
   const calculateFeedCostPerKg = (cages, dailyRecords, biweeklyRecords) => {
     if (!dailyRecords || dailyRecords.length === 0) return 'N/A'
 
-    let totalFeedCost = 0
+    let totalFeedCostGhs = 0
     let totalFeedAmount = 0
 
-    dailyRecords.forEach(record => {
-      if (record.feed_amount && record.feed_price) {
-        totalFeedCost += record.feed_amount * record.feed_price
-        totalFeedAmount += record.feed_amount
+    dailyRecords.forEach((record) => {
+      const kg = Number(record.feed_amount) || 0
+      const cost = Number(record.feed_cost) || 0
+      if (kg > 0) {
+        totalFeedAmount += kg
+      }
+      if (cost > 0) {
+        totalFeedCostGhs += cost
       }
     })
 
-    if (totalFeedAmount === 0) return 'N/A'
+    if (totalFeedAmount === 0 || totalFeedCostGhs === 0) return 'N/A'
 
-    const feedCostPerKg = totalFeedCost / totalFeedAmount
-    return feedCostPerKg.toFixed(2)
+    return (totalFeedCostGhs / totalFeedAmount).toFixed(2)
   }
 
   // Helper function to calculate survival rate
@@ -528,156 +561,73 @@ function Dashboard({ selectedCage }) {
     }
   }
 
-  // New function to prepare water quality data
-  const prepareWaterQualityData = () => {
-    // Generate sample data for now
-    const data = []
-    const today = new Date()
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      data.push({
-        date: date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: '2-digit',
-        }),
-        temperature: 28 + Math.random() * 2,
-        oxygen: 6 + Math.random(),
-        ph: 7 + Math.random()
-      })
-    }
-    console.log('Water Quality Data:', data)
-    return data
-  }
-
-  // New function to prepare mortality data
   const prepareMortalityData = () => {
     if (!dailyRecords || dailyRecords.length === 0) {
-      // Generate sample data if no records
-      const data = []
-      const today = new Date()
-      for (let i = 0; i < 30; i++) {
-        const date = new Date(today)
-        date.setDate(date.getDate() - i)
-        data.push({
-          date: date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: '2-digit',
-          }),
-          mortality: Math.floor(Math.random() * 10),
-          mortalityRate: Math.random() * 2
-        })
-      }
-      console.log('Sample Mortality Data:', data)
-      return data
+      return []
     }
-    
-    const data = dailyRecords.map(record => ({
-      date: new Date(record.date).toLocaleDateString('en-US', {
+    const byKey = {}
+    dailyRecords.forEach((record) => {
+      const label = new Date(record.date).toLocaleDateString('en-US', {
         month: 'short',
         day: '2-digit',
-      }),
-      mortality: record.mortality || 0,
-      mortalityRate: ((record.mortality || 0) / (cages.find(c => c.id === record.cage_id)?.initial_count || 1)) * 100
-    }))
-    console.log('Mortality Data:', data)
-    return data
-  }
-
-  // New function to prepare feed efficiency data
-  const prepareFeedEfficiencyData = () => {
-    if (!dailyRecords || !biweeklyRecords || dailyRecords.length === 0) {
-      // Generate sample data if no records
-      const data = []
-      const today = new Date()
-      for (let i = 0; i < 30; i++) {
-        const date = new Date(today)
-        date.setDate(date.getDate() - i)
-        data.push({
-          date: date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: '2-digit',
-          }),
-          fcr: 1.5 + Math.random() * 0.5,
-          feedAmount: 100 + Math.random() * 50,
-          weightGain: 50 + Math.random() * 30
-        })
+      })
+      if (!byKey[label]) {
+        byKey[label] = { date: label, mortality: 0, mortalityRate: 0 }
       }
-      console.log('Sample Feed Efficiency Data:', data)
-      return data
-    }
-    
-    const data = biweeklyRecords.map(record => {
-      const periodStart = new Date(record.date)
-      periodStart.setDate(periodStart.getDate() - 14)
-      
-      const periodRecords = dailyRecords.filter(dr => 
-        new Date(dr.date) >= periodStart && 
-        new Date(dr.date) <= new Date(record.date)
+      byKey[label].mortality += Number(record.mortality) || 0
+      const pop = Number(
+        cages.find((c) => c.id === record.cage_id)?.initial_count,
       )
-      
-      const totalFeed = periodRecords.reduce((sum, r) => sum + (r.feed_amount || 0), 0)
-      const weightGain = record.average_body_weight - (record.previous_weight || 0)
-      
-      return {
-        date: new Date(record.date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: '2-digit',
-        }),
-        fcr: weightGain > 0 ? totalFeed / weightGain : 0,
-        feedAmount: totalFeed,
-        weightGain: weightGain
+      if (pop > 0 && record.mortality) {
+        byKey[label].mortalityRate +=
+          (Number(record.mortality) / pop) * 100
       }
     })
-    console.log('Feed Efficiency Data:', data)
-    return data
+    return Object.values(byKey).sort((a, b) =>
+      String(a.date).localeCompare(String(b.date)),
+    )
+  }
+
+  const prepareFeedEfficiencyData = () => {
+    return []
   }
 
   // New function to prepare biomass projection
   const prepareBiomassProjection = () => {
     if (!biweeklyRecords || biweeklyRecords.length < 2) {
-      // Generate sample data if no records
-      const data = []
-      const today = new Date()
-      let currentBiomass = 300
-      for (let i = 0; i < 30; i++) {
-        const date = new Date(today)
-        date.setDate(date.getDate() + i)
-        currentBiomass += 5 + Math.random() * 3
-        data.push({
-          date: date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: '2-digit',
-          }),
-          projected: currentBiomass,
-          target: 500
-        })
-      }
-      console.log('Sample Biomass Projection Data:', data)
-      return data
+      return []
     }
-    
-    const lastRecord = biweeklyRecords[0]
-    const growthRate = calculateAvgDailyGrowth(cages, dailyRecords, biweeklyRecords)
-    
+
+    const sorted = [...biweeklyRecords].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    )
+    const lastRecord = sorted[sorted.length - 1]
+    const growthRaw = calculateAvgDailyGrowth(
+      cages,
+      dailyRecords,
+      biweeklyRecords,
+    )
+    const growthRate =
+      growthRaw === 'N/A' ? NaN : parseFloat(String(growthRaw))
+    if (!Number.isFinite(growthRate)) return []
+
     const projection = []
     let currentDate = new Date()
     let currentBiomass = lastRecord.average_body_weight
-    
+
     for (let i = 0; i < 30; i++) {
       currentDate.setDate(currentDate.getDate() + 1)
-      currentBiomass += parseFloat(growthRate)
-      
+      currentBiomass += growthRate
+
       projection.push({
         date: new Date(currentDate).toLocaleDateString('en-US', {
           month: 'short',
           day: '2-digit',
         }),
         projected: currentBiomass,
-        target: 500
+        target: 500,
       })
     }
-    console.log('Biomass Projection Data:', projection)
     return projection
   }
 
@@ -690,17 +640,17 @@ function Dashboard({ selectedCage }) {
   const generateSparklineData = (value, trend) => {
     const data = []
     const points = 7
-    const baseValue = value * 0.8
-    const range = value * 0.4
-    
+    const safe = Number.isFinite(value) ? value : 0
+    const baseValue = safe * 0.85
+    const range = Math.max(0.001, safe * 0.15)
+
     for (let i = 0; i < points; i++) {
       data.push({
-        value: baseValue + (Math.random() * range)
+        value: baseValue + (range * i) / (points - 1 || 1),
       })
     }
-    
-    // Add the current value
-    data.push({ value })
+
+    data.push({ value: safe })
     return data
   }
 
@@ -766,21 +716,37 @@ function Dashboard({ selectedCage }) {
             icon: Calculator,
             color: 'red',
             trend: calculateTrend(metrics.averageFCR === 'N/A' ? 0 : parseFloat(metrics.averageFCR), 1.5),
-            tooltip: 'Feed Conversion Ratio - lower is better',
+            tooltip:
+              'Mean FCR from recent harvest records (active sample of units)',
             unit: '',
-            description: 'Feed efficiency indicator',
-            subtext: 'Target: < 1.5'
+            description: 'Feed efficiency (harvests)',
+            subtext:
+              metrics.averageFCR === 'N/A'
+                ? 'No harvest FCR in range — record harvests with FCR in Nsuo'
+                : 'Target: < 1.5',
           },
           {
             title: 'Mortality Rate',
             value: metrics.mortalityRate === 'N/A' ? 0 : parseFloat(metrics.mortalityRate),
             icon: AlertTriangle,
             color: 'yellow',
-            trend: calculateTrend(metrics.mortalityRate === 'N/A' ? 0 : parseFloat(metrics.mortalityRate), 2.5),
-            tooltip: 'Percentage of fish that die each day',
+            trend: calculateTrend(
+              metrics.mortalityRate === 'N/A' ? 0 : parseFloat(metrics.mortalityRate),
+              2.5,
+            ),
+            tooltip:
+              metrics.mortalityRate === 'N/A'
+                ? 'Needs unit headcount (initial_count) on cages for a %; see losses in subtext'
+                : 'Approximate cumulative mortality vs recorded starting headcount',
             unit: '%',
-            description: 'Daily mortality percentage',
-            subtext: 'Target: < 2%'
+            description:
+              metrics.mortalityRate === 'N/A'
+                ? 'Recorded losses (daily)'
+                : 'Cumulative mortality vs headcount',
+            subtext:
+              metrics.mortalityRate === 'N/A'
+                ? `${metrics.totalRecordedLosses || 0} fish in daily records — wire cycle stocking counts for %`
+                : 'Target: < 2%',
           },
           {
             title: 'Avg. Daily Growth',
