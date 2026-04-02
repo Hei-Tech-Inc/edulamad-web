@@ -75,15 +75,62 @@ function Dashboard({ selectedCage }) {
         if (!farmId) {
           setCages([])
           setRecentStockings([])
+          setWaterQualityData([])
           return
         }
         const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
         setCages(legacy)
         setRecentStockings([])
+
+        const end = new Date()
+        const start = new Date()
+        start.setDate(start.getDate() - 120)
+        const from = start.toISOString().slice(0, 10)
+        const to = end.toISOString().slice(0, 10)
+        try {
+          const chartRows = []
+          for (let page = 1; ; page++) {
+            const { data: raw } = await apiClient.get(
+              API.farms.weatherObservations(farmId),
+              { params: { from, to, limit: 100, page } },
+            )
+            const items = Array.isArray(raw) ? raw : raw?.items ?? []
+            for (const o of items) {
+              const ymd = String(o.observedDate ?? '').slice(0, 10)
+              chartRows.push({
+                sortKey: ymd,
+                date: ymd
+                  ? new Date(`${ymd}T12:00:00`).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: '2-digit',
+                    })
+                  : '—',
+                rainfall:
+                  o.rainfallEstimateMm != null
+                    ? Number(o.rainfallEstimateMm)
+                    : 0,
+                waterLevelIdx:
+                  o.waterLevelChange === 'risen'
+                    ? 1
+                    : o.waterLevelChange === 'fallen'
+                    ? -1
+                    : 0,
+              })
+            }
+            if (items.length < 100) break
+          }
+          chartRows.sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+          setWaterQualityData(
+            chartRows.map(({ sortKey, ...row }) => row),
+          )
+        } catch {
+          setWaterQualityData([])
+        }
       } catch (error) {
         console.error('Error fetching data:', error.message)
         setError(error.message)
         setCages([])
+        setWaterQualityData([])
       } finally {
         setLoading(false)
       }
@@ -1078,33 +1125,59 @@ function Dashboard({ selectedCage }) {
               </div>
             </div>
 
-            {/* Water Quality Chart */}
+            {/* Weather observations (farm-level, Nsuo API) */}
             <div className="bg-white rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-4">Water Quality Parameters</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-1">
+                Farm weather observations
+              </h3>
+              <p className="text-xs text-gray-500 mb-3">
+                Rainfall (mm) and water-level trend (+1 risen, 0 stable, −1
+                fallen) from the last ~120 days.
+              </p>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsLineChart data={waterQualityData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                    <Tooltip />
-                    <Line
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="temperature"
-                      stroke="#8884d8"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="oxygen"
-                      stroke="#82ca9d"
-                      strokeWidth={2}
-                    />
-                  </RechartsLineChart>
-                </ResponsiveContainer>
+                {waterQualityData.length === 0 ? (
+                  <p className="text-sm text-gray-500 flex items-center justify-center h-full">
+                    No weather observations in range — record them in Nsuo for
+                    this farm.
+                  </p>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart data={waterQualityData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis
+                        yAxisId="left"
+                        orientation="left"
+                        stroke="#2563eb"
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        stroke="#16a34a"
+                      />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        yAxisId="left"
+                        name="Rainfall (mm)"
+                        type="monotone"
+                        dataKey="rainfall"
+                        stroke="#2563eb"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        yAxisId="right"
+                        name="Water level Δ"
+                        type="monotone"
+                        dataKey="waterLevelIdx"
+                        stroke="#16a34a"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
           </div>
