@@ -7,7 +7,6 @@ import cagesReducer from './slices/cagesSlice'
 import authReducer from './slices/authSlice'
 import dashboardReducer from './slices/dashboardSlice'
 import feedReducer from './slices/feedSlice'
-import dailyReducer from './slices/dailySlice'
 import notificationsReducer from './slices/notificationsSlice'
 
 // Create a storage object that works in both client and server environments

@@ -1,57 +1,34 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { supabase } from '../../lib/supabase'
 
-// Fetch all daily records
+const LEGACY_MSG =
+  'Daily records are managed in Nsuo. This Redux path no longer uses Supabase.'
+
 export const fetchDailyRecords = createAsyncThunk(
   'daily/fetchDailyRecords',
   async () => {
-    const { data, error } = await supabase
-      .from('daily_records')
-      .select('*')
-      .order('date', { ascending: false })
-    if (error) throw error
-    return data
-  }
+    return []
+  },
 )
 
-// Create a new daily record
 export const createDailyRecord = createAsyncThunk(
   'daily/createDailyRecord',
-  async (record) => {
-    const { data, error } = await supabase
-      .from('daily_records')
-      .insert([record])
-      .single()
-    if (error) throw error
-    return data
-  }
+  async () => {
+    throw new Error(LEGACY_MSG)
+  },
 )
 
-// Update a daily record
 export const updateDailyRecord = createAsyncThunk(
   'daily/updateDailyRecord',
-  async ({ id, updates }) => {
-    const { data, error } = await supabase
-      .from('daily_records')
-      .update(updates)
-      .eq('id', id)
-      .single()
-    if (error) throw error
-    return data
-  }
+  async () => {
+    throw new Error(LEGACY_MSG)
+  },
 )
 
-// Delete a daily record
 export const deleteDailyRecord = createAsyncThunk(
   'daily/deleteDailyRecord',
-  async (id) => {
-    const { error } = await supabase
-      .from('daily_records')
-      .delete()
-      .eq('id', id)
-    if (error) throw error
-    return id
-  }
+  async () => {
+    throw new Error(LEGACY_MSG)
+  },
 )
 
 const initialState = {
@@ -87,14 +64,14 @@ const dailySlice = createSlice({
         state.dailyRecords.unshift(action.payload)
       })
       .addCase(updateDailyRecord.fulfilled, (state, action) => {
-        const idx = state.dailyRecords.findIndex(r => r.id === action.payload.id)
+        const idx = state.dailyRecords.findIndex((r) => r.id === action.payload.id)
         if (idx !== -1) state.dailyRecords[idx] = action.payload
       })
       .addCase(deleteDailyRecord.fulfilled, (state, action) => {
-        state.dailyRecords = state.dailyRecords.filter(r => r.id !== action.payload)
+        state.dailyRecords = state.dailyRecords.filter((r) => r.id !== action.payload)
       })
   },
 })
 
 export const { clearDailyError, resetDailyState } = dailySlice.actions
-export default dailySlice.reducer 
+export default dailySlice.reducer

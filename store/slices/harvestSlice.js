@@ -1,57 +1,34 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { supabase } from '../../lib/supabase'
 
-// Fetch all harvest records
+const LEGACY_MSG =
+  'Harvest records are managed in Nsuo. This Redux path no longer uses Supabase.'
+
 export const fetchHarvestRecords = createAsyncThunk(
   'harvest/fetchHarvestRecords',
   async () => {
-    const { data, error } = await supabase
-      .from('harvest_records')
-      .select('*')
-      .order('harvest_date', { ascending: false })
-    if (error) throw error
-    return data
-  }
+    return []
+  },
 )
 
-// Create a new harvest record
 export const createHarvestRecord = createAsyncThunk(
   'harvest/createHarvestRecord',
-  async (record) => {
-    const { data, error } = await supabase
-      .from('harvest_records')
-      .insert([record])
-      .single()
-    if (error) throw error
-    return data
-  }
+  async () => {
+    throw new Error(LEGACY_MSG)
+  },
 )
 
-// Update a harvest record
 export const updateHarvestRecord = createAsyncThunk(
   'harvest/updateHarvestRecord',
-  async ({ id, updates }) => {
-    const { data, error } = await supabase
-      .from('harvest_records')
-      .update(updates)
-      .eq('id', id)
-      .single()
-    if (error) throw error
-    return data
-  }
+  async () => {
+    throw new Error(LEGACY_MSG)
+  },
 )
 
-// Delete a harvest record
 export const deleteHarvestRecord = createAsyncThunk(
   'harvest/deleteHarvestRecord',
-  async (id) => {
-    const { error } = await supabase
-      .from('harvest_records')
-      .delete()
-      .eq('id', id)
-    if (error) throw error
-    return id
-  }
+  async () => {
+    throw new Error(LEGACY_MSG)
+  },
 )
 
 const initialState = {
@@ -87,14 +64,14 @@ const harvestSlice = createSlice({
         state.harvestRecords.unshift(action.payload)
       })
       .addCase(updateHarvestRecord.fulfilled, (state, action) => {
-        const idx = state.harvestRecords.findIndex(r => r.id === action.payload.id)
+        const idx = state.harvestRecords.findIndex((r) => r.id === action.payload.id)
         if (idx !== -1) state.harvestRecords[idx] = action.payload
       })
       .addCase(deleteHarvestRecord.fulfilled, (state, action) => {
-        state.harvestRecords = state.harvestRecords.filter(r => r.id !== action.payload)
+        state.harvestRecords = state.harvestRecords.filter((r) => r.id !== action.payload)
       })
   },
 })
 
 export const { clearHarvestError, resetHarvestState } = harvestSlice.actions
-export default harvestSlice.reducer 
+export default harvestSlice.reducer

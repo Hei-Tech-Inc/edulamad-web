@@ -1,58 +1,27 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { supabase } from '../../lib/supabase'
 
-// Async thunks
+const LEGACY_MSG =
+  'Biweekly records are managed in Nsuo. This Redux path no longer uses Supabase.'
+
 export const fetchBiweeklyRecords = createAsyncThunk(
   'biweekly/fetchRecords',
-  async (cageId) => {
-    const { data, error } = await supabase
-      .from('biweekly_records')
-      .select(`
-        *,
-        samplings (*)
-      `)
-      .eq('cage_id', cageId)
-      .order('date', { ascending: false })
-
-    if (error) throw error
-    return data
-  }
+  async () => {
+    return []
+  },
 )
 
 export const createBiweeklyRecord = createAsyncThunk(
   'biweekly/createRecord',
-  async ({ cageId, record, samplings }) => {
-    // Start a transaction
-    const { data: recordData, error: recordError } = await supabase
-      .from('biweekly_records')
-      .insert([record])
-      .select()
-      .single()
-
-    if (recordError) throw recordError
-
-    // Add the record_id to each sampling
-    const samplingsWithRecordId = samplings.map(sampling => ({
-      ...sampling,
-      biweekly_record_id: recordData.id
-    }))
-
-    const { data: samplingData, error: samplingError } = await supabase
-      .from('samplings')
-      .insert(samplingsWithRecordId)
-      .select()
-
-    if (samplingError) throw samplingError
-
-    return { record: recordData, samplings: samplingData }
-  }
+  async () => {
+    throw new Error(LEGACY_MSG)
+  },
 )
 
 const initialState = {
   records: [],
   loading: false,
   error: null,
-  success: false
+  success: false,
 }
 
 const biweeklySlice = createSlice({
@@ -67,11 +36,10 @@ const biweeklySlice = createSlice({
     },
     resetState: (state) => {
       return initialState
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch records
       .addCase(fetchBiweeklyRecords.pending, (state) => {
         state.loading = true
         state.error = null
@@ -84,15 +52,13 @@ const biweeklySlice = createSlice({
         state.loading = false
         state.error = action.error.message
       })
-      // Create record
       .addCase(createBiweeklyRecord.pending, (state) => {
         state.loading = true
         state.error = null
         state.success = false
       })
-      .addCase(createBiweeklyRecord.fulfilled, (state, action) => {
+      .addCase(createBiweeklyRecord.fulfilled, (state) => {
         state.loading = false
-        state.records.unshift(action.payload.record)
         state.success = true
       })
       .addCase(createBiweeklyRecord.rejected, (state, action) => {
@@ -100,8 +66,8 @@ const biweeklySlice = createSlice({
         state.error = action.error.message
         state.success = false
       })
-  }
+  },
 })
 
 export const { clearError, clearSuccess, resetState } = biweeklySlice.actions
-export default biweeklySlice.reducer 
+export default biweeklySlice.reducer
