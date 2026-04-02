@@ -48,7 +48,7 @@ function CompaniesList() {
       } catch (error) {
         console.error('Error fetching companies:', error)
         setError('Failed to load companies')
-        showToast('error', 'Failed to load companies')
+        showToast('Failed to load companies', 'error')
       } finally {
         setLoading(false)
       }
@@ -70,13 +70,13 @@ function CompaniesList() {
 
       if (error) throw error
 
-      showToast('success', 'Company deleted successfully')
+      showToast('Company deleted successfully', 'success')
       setCompanies(companies.filter((c) => c.id !== companyToDelete.id))
       setShowDeleteModal(false)
       setCompanyToDelete(null)
     } catch (error) {
       console.error('Error deleting company:', error)
-      showToast('error', 'Failed to delete company: ' + error.message)
+      showToast('Failed to delete company: ' + error.message, 'error')
     }
   }
 
@@ -105,7 +105,10 @@ function CompaniesList() {
       header: 'Created',
       accessor: 'created_at',
       sortable: true,
-      cell: (row) => new Date(row.created_at).toLocaleDateString(),
+      cell: (row) => {
+        const t = row.created_at ? new Date(row.created_at).getTime() : NaN
+        return Number.isFinite(t) ? new Date(t).toLocaleDateString() : '—'
+      },
     },
     {
       header: 'Users',

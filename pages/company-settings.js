@@ -69,7 +69,7 @@ function CompanySettings() {
     } catch (error) {
       console.error('Error fetching company data:', error.message)
       setError('Failed to load company data. Please try again.')
-      showToast('error', 'Failed to load company data')
+      showToast('Failed to load company data', 'error')
     } finally {
       setLoading(false)
     }
@@ -103,12 +103,12 @@ function CompanySettings() {
 
       if (error) throw error
 
-      showToast('success', 'Company settings updated successfully')
+      showToast('Company settings updated successfully', 'success')
       setCompany(data)
     } catch (error) {
       console.error('Error updating company:', error.message)
       setError(error.message)
-      showToast('error', error.message)
+      showToast(error.message, 'error')
     } finally {
       setSaving(false)
     }
@@ -127,14 +127,14 @@ function CompanySettings() {
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']
     if (!validTypes.includes(file.type)) {
       setError('Please select a valid image file (JPEG, PNG, GIF, SVG)')
-      showToast('error', 'Invalid file type')
+      showToast('Invalid file type', 'error')
       return
     }
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       setError('Image size should be less than 2MB')
-      showToast('error', 'File too large')
+      showToast('File too large', 'error')
       return
     }
 
@@ -146,12 +146,12 @@ function CompanySettings() {
 
       if (error) throw error
 
-      showToast('success', 'Logo uploaded successfully')
+      showToast('Logo uploaded successfully', 'success')
       setCompany(data)
     } catch (error) {
       console.error('Error uploading logo:', error.message)
       setError('Failed to upload logo: ' + error.message)
-      showToast('error', 'Failed to upload logo')
+      showToast('Failed to upload logo', 'error')
     } finally {
       setUploading(false)
       // Reset file input
@@ -177,12 +177,12 @@ function CompanySettings() {
 
       if (error) throw error
 
-      showToast('success', 'Logo removed successfully')
+      showToast('Logo removed successfully', 'success')
       setCompany(data)
     } catch (error) {
       console.error('Error deleting logo:', error.message)
       setError('Failed to delete logo: ' + error.message)
-      showToast('error', 'Failed to delete logo')
+      showToast('Failed to delete logo', 'error')
     } finally {
       setUploading(false)
     }

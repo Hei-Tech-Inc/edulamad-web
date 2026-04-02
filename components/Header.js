@@ -55,8 +55,18 @@ const TopBar = ({ title }) => {
 
   const unreadCount = dummyNotifications.filter(n => !n.read).length
 
+  const apiBase =
+    typeof process.env.NEXT_PUBLIC_API_URL === 'string'
+      ? process.env.NEXT_PUBLIC_API_URL
+      : 'http://localhost:3001/api/v1'
+
   return (
     <header className="bg-white dark:bg-gray-900 shadow sticky top-0 z-30">
+      {process.env.NODE_ENV === 'development' && (
+        <div className="px-4 py-1 text-[11px] font-mono bg-amber-50 text-amber-950 border-b border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-100 dark:border-amber-800/60">
+          Dev · Nsuo API: {apiBase}
+        </div>
+      )}
       <div className="flex justify-between items-center px-6 py-4">
         {/* Page Title */}
         <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">{title}</h1>
