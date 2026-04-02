@@ -4,7 +4,8 @@ import ProtectedRoute from '../components/ProtectedRoute'
 import Layout from '../components/Layout'
 import BiweeklyEntryForm from '../components/BiweeklyEntryForm'
 import { Search, Filter, X, Calendar, MapPin, Fish, TrendingUp, Activity } from 'lucide-react'
-import { cageService } from '../lib/databaseService'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 
 export default function BiweeklyEntryPage() {
   return (
@@ -35,11 +36,16 @@ function BiweeklyEntry() {
   const fetchCages = async () => {
     setLoading(true)
     try {
-      const { data, error } = await cageService.getAllCages()
-      if (error) throw error
-      setCages(data || [])
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        setCages([])
+        return
+      }
+      const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+      setCages(legacy)
     } catch (error) {
       console.error('Error fetching cages:', error)
+      setCages([])
     } finally {
       setLoading(false)
     }

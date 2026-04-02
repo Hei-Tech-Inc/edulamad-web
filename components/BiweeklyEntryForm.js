@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useToast } from './Toast'
-import { biweeklyRecordService } from '../lib/databaseService'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
+import { queryKeys } from '@/api/query-keys'
+import { fetchActiveCycleIdForUnit } from '@/lib/unit-cycles-api'
 import { 
   Plus, 
   Trash, 
@@ -13,6 +17,7 @@ import {
 } from 'lucide-react'
 
 const BiweeklyEntryForm = ({ cage, onComplete }) => {
+  const queryClient = useQueryClient()
   const { showToast } = useToast()
   const [samplings, setSamplings] = useState([
     { id: 1, fish_count: '', total_weight: '', abw: 0 }
@@ -22,11 +27,36 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
+  const [activeCycleId, setActiveCycleId] = useState(null)
+  const [cycleLoading, setCycleLoading] = useState(true)
 
   // Generate batch code on component mount
   useEffect(() => {
     setBatchCode(generateBatchCode())
   }, [])
+
+  useEffect(() => {
+    if (!cage?.id) {
+      setActiveCycleId(null)
+      setCycleLoading(false)
+      return
+    }
+    let cancelled = false
+    setCycleLoading(true)
+    ;(async () => {
+      try {
+        const id = await fetchActiveCycleIdForUnit(cage.id)
+        if (!cancelled) setActiveCycleId(id)
+      } catch {
+        if (!cancelled) setActiveCycleId(null)
+      } finally {
+        if (!cancelled) setCycleLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [cage?.id])
 
   // Clear success message after 3 seconds
   useEffect(() => {
@@ -92,7 +122,25 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
     setLoading(true)
 
     try {
-      // Validate form data
+      if (cycleLoading) {
+        throw new Error('Loading stock cycle…')
+      }
+      if (!activeCycleId) {
+        throw new Error(
+          'No active stock cycle for this unit. Start a cycle in Nsuo before weight samples.',
+        )
+      }
+
+      const stockingAnchor = cage.stocking_date || cage.installation_date
+      if (stockingAnchor) {
+        const selectedDate = new Date(date)
+        if (selectedDate < new Date(stockingAnchor)) {
+          throw new Error(
+            `Cannot enter data before reference date (${stockingAnchor}).`,
+          )
+        }
+      }
+
       const totalFish = samplings.reduce((sum, s) => sum + Number(s.fish_count || 0), 0)
       const totalWeight = samplings.reduce((sum, s) => sum + Number(s.total_weight || 0), 0)
 
@@ -100,45 +148,46 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
         throw new Error('Please enter valid fish count and weight data')
       }
 
-      // Create the biweekly record
-      const recordData = {
-        cage_id: cage.id,
-        date,
-        batch_code: batchCode,
-        average_body_weight: calculateAverageABW(),
-        total_fish_count: totalFish,
-        total_weight: totalWeight
+      const sampledAt = `${date}T12:00:00.000Z`
+      const toSubmit = samplings
+        .map((sampling, index) => ({ sampling, index }))
+        .filter(({ sampling }) => sampling.fish_count && sampling.total_weight)
+
+      const samplingResults = await Promise.allSettled(
+        toSubmit.map(({ sampling, index }) => {
+          const fc = Number(sampling.fish_count)
+          const tw = Number(sampling.total_weight)
+          const avgG = fc > 0 ? tw / fc : 0
+          const noteParts = []
+          if (batchCode) noteParts.push(`Bi-weekly ref: ${batchCode}`)
+          noteParts.push(`Sampling ${index + 1}`)
+          return apiClient.post(API.units.weightSamples(cage.id), {
+            sampledAt,
+            cycleId: activeCycleId,
+            sampleSize: fc,
+            avgWeightG: avgG,
+            minWeightG: avgG,
+            maxWeightG: avgG,
+            samplingMethod: 'manual',
+            notes: noteParts.join(' · '),
+            source: 'web',
+          })
+        }),
+      )
+
+      const failed = samplingResults.filter((r) => r.status === 'rejected')
+      if (failed.length > 0) {
+        const first = failed[0].reason
+        const msg = first?.message || String(first)
+        throw new Error(msg || 'Some weight samples failed to save')
       }
 
-      const { data: record, error: recordError } = await biweeklyRecordService.createBiweeklyRecord(recordData)
-
-      if (recordError) {
-        throw recordError
-      }
-
-      // Create sampling records
-      const samplingPromises = samplings.map((sampling, index) => {
-        if (!sampling.fish_count || !sampling.total_weight) return null
-
-        return biweeklyRecordService.createBiweeklySampling({
-          biweekly_record_id: record.id,
-          sampling_number: index + 1,
-          fish_count: Number(sampling.fish_count),
-          total_weight: Number(sampling.total_weight),
-          average_body_weight: Number(sampling.abw)
-        })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.weightSamples.byUnit(cage.id),
       })
 
-      const samplingResults = await Promise.all(samplingPromises.filter(Boolean))
-      const samplingErrors = samplingResults.filter(result => result.error)
-
-      if (samplingErrors.length > 0) {
-        console.error('Some sampling records failed to save:', samplingErrors)
-        showToast('warning', 'Record saved but some sampling data may be incomplete')
-      }
-
       setSuccess(true)
-      showToast('success', 'Bi-weekly record saved successfully')
+      showToast('success', 'Weight samples saved successfully')
 
       // Reset form
       setDate(new Date().toISOString().split('T')[0])
@@ -168,7 +217,14 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
           Bi-weekly Records Entry - {cage.name}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Enter sampling data for {cage.name}
+          Enter sampling data for {cage.name}. Each sampling row is saved as a
+          weight sample in Nsuo (active stock cycle required).
+        </p>
+        <p className="mt-1 text-sm text-amber-800">
+          {cycleLoading && 'Loading stock cycle…'}
+          {!cycleLoading &&
+            !activeCycleId &&
+            'No active stock cycle — saves are disabled until a cycle exists for this unit.'}
         </p>
       </div>
 
@@ -349,9 +405,9 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
         <div className="flex justify-end pt-6 border-t border-gray-200">
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || cycleLoading || !activeCycleId}
             className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white transition-colors ${
-              loading
+              loading || cycleLoading || !activeCycleId
                 ? 'bg-indigo-400 cursor-not-allowed'
                 : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
             }`}
