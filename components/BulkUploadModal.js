@@ -279,11 +279,14 @@ const BulkUploadModal = ({
           field: 'cage_code',
           message: `Cage code "${record.cage_code}" does not exist in the system`,
         })
-      } else if (cage.status !== 'active') {
+      } else if (
+        cage.status !== 'active' &&
+        cage.status !== 'ready_to_harvest'
+      ) {
         errors.push({
           row: rowNumber,
           field: 'cage_code',
-          message: `Cage "${record.cage_code}" is not active. Only active cages are allowed for data entry.`,
+          message: `Cage "${record.cage_code}" is not active. Only active (or harvest-ready) units can receive daily records.`,
         })
       }
     }
@@ -295,7 +298,10 @@ const BulkUploadModal = ({
       'cage_name' in record &&
       record.cage_name
     ) {
-      const cage = cages.find((cage) => cage.code === record.cage_code.trim())
+      const cage = cages.find(
+        (c) =>
+          c.code?.toLowerCase() === record.cage_code?.toLowerCase().trim(),
+      )
       if (
         cage &&
         cage.name.toLowerCase() !== record.cage_name.trim().toLowerCase()
@@ -307,7 +313,11 @@ const BulkUploadModal = ({
       }
     }
 
-    if ('feed_type' in record && record.feed_type) {
+    if (
+      'feed_type' in record &&
+      record.feed_type &&
+      feedTypes.length > 0
+    ) {
       const feedTypeExists = feedTypes.some(
         (ft) =>
           ft.name.toLowerCase().trim() ===
