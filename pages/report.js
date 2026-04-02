@@ -5,6 +5,7 @@ import { ArrowLeft, FileText, BarChart, Download, Printer } from 'lucide-react'
 import ProtectedRoute from '../components/ProtectedRoute'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { useUiStore } from '@/stores/ui.store'
 import { buildFarmReport } from '@/lib/farm-report-summary'
 
 export default function ReportsPage() {
@@ -16,6 +17,7 @@ export default function ReportsPage() {
 }
 
 function Reports() {
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [loading, setLoading] = useState(false)
   const [reportType, setReportType] = useState('production')
   const [dateRange, setDateRange] = useState({
@@ -29,31 +31,45 @@ function Reports() {
   const [reportData, setReportData] = useState(null)
   const [error, setError] = useState(null)
 
-  // Fetch available cages
   useEffect(() => {
+    setSelectedCages([])
+  }, [activeFarmId])
+
+  // Fetch units for the active farm (refetch when user switches farm)
+  useEffect(() => {
+    let cancelled = false
+
     async function fetchCages() {
       try {
-        const farmId = await resolveFarmIdForRedux()
+        const farmId = activeFarmId || (await resolveFarmIdForRedux())
+        if (cancelled) return
         if (!farmId) {
           throw new Error(
             'No farm selected. Choose a farm in the app or ensure you have farm access.',
           )
         }
         const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        if (cancelled) return
         const sorted = [...legacy].sort((a, b) =>
           a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
         )
         setCages(
           sorted.map((u) => ({ id: u.id, name: u.name, status: u.status })),
         )
-      } catch (error) {
-        console.error('Error fetching cages:', error.message)
-        setError(error.message)
+        setError(null)
+      } catch (err) {
+        if (cancelled) return
+        console.error('Error fetching cages:', err.message)
+        setError(err.message)
+        setCages([])
       }
     }
 
     fetchCages()
-  }, [])
+    return () => {
+      cancelled = true
+    }
+  }, [activeFarmId])
 
   const handleCageToggle = (cageId) => {
     if (selectedCages.includes(cageId)) {

@@ -34,6 +34,7 @@ import {
   enrichLegacyUnitsWithSummaries,
 } from '@/lib/cages-redux-api'
 import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
+import { useUiStore } from '@/stores/ui.store'
 import BiweeklyForm from './BiweeklyForm'
 import HarvestForm from './HarvestForm'
 import DailyEntryForm from './DailyEntryForm'
@@ -42,6 +43,7 @@ import DataTable from './DataTable'
 
 function Dashboard({ selectedCage }) {
   const router = useRouter()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [cages, setCages] = useState([])
   const [dailyRecords, setDailyRecords] = useState([])
   const [biweeklyRecords, setBiweeklyRecords] = useState([])
@@ -68,13 +70,16 @@ function Dashboard({ selectedCage }) {
   const [timeRange, setTimeRange] = useState('30d') // '7d', '30d', '90d', '1y'
   const [waterQualityData, setWaterQualityData] = useState([])
 
-  // Load units for active farm (same source as Cages / Redux)
+  // Load units + weather for the farm selected in the UI store (refetch on switch)
   useEffect(() => {
+    let cancelled = false
+
     async function fetchData() {
       setLoading(true)
       setError(null)
       try {
-        const farmId = await resolveFarmIdForRedux()
+        const farmId = activeFarmId || (await resolveFarmIdForRedux())
+        if (cancelled) return
         if (!farmId) {
           setCages([])
           setRecentStockings([])
@@ -82,10 +87,12 @@ function Dashboard({ selectedCage }) {
           return
         }
         let { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        if (cancelled) return
         legacy = await enrichLegacyUnitsWithSummaries(farmId, legacy, {
           maxUnits: 30,
           concurrency: 5,
         })
+        if (cancelled) return
         setCages(legacy)
         setRecentStockings([])
 
@@ -101,6 +108,7 @@ function Dashboard({ selectedCage }) {
               API.farms.weatherObservations(farmId),
               { params: { from, to, limit: 100, page } },
             )
+            if (cancelled) return
             const items = Array.isArray(raw) ? raw : raw?.items ?? []
             for (const o of items) {
               const ymd = String(o.observedDate ?? '').slice(0, 10)
@@ -127,24 +135,30 @@ function Dashboard({ selectedCage }) {
             if (items.length < 100) break
           }
           chartRows.sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-          setWaterQualityData(
-            chartRows.map(({ sortKey, ...row }) => row),
-          )
+          if (!cancelled) {
+            setWaterQualityData(
+              chartRows.map(({ sortKey, ...row }) => row),
+            )
+          }
         } catch {
-          setWaterQualityData([])
+          if (!cancelled) setWaterQualityData([])
         }
       } catch (error) {
+        if (cancelled) return
         console.error('Error fetching data:', error.message)
         setError(error.message)
         setCages([])
         setWaterQualityData([])
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchData()
-  }, [])
+    return () => {
+      cancelled = true
+    }
+  }, [activeFarmId])
 
   // Per-unit daily + weight samples for charts (cap parallel requests)
   useEffect(() => {

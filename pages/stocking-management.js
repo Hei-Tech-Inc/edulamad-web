@@ -1,5 +1,5 @@
 // pages/stocking-management.js
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -16,6 +16,7 @@ import {
   fetchLegacyStockManagementRowsForFarm,
   patchStockCycleEditableFields,
 } from '@/lib/farm-stock-management-rows'
+import { useUiStore } from '@/stores/ui.store'
 
 export default function StockingManagementPage() {
   return (
@@ -26,6 +27,7 @@ export default function StockingManagementPage() {
 }
 
 function StockingManagement() {
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [stockings, setStockings] = useState([])
   const [filteredStockings, setFilteredStockings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -49,18 +51,10 @@ function StockingManagement() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  useEffect(() => {
-    filterStockings()
-  }, [stockings, searchQuery, yearFilter, cageFilter, sortField, sortDirection])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const farmId = await resolveFarmIdForRedux()
+      const farmId = activeFarmId || (await resolveFarmIdForRedux())
       if (!farmId) {
         setStockings([])
         setUniqueCages([])
@@ -88,9 +82,9 @@ function StockingManagement() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeFarmId])
 
-  const filterStockings = () => {
+  const filterStockings = useCallback(() => {
     let result = [...stockings]
 
     // Apply search filter
@@ -149,7 +143,22 @@ function StockingManagement() {
     })
 
     setFilteredStockings(result)
-  }
+  }, [
+    stockings,
+    searchQuery,
+    yearFilter,
+    cageFilter,
+    sortField,
+    sortDirection,
+  ])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  useEffect(() => {
+    filterStockings()
+  }, [filterStockings])
 
   const handleSort = (field) => {
     const actualField = field === 'cage_name' ? 'cage_name' : field

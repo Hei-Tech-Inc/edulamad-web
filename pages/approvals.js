@@ -16,6 +16,7 @@ import {
   fetchPendingStockCycleApprovals,
   approveStockCycle,
 } from '@/lib/farm-cycle-approvals'
+import { useUiStore } from '@/stores/ui.store'
 import { useToast } from '../components/Toast'
 
 export default function ApprovalsPage() {
@@ -28,6 +29,7 @@ export default function ApprovalsPage() {
 
 function PendingApprovals() {
   const { showToast } = useToast()
+  const activeFarmId = useUiStore((s) => s.activeFarmId)
 
   const [loading, setLoading] = useState(true)
   const [approvals, setApprovals] = useState({
@@ -46,7 +48,7 @@ function PendingApprovals() {
     setLoading(true)
     setError('')
     try {
-      const farmId = await resolveFarmIdForRedux()
+      const farmId = activeFarmId || (await resolveFarmIdForRedux())
       if (!farmId) {
         throw new Error(
           'No farm selected. Choose a farm in the app or ensure you have farm access.',
@@ -62,7 +64,7 @@ function PendingApprovals() {
     } finally {
       setLoading(false)
     }
-  }, [showToast])
+  }, [showToast, activeFarmId])
 
   useEffect(() => {
     fetchPendingApprovals()
