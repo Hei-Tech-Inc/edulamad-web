@@ -31,22 +31,48 @@ function ActiveCages() {
     if (!cages || cages.length === 0) return []
 
     return cages
-      .filter(cage => cage.stocking_date)
-      .map(cage => {
-        const stockingDate = new Date(cage.stocking_date)
+      .map((cage) => {
+        const anchor = cage.stocking_date || cage.installation_date
         const today = new Date()
-        const doc = Math.floor((today - stockingDate) / (1000 * 60 * 60 * 24))
-        const growthRate = cage.initial_weight ? 
-          ((cage.current_weight - cage.initial_weight) / cage.initial_weight * 100).toFixed(1) : 0
+        const doc = anchor
+          ? Math.floor((today - new Date(anchor)) / (1000 * 60 * 60 * 24))
+          : 0
+        const growthRate =
+          cage.initial_weight != null &&
+          cage.current_weight != null &&
+          Number(cage.initial_weight) > 0
+            ? (
+                ((cage.current_weight - cage.initial_weight) /
+                  cage.initial_weight) *
+                100
+              ).toFixed(1)
+            : '—'
+
+        const g = parseFloat(growthRate)
+        const band =
+          Number.isNaN(g) || growthRate === '—'
+            ? 'Low Growth'
+            : g > 50
+              ? 'High Growth'
+              : g > 25
+                ? 'Medium Growth'
+                : 'Low Growth'
 
         return {
           ...cage,
           doc,
           growthRate,
-          status: growthRate > 50 ? 'High Growth' : growthRate > 25 ? 'Medium Growth' : 'Low Growth'
+          status: band,
         }
       })
-      .sort((a, b) => b.growthRate - a.growthRate)
+      .sort((a, b) => {
+        const ax = parseFloat(a.growthRate)
+        const bx = parseFloat(b.growthRate)
+        if (Number.isNaN(ax) && Number.isNaN(bx)) return 0
+        if (Number.isNaN(ax)) return 1
+        if (Number.isNaN(bx)) return -1
+        return bx - ax
+      })
   }, [cages])
 
   if (loading) {
@@ -136,17 +162,23 @@ function ActiveCages() {
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Initial Weight:</span>
-                  <span className="text-sm font-medium text-gray-900">{cage.initial_weight} g</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {cage.initial_weight != null ? `${cage.initial_weight}` : '—'}
+                  </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Current Weight:</span>
-                  <span className="text-sm font-medium text-gray-900">{cage.current_weight} g</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {cage.current_weight != null ? `${cage.current_weight}` : '—'}
+                  </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Growth Rate:</span>
-                  <span className="text-sm font-medium text-gray-900">{cage.growthRate}%</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {cage.growthRate === '—' ? '—' : `${cage.growthRate}%`}
+                  </span>
                 </div>
 
                 <div className="flex justify-between">
@@ -156,11 +188,17 @@ function ActiveCages() {
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Size:</span>
-                  <span className="text-sm font-medium text-gray-900">{cage.size} m³</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {cage.size != null
+                      ? `${cage.size} ${cage.sizeUnit === 'm2' ? 'm²' : 'm³'}`
+                      : '—'}
+                  </span>
                 </div>
 
                 <div className="mt-4">
-                  <Link href={`/cage/${cage.id}`}>
+                  <Link
+                    href={`/cages/${cage.id}?farmId=${encodeURIComponent(cage.farmId)}`}
+                  >
                     <button className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                       View Details
                     </button>

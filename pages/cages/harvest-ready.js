@@ -31,18 +31,30 @@ function HarvestReadyCages() {
     if (!cages || cages.length === 0) return []
 
     return cages
-      .filter(cage => cage.stocking_date)
-      .map(cage => {
-        const stockingDate = new Date(cage.stocking_date)
+      .map((cage) => {
+        const anchor = cage.stocking_date || cage.installation_date
         const today = new Date()
-        const doc = Math.floor((today - stockingDate) / (1000 * 60 * 60 * 24))
-        const daysToHarvest = Math.max(0, 120 - doc) // 120 days is the harvest threshold
+        const doc = anchor
+          ? Math.floor((today - new Date(anchor)) / (1000 * 60 * 60 * 24))
+          : 0
+        const daysToHarvest = anchor
+          ? Math.max(0, 120 - doc)
+          : cage.status === 'ready_to_harvest'
+            ? 0
+            : 120
+
+        const uiStatus =
+          cage.status === 'ready_to_harvest' || daysToHarvest <= 0
+            ? 'Ready'
+            : daysToHarvest <= 20
+              ? 'Soon'
+              : 'Growing'
 
         return {
           ...cage,
           doc,
           daysToHarvest,
-          status: daysToHarvest <= 0 ? 'Ready' : daysToHarvest <= 20 ? 'Soon' : 'Growing'
+          status: uiStatus,
         }
       })
       .sort((a, b) => a.daysToHarvest - b.daysToHarvest)
@@ -140,17 +152,23 @@ function HarvestReadyCages() {
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Initial Weight:</span>
-                  <span className="text-sm font-medium text-gray-900">{cage.initial_weight} g</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {cage.initial_weight != null ? `${cage.initial_weight} g` : '—'}
+                  </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Current Weight:</span>
-                  <span className="text-sm font-medium text-gray-900">{cage.current_weight} g</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {cage.current_weight != null ? `${cage.current_weight} g` : '—'}
+                  </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Growth Rate:</span>
-                  <span className="text-sm font-medium text-gray-900">{cage.growth_rate}%</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {cage.growth_rate != null ? `${cage.growth_rate}%` : '—'}
+                  </span>
                 </div>
 
                 {cage.status === 'Ready' && (
@@ -163,7 +181,9 @@ function HarvestReadyCages() {
                 )}
 
                 <div className="mt-4">
-                  <Link href={`/cage/${cage.id}`}>
+                  <Link
+                    href={`/cages/${cage.id}?farmId=${encodeURIComponent(cage.farmId)}`}
+                  >
                     <button className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                       View Details
                     </button>

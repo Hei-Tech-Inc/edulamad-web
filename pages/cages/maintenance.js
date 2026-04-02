@@ -31,21 +31,42 @@ function MaintenanceCages() {
     if (!cages || cages.length === 0) return []
 
     return cages
-      .filter(cage => cage.last_maintenance_date)
-      .map(cage => {
-        const lastMaintenance = new Date(cage.last_maintenance_date)
+      .map((cage) => {
+        const last = cage.last_maintenance_date
+          ? new Date(cage.last_maintenance_date)
+          : null
         const today = new Date()
-        const daysSinceMaintenance = Math.floor((today - lastMaintenance) / (1000 * 60 * 60 * 24))
-        const maintenanceDue = Math.max(0, 30 - daysSinceMaintenance) // 30 days maintenance interval
+        const daysSinceMaintenance = last
+          ? Math.floor((today - last) / (1000 * 60 * 60 * 24))
+          : null
+        const maintenanceDue =
+          daysSinceMaintenance != null
+            ? Math.max(0, 30 - daysSinceMaintenance)
+            : null
+
+        const status =
+          cage.status === 'maintenance' && daysSinceMaintenance == null
+            ? 'In maintenance'
+            : maintenanceDue != null && maintenanceDue <= 0
+              ? 'Overdue'
+              : maintenanceDue != null && maintenanceDue <= 7
+                ? 'Due Soon'
+                : maintenanceDue != null
+                  ? 'Maintained'
+                  : 'In maintenance'
 
         return {
           ...cage,
-          daysSinceMaintenance,
-          maintenanceDue,
-          status: maintenanceDue <= 0 ? 'Overdue' : maintenanceDue <= 7 ? 'Due Soon' : 'Maintained'
+          daysSinceMaintenance: daysSinceMaintenance ?? '—',
+          maintenanceDue: maintenanceDue ?? '—',
+          status,
         }
       })
-      .sort((a, b) => a.maintenanceDue - b.maintenanceDue)
+      .sort((a, b) => {
+        const ax = typeof a.maintenanceDue === 'number' ? a.maintenanceDue : 999
+        const bx = typeof b.maintenanceDue === 'number' ? b.maintenanceDue : 999
+        return ax - bx
+      })
   }, [cages])
 
   if (loading) {
@@ -121,6 +142,7 @@ function MaintenanceCages() {
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                   cage.status === 'Overdue' ? 'bg-red-100 text-red-800' :
                   cage.status === 'Due Soon' ? 'bg-yellow-100 text-yellow-800' :
+                  cage.status === 'In maintenance' ? 'bg-amber-100 text-amber-800' :
                   'bg-green-100 text-green-800'
                 }`}>
                   {cage.status}
@@ -131,7 +153,9 @@ function MaintenanceCages() {
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Last Maintenance:</span>
                   <span className="text-sm font-medium text-gray-900">
-                    {new Date(cage.last_maintenance_date).toLocaleDateString()}
+                    {cage.last_maintenance_date
+                      ? new Date(cage.last_maintenance_date).toLocaleDateString()
+                      : '—'}
                   </span>
                 </div>
 
@@ -152,7 +176,11 @@ function MaintenanceCages() {
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Size:</span>
-                  <span className="text-sm font-medium text-gray-900">{cage.size} m³</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {cage.size != null
+                      ? `${cage.size} ${cage.sizeUnit === 'm2' ? 'm²' : 'm³'}`
+                      : '—'}
+                  </span>
                 </div>
 
                 {cage.status === 'Overdue' && (
@@ -165,7 +193,9 @@ function MaintenanceCages() {
                 )}
 
                 <div className="mt-4">
-                  <Link href={`/cage/${cage.id}`}>
+                  <Link
+                    href={`/cages/${cage.id}?farmId=${encodeURIComponent(cage.farmId)}`}
+                  >
                     <button className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                       View Details
                     </button>

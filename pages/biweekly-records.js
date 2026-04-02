@@ -3,7 +3,9 @@ import { format } from 'date-fns'
 import Link from 'next/link'
 import ProtectedRoute from '../components/ProtectedRoute'
 import Layout from '../components/Layout'
-import { biweeklyRecordService, cageService } from '../lib/databaseService'
+import { biweeklyRecordService } from '../lib/databaseService'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 import {
   Search,
   Filter,
@@ -50,9 +52,13 @@ export default function BiweeklyRecords() {
       setLoading(true)
       setError(null)
 
-      // Fetch cages for filter
-      const { data: cagesData } = await cageService.getAllCages()
-      setCages(cagesData || [])
+      const farmId = await resolveFarmIdForRedux()
+      if (farmId) {
+        const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        setCages(legacy)
+      } else {
+        setCages([])
+      }
 
       // Fetch biweekly records with pagination
       const { data, error, totalCount: count, totalPages: pages } = 

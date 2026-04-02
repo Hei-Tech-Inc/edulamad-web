@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { ArrowLeft, Eye, CheckCircle, AlertTriangle, Info, Fish, Scale, Calendar, Calculator, BarChart3 } from 'lucide-react'
-import { cageService } from '../lib/databaseService'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 
 const SIZE_CATEGORIES = [
   { category: 'S3', range: '800g above', color: 'bg-purple-100 text-purple-800' },
@@ -32,21 +33,35 @@ export default function HarvestSampling() {
   const [sizeSumWarning, setSizeSumWarning] = useState('')
 
   useEffect(() => {
-    async function fetchCages() {
+    async function loadCages() {
       setLoading(true)
-      const { data, error } = await cageService.getActiveCages()
-      setCages(data || [])
-      setLoading(false)
+      try {
+        const farmId = await resolveFarmIdForRedux()
+        if (!farmId) {
+          setCages([])
+        } else {
+          const { legacy } = await fetchLegacyUnitsForFarm(farmId, {
+            limit: 500,
+            status: 'active',
+          })
+          setCages(legacy)
+        }
+      } catch {
+        setCages([])
+      } finally {
+        setLoading(false)
+      }
     }
-    fetchCages()
+    loadCages()
   }, [])
 
   // Calculate DOC and ABW
   useEffect(() => {
     if (form.cageId && form.date) {
       const cage = cages.find(c => c.id === form.cageId)
-      if (cage && cage.stocking_date) {
-        const stockingDate = new Date(cage.stocking_date)
+      const anchor = cage?.stocking_date || cage?.installation_date
+      if (cage && anchor) {
+        const stockingDate = new Date(anchor)
         const sampleDate = new Date(form.date)
         const days = Math.floor((sampleDate - stockingDate) / (1000 * 60 * 60 * 24))
         setDoc(days >= 0 ? days : '')

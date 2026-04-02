@@ -1,98 +1,115 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { createSelector } from '@reduxjs/toolkit'
-import cageService from '../../lib/cageService'
+import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 
-// Async thunks
+// Async thunks — farm-scoped units via Nsuo API (uses UI active farm or first listed farm)
 export const fetchCages = createAsyncThunk(
   'cages/fetchCages',
   async ({ page = 1, pageSize = 50 }, { rejectWithValue }) => {
     try {
-      const response = await cageService.getAllCages(page, pageSize)
-      if (response.error) throw response.error
-      return response
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        return rejectWithValue(
+          'No farms available. Create a farm first, then open Units.',
+        )
+      }
+      const { legacy, total, pages } = await fetchLegacyUnitsForFarm(farmId, {
+        page,
+        limit: pageSize,
+      })
+      const totalPages =
+        pages > 0 ? pages : Math.max(1, Math.ceil(total / pageSize) || 1)
+      return {
+        data: legacy,
+        totalCount: total,
+        totalPages,
+      }
     } catch (error) {
-      return rejectWithValue(error.message)
+      return rejectWithValue(error?.message ?? 'Failed to load units')
     }
-  }
+  },
 )
 
 export const fetchActiveCages = createAsyncThunk(
   'cages/fetchActiveCages',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await cageService.getActiveCages()
-      if (response.error) throw response.error
-      return response.data
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        return rejectWithValue(
+          'No active farm. Open the main Units list to select a farm.',
+        )
+      }
+      const { legacy } = await fetchLegacyUnitsForFarm(farmId, {
+        limit: 500,
+        status: 'active',
+      })
+      return legacy
     } catch (error) {
-      return rejectWithValue(error.message)
+      return rejectWithValue(error?.message ?? 'Failed to load active units')
     }
-  }
+  },
 )
 
 export const fetchHarvestReadyCages = createAsyncThunk(
   'cages/fetchHarvestReadyCages',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await cageService.getActiveCages()
-      if (response.error) throw response.error
-      // Filter cages that are ready for harvest based on growth metrics
-      const harvestReadyCages = response.data.filter(cage => {
-        const daysOfCulture = cage.stocking_date ? 
-          Math.floor((new Date() - new Date(cage.stocking_date)) / (1000 * 60 * 60 * 24)) : 0
-        return daysOfCulture >= 180 && cage.growth_rate >= 80 // Example criteria
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        return rejectWithValue(
+          'No active farm. Open the main Units list to select a farm.',
+        )
+      }
+      const { legacy } = await fetchLegacyUnitsForFarm(farmId, {
+        limit: 500,
+        status: 'harvesting',
       })
-      return harvestReadyCages
+      return legacy
     } catch (error) {
-      return rejectWithValue(error.message)
+      return rejectWithValue(
+        error?.message ?? 'Failed to load harvest-ready units',
+      )
     }
-  }
+  },
 )
 
 export const fetchMaintenanceCages = createAsyncThunk(
   'cages/fetchMaintenanceCages',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await cageService.getActiveCages()
-      if (response.error) throw response.error
-      // Filter cages that need maintenance
-      const maintenanceCages = response.data.filter(cage => {
-        if (!cage.last_maintenance_date) return true
-        const daysSinceMaintenance = Math.floor(
-          (new Date() - new Date(cage.last_maintenance_date)) / (1000 * 60 * 60 * 24)
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        return rejectWithValue(
+          'No active farm. Open the main Units list to select a farm.',
         )
-        return daysSinceMaintenance >= 30 // Example: maintenance needed every 30 days
+      }
+      const { legacy } = await fetchLegacyUnitsForFarm(farmId, {
+        limit: 500,
+        status: 'maintenance',
       })
-      return maintenanceCages
+      return legacy
     } catch (error) {
-      return rejectWithValue(error.message)
+      return rejectWithValue(
+        error?.message ?? 'Failed to load maintenance units',
+      )
     }
-  }
+  },
 )
 
+/** @deprecated No Supabase metrics path; use Nsuo APIs. Kept for legacy imports. */
 export const updateCageMetrics = createAsyncThunk(
   'cages/updateCageMetrics',
-  async ({ cageId, metrics }, { rejectWithValue }) => {
-    try {
-      const response = await cageService.updateCageMetrics(cageId, metrics)
-      if (response.error) throw response.error
-      return response.data
-    } catch (error) {
-      return rejectWithValue(error.message)
-    }
-  }
+  async (_args, { rejectWithValue }) =>
+    rejectWithValue('Metric updates are handled by the Nsuo backend.'),
 )
 
+/** @deprecated No Supabase metrics path; use Nsuo APIs. Kept for legacy imports. */
 export const calculateGrowthMetrics = createAsyncThunk(
   'cages/calculateGrowthMetrics',
-  async (cageId, { rejectWithValue }) => {
-    try {
-      const response = await cageService.calculateGrowthMetrics(cageId)
-      if (response.error) throw response.error
-      return response.data
-    } catch (error) {
-      return rejectWithValue(error.message)
-    }
-  }
+  async (_cageId, { rejectWithValue }) =>
+    rejectWithValue('Growth metrics are computed by the Nsuo backend.'),
 )
 
 const initialState = {
@@ -138,6 +155,7 @@ const cagesSlice = createSlice({
         state.cages = action.payload.data
         state.totalPages = action.payload.totalPages
         state.totalCount = action.payload.totalCount
+        state.analytics.totalCages = action.payload.totalCount
         state.error = null
       })
       .addCase(fetchCages.rejected, (state, action) => {
@@ -188,50 +206,6 @@ const cagesSlice = createSlice({
       .addCase(fetchMaintenanceCages.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
-      })
-      // Update cage metrics
-      .addCase(updateCageMetrics.fulfilled, (state, action) => {
-        const updatedCage = action.payload
-        // Update in all relevant arrays
-        state.cages = state.cages.map(cage => 
-          cage.id === updatedCage.id ? updatedCage : cage
-        )
-        state.activeCages = state.activeCages.map(cage => 
-          cage.id === updatedCage.id ? updatedCage : cage
-        )
-        state.harvestReadyCages = state.harvestReadyCages.map(cage => 
-          cage.id === updatedCage.id ? updatedCage : cage
-        )
-        state.maintenanceCages = state.maintenanceCages.map(cage => 
-          cage.id === updatedCage.id ? updatedCage : cage
-        )
-      })
-      // Calculate growth metrics
-      .addCase(calculateGrowthMetrics.fulfilled, (state, action) => {
-        const updatedCage = action.payload
-        // Update in all relevant arrays
-        state.cages = state.cages.map(cage => 
-          cage.id === updatedCage.id ? updatedCage : cage
-        )
-        state.activeCages = state.activeCages.map(cage => 
-          cage.id === updatedCage.id ? updatedCage : cage
-        )
-        state.harvestReadyCages = state.harvestReadyCages.map(cage => 
-          cage.id === updatedCage.id ? updatedCage : cage
-        )
-        state.maintenanceCages = state.maintenanceCages.map(cage => 
-          cage.id === updatedCage.id ? updatedCage : cage
-        )
-        // Update analytics
-        const activeCages = state.activeCages
-        if (activeCages.length > 0) {
-          state.analytics.averageGrowthRate = activeCages.reduce(
-            (sum, cage) => sum + (parseFloat(cage.growth_rate) || 0), 0
-          ) / activeCages.length
-          state.analytics.averageMortalityRate = activeCages.reduce(
-            (sum, cage) => sum + (parseFloat(cage.mortality_rate) || 0), 0
-          ) / activeCages.length
-        }
       })
   }
 })

@@ -4,7 +4,8 @@ import ProtectedRoute from '../../components/ProtectedRoute'
 import Layout from '../../components/Layout'
 import CageManagementSidebar from '../../components/CageManagementSidebar'
 import { fetchCages } from '../../store/slices/cagesSlice'
-import { cageService } from '../../lib/databaseService'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
 import {
   Settings as SettingsIcon,
   AlertTriangle,
@@ -47,12 +48,52 @@ export default function CageSettingsPage() {
     setEditMode(true)
   }
 
+  const buildUnitPatch = () => {
+    let gpsLatitude
+    let gpsLongitude
+    const loc = formData.location?.trim()
+    if (loc) {
+      const parts = loc.split(',').map((s) => s.trim())
+      if (parts.length === 2) {
+        const a = parseFloat(parts[0])
+        const b = parseFloat(parts[1])
+        if (!Number.isNaN(a) && !Number.isNaN(b)) {
+          gpsLatitude = a
+          gpsLongitude = b
+        }
+      }
+    }
+    const extras = [
+      formData.capacity && `Capacity (fish): ${formData.capacity}`,
+      formData.material && `Material: ${formData.material}`,
+    ].filter(Boolean)
+    const notes = [formData.notes?.trim(), ...extras].filter(Boolean).join('\n')
+
+    const body = {
+      name: formData.name.trim(),
+      notes: notes || undefined,
+    }
+    if (formData.size !== '' && formData.size != null) {
+      const n = parseFloat(formData.size)
+      if (!Number.isNaN(n)) body.areaM2 = n
+    }
+    if (gpsLatitude != null && gpsLongitude != null) {
+      body.gpsLatitude = gpsLatitude
+      body.gpsLongitude = gpsLongitude
+    }
+    return body
+  }
+
   const handleSaveChanges = async () => {
     try {
-      const { error } = await cageService.updateCage(selectedCage.id, formData)
-      if (error) throw error
+      const farmId = selectedCage.farmId
+      if (!farmId) throw new Error('Missing farm for this unit.')
+      await apiClient.patch(
+        API.farms.unit(farmId, selectedCage.id),
+        buildUnitPatch(),
+      )
 
-      setMessage({ type: 'success', text: 'Cage updated successfully' })
+      setMessage({ type: 'success', text: 'Unit updated successfully' })
       setEditMode(false)
       dispatch(fetchCages())
     } catch (error) {
@@ -62,10 +103,11 @@ export default function CageSettingsPage() {
 
   const handleDeleteCage = async () => {
     try {
-      const { error } = await cageService.deleteCage(selectedCage.id)
-      if (error) throw error
+      const farmId = selectedCage.farmId
+      if (!farmId) throw new Error('Missing farm for this unit.')
+      await apiClient.delete(API.farms.unit(farmId, selectedCage.id))
 
-      setMessage({ type: 'success', text: 'Cage deleted successfully' })
+      setMessage({ type: 'success', text: 'Unit deleted successfully' })
       setShowDeleteConfirm(false)
       setSelectedCage(null)
       dispatch(fetchCages())
@@ -210,7 +252,7 @@ export default function CageSettingsPage() {
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700">
-                            Size (m³)
+                            Area (m²)
                           </label>
                           <input
                             type="number"
