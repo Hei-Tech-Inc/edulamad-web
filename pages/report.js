@@ -1,11 +1,11 @@
 // pages/reports.js
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { ArrowLeft, FileText, BarChart, Download, Printer } from 'lucide-react'
 import ProtectedRoute from '../components/ProtectedRoute'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { buildFarmReport } from '@/lib/farm-report-summary'
 
 export default function ReportsPage() {
   return (
@@ -16,7 +16,6 @@ export default function ReportsPage() {
 }
 
 function Reports() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [reportType, setReportType] = useState('production')
   const [dateRange, setDateRange] = useState({
@@ -85,7 +84,6 @@ function Reports() {
     setReportData(null)
 
     try {
-      // Validate inputs
       if (selectedCages.length === 0) {
         throw new Error('Please select at least one cage')
       }
@@ -94,38 +92,28 @@ function Reports() {
         throw new Error('Please select a date range')
       }
 
-      // Example API call to get report data
-      // In a real app, you would create a dedicated API endpoint for each report type
+      await resolveFarmIdForRedux()
 
-      // Simulating report data for now
-      setTimeout(() => {
-        const dummyReportData = {
-          reportType,
-          dateRange,
-          selectedCages,
-          generatedAt: new Date().toISOString(),
-          data: {
-            totalFeed: 1250.5,
-            totalMortality: 125,
-            averageFCR: 1.45,
-            growthRate: 3.2,
-            biomassGain: 1500,
-          },
-        }
+      const unitNameById = Object.fromEntries(
+        cages.map((c) => [c.id, c.name]),
+      )
 
-        setReportData(dummyReportData)
-        setLoading(false)
-      }, 1500)
+      const payload = await buildFarmReport({
+        unitIds: selectedCages,
+        unitNameById,
+        dateRange,
+        reportType,
+      })
+      setReportData(payload)
     } catch (error) {
       console.error('Error generating report:', error.message)
       setError(error.message)
+    } finally {
       setLoading(false)
     }
   }
 
   const downloadReport = () => {
-    // In a real app, you would implement proper PDF/Excel generation
-    // This is just a placeholder
     if (!reportData) return
 
     const jsonString = JSON.stringify(reportData, null, 2)
@@ -392,157 +380,208 @@ function Reports() {
                     </div>
 
                     {/* Report Content - customize based on report type */}
-                    {reportType === 'production' && (
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          <div className="bg-blue-50 p-4 rounded-lg">
-                            <p className="text-sm font-medium text-gray-500">
-                              Total Feed Used
-                            </p>
-                            <p className="text-3xl font-semibold text-blue-600 mt-2">
-                              {reportData.data.totalFeed} kg
-                            </p>
-                          </div>
-                          <div className="bg-green-50 p-4 rounded-lg">
-                            <p className="text-sm font-medium text-gray-500">
-                              Average FCR
-                            </p>
-                            <p className="text-3xl font-semibold text-green-600 mt-2">
-                              {reportData.data.averageFCR}
-                            </p>
-                          </div>
-                          <div className="bg-purple-50 p-4 rounded-lg">
-                            <p className="text-sm font-medium text-gray-500">
-                              Biomass Gain
-                            </p>
-                            <p className="text-3xl font-semibold text-purple-600 mt-2">
-                              {reportData.data.biomassGain} kg
-                            </p>
-                          </div>
+                    <div className="space-y-6">
+                      <p className="text-sm text-gray-600">
+                        Figures are aggregated from Nsuo daily records, weight
+                        samples, and harvests in the selected date range.
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-gray-500">
+                            Total feed (daily records)
+                          </p>
+                          <p className="text-3xl font-semibold text-blue-600 mt-2">
+                            {reportData.data.totalFeedKg.toFixed(1)} kg
+                          </p>
                         </div>
+                        <div className="bg-rose-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-gray-500">
+                            Total mortality
+                          </p>
+                          <p className="text-3xl font-semibold text-rose-600 mt-2">
+                            {reportData.data.totalMortality}
+                          </p>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-lg">
+                          <p className="text-sm font-medium text-gray-500">
+                            Mean FCR (harvests)
+                          </p>
+                          <p className="text-3xl font-semibold text-green-600 mt-2">
+                            {reportData.data.meanFcr != null
+                              ? reportData.data.meanFcr.toFixed(2)
+                              : '—'}
+                          </p>
+                        </div>
+                      </div>
 
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                            Production Details
-                          </h3>
-                          <table className="min-w-full divide-y divide-gray-200">
+                      {reportType === 'feed' && (
+                        <div className="bg-amber-50 border border-amber-100 rounded-lg p-4">
+                          <p className="text-sm font-medium text-amber-900">
+                            Feed focus: total{' '}
+                            <strong>
+                              {reportData.data.totalFeedKg.toFixed(1)} kg
+                            </strong>{' '}
+                            recorded across{' '}
+                            <strong>{reportData.data.dailyRecordCount}</strong>{' '}
+                            daily rows.
+                          </p>
+                        </div>
+                      )}
+
+                      {reportType === 'growth' && (
+                        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 text-sm text-indigo-950">
+                          <p>
+                            Weight samples:{' '}
+                            <strong>{reportData.data.weightSampleCount}</strong>.
+                            ABW min / max:{' '}
+                            <strong>
+                              {reportData.data.sampleAbwMinG != null
+                                ? reportData.data.sampleAbwMinG.toFixed(1)
+                                : '—'}
+                            </strong>{' '}
+                            /{' '}
+                            <strong>
+                              {reportData.data.sampleAbwMaxG != null
+                                ? reportData.data.sampleAbwMaxG.toFixed(1)
+                                : '—'}
+                            </strong>{' '}
+                            g · Range:{' '}
+                            <strong>
+                              {reportData.data.abwRangeG != null
+                                ? reportData.data.abwRangeG.toFixed(1)
+                                : '—'}
+                            </strong>{' '}
+                            g
+                          </p>
+                        </div>
+                      )}
+
+                      {reportType === 'mortality' && (
+                        <div className="bg-red-50 border border-red-100 rounded-lg p-4 text-sm text-red-900">
+                          Mortality total:{' '}
+                          <strong>{reportData.data.totalMortality}</strong> fish
+                          (sum of{' '}
+                          <code className="text-xs">mortalityCount</code> on
+                          daily records).
+                        </div>
+                      )}
+
+                      {reportType === 'financial' && (
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-800">
+                          Feed cost (GHS) from daily records:{' '}
+                          <strong>
+                            {reportData.data.totalFeedCostGhs.toFixed(2)}
+                          </strong>
+                          . Harvest weight total:{' '}
+                          <strong>
+                            {reportData.data.totalHarvestWeightKg.toFixed(1)} kg
+                          </strong>
+                          .
+                        </div>
+                      )}
+
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                          Summary metrics
+                        </h3>
+                        <table className="min-w-full divide-y divide-gray-200 text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-gray-600">
+                                Metric
+                              </th>
+                              <th className="px-4 py-2 text-left text-gray-600">
+                                Value
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            <tr>
+                              <td className="px-4 py-2">Daily record rows</td>
+                              <td className="px-4 py-2">
+                                {reportData.data.dailyRecordCount}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-2">Weight samples</td>
+                              <td className="px-4 py-2">
+                                {reportData.data.weightSampleCount}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-2">Harvest events</td>
+                              <td className="px-4 py-2">
+                                {reportData.data.harvestCount}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-2">
+                                Harvest weight total (kg)
+                              </td>
+                              <td className="px-4 py-2">
+                                {reportData.data.totalHarvestWeightKg.toFixed(
+                                  2,
+                                )}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                          By unit
+                        </h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200 text-sm">
                             <thead className="bg-gray-50">
                               <tr>
-                                <th
-                                  scope="col"
-                                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                  Metric
+                                <th className="px-3 py-2 text-left">Unit</th>
+                                <th className="px-3 py-2 text-right">Feed kg</th>
+                                <th className="px-3 py-2 text-right">
+                                  Mortality
                                 </th>
-                                <th
-                                  scope="col"
-                                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                  Value
+                                <th className="px-3 py-2 text-right">Daily</th>
+                                <th className="px-3 py-2 text-right">Samples</th>
+                                <th className="px-3 py-2 text-right">
+                                  Harvests
+                                </th>
+                                <th className="px-3 py-2 text-right">
+                                  Hv. kg
                                 </th>
                               </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              <tr>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  Total Feed Used
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {reportData.data.totalFeed} kg
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  Total Mortality
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {reportData.data.totalMortality} fish
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  Average FCR
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {reportData.data.averageFCR}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  Growth Rate
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {reportData.data.growthRate} g/day
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  Biomass Gain
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {reportData.data.biomassGain} kg
-                                </td>
-                              </tr>
+                            <tbody className="divide-y divide-gray-200">
+                              {reportData.byUnit.map((u) => (
+                                <tr key={u.unitId}>
+                                  <td className="px-3 py-2 font-medium text-gray-900">
+                                    {u.unitName}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums">
+                                    {u.feedKg.toFixed(1)}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums">
+                                    {u.mortality}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums">
+                                    {u.dailyRows}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums">
+                                    {u.samples}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums">
+                                    {u.harvests}
+                                  </td>
+                                  <td className="px-3 py-2 text-right tabular-nums">
+                                    {u.harvestWeightKg.toFixed(1)}
+                                  </td>
+                                </tr>
+                              ))}
                             </tbody>
                           </table>
                         </div>
-
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                            Selected Cages
-                          </h3>
-                          <div className="bg-gray-50 p-4 rounded-md">
-                            <ul className="list-disc list-inside">
-                              {cages
-                                .filter((cage) =>
-                                  selectedCages.includes(cage.id),
-                                )
-                                .map((cage) => (
-                                  <li
-                                    key={cage.id}
-                                    className="text-sm text-gray-700"
-                                  >
-                                    {cage.name}
-                                  </li>
-                                ))}
-                            </ul>
-                          </div>
-                        </div>
                       </div>
-                    )}
-
-                    {/* Other report types would have their own specialized content */}
-                    {reportType === 'feed' && (
-                      <div className="text-center p-12">
-                        <p className="text-lg text-gray-500">
-                          Feed usage report preview goes here
-                        </p>
-                      </div>
-                    )}
-
-                    {reportType === 'growth' && (
-                      <div className="text-center p-12">
-                        <p className="text-lg text-gray-500">
-                          Growth performance report preview goes here
-                        </p>
-                      </div>
-                    )}
-
-                    {reportType === 'mortality' && (
-                      <div className="text-center p-12">
-                        <p className="text-lg text-gray-500">
-                          Mortality analysis report preview goes here
-                        </p>
-                      </div>
-                    )}
-
-                    {reportType === 'financial' && (
-                      <div className="text-center p-12">
-                        <p className="text-lg text-gray-500">
-                          Financial summary report preview goes here
-                        </p>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
