@@ -1,57 +1,34 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { supabase } from '../../lib/supabase'
 
-// Fetch all feed types
+const UNAVAILABLE =
+  'Feed supplier/type catalog is not connected to Nsuo in this app. Daily records use free-text feed type.'
+
 export const fetchFeedTypes = createAsyncThunk(
   'feed/fetchFeedTypes',
   async () => {
-    const { data, error } = await supabase
-      .from('feed_types')
-      .select('*')
-      .order('name', { ascending: true })
-    if (error) throw error
-    return data
-  }
+    return []
+  },
 )
 
-// Create a new feed type
 export const createFeedType = createAsyncThunk(
   'feed/createFeedType',
-  async (feedType) => {
-    const { data, error } = await supabase
-      .from('feed_types')
-      .insert([feedType])
-      .single()
-    if (error) throw error
-    return data
-  }
+  async () => {
+    throw new Error(UNAVAILABLE)
+  },
 )
 
-// Update a feed type
 export const updateFeedType = createAsyncThunk(
   'feed/updateFeedType',
-  async ({ id, updates }) => {
-    const { data, error } = await supabase
-      .from('feed_types')
-      .update(updates)
-      .eq('id', id)
-      .single()
-    if (error) throw error
-    return data
-  }
+  async () => {
+    throw new Error(UNAVAILABLE)
+  },
 )
 
-// Delete a feed type
 export const deleteFeedType = createAsyncThunk(
   'feed/deleteFeedType',
-  async (id) => {
-    const { error } = await supabase
-      .from('feed_types')
-      .delete()
-      .eq('id', id)
-    if (error) throw error
-    return id
-  }
+  async () => {
+    throw new Error(UNAVAILABLE)
+  },
 )
 
 const initialState = {
@@ -83,18 +60,8 @@ const feedSlice = createSlice({
         state.loading = false
         state.error = action.error.message
       })
-      .addCase(createFeedType.fulfilled, (state, action) => {
-        state.feedTypes.push(action.payload)
-      })
-      .addCase(updateFeedType.fulfilled, (state, action) => {
-        const idx = state.feedTypes.findIndex(f => f.id === action.payload.id)
-        if (idx !== -1) state.feedTypes[idx] = action.payload
-      })
-      .addCase(deleteFeedType.fulfilled, (state, action) => {
-        state.feedTypes = state.feedTypes.filter(f => f.id !== action.payload)
-      })
   },
 })
 
 export const { clearFeedError, resetFeedState } = feedSlice.actions
-export default feedSlice.reducer 
+export default feedSlice.reducer
