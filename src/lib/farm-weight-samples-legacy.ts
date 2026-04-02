@@ -28,8 +28,11 @@ function sampleDateToYmd(sampledAt: string | undefined): string {
   return raw.split('T')[0] ?? '';
 }
 
+/** Minimum unit fields for labeling legacy rows (full `LegacyCageRow` is OK too). */
+export type LegacyUnitRef = Pick<LegacyCageRow, 'id' | 'name'>;
+
 function mapWeightSampleToLegacyRow(
-  unit: LegacyCageRow,
+  unit: LegacyUnitRef,
   w: Record<string, unknown>,
 ): LegacyBiweeklyRecordRow {
   const id = String(w.id ?? '');
@@ -113,4 +116,21 @@ export async function fetchLegacyBiweeklyRowsForFarm(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
   return flat;
+}
+
+/** Weight samples for one unit as legacy biweekly rows (newest first). */
+export async function fetchLegacyBiweeklyRowsForUnit(
+  unit: LegacyUnitRef,
+  options?: { samplesLimit?: number },
+): Promise<LegacyBiweeklyRecordRow[]> {
+  const limit = options?.samplesLimit ?? 200;
+  const { data } = await apiClient.get(API.units.weightSamples(unit.id), {
+    params: { limit, page: 1 },
+  });
+  const rows = normalizeWeightSampleList(data);
+  const mapped = rows.map((w) => mapWeightSampleToLegacyRow(unit, w));
+  mapped.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+  return mapped;
 }

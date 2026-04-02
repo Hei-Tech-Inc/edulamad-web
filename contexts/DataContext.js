@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
-import { cageService, stockingService, dailyRecordService, biweeklyRecordService } from '../lib/databaseService'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
+import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
+import { fetchLegacyBiweeklyRowsForUnit } from '@/lib/farm-weight-samples-legacy'
 
 const DataContext = createContext()
 
@@ -13,43 +18,54 @@ export function DataProvider({ children }) {
 
   const refreshCages = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
-      const { data, error } = await cageService.getAllCages()
-      if (error) throw error
-      setCages(data)
-      return data
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        setCages([])
+        return []
+      }
+      const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+      setCages(legacy)
+      return legacy
     } catch (err) {
-      setError(err.message)
+      const msg = err?.message || String(err)
+      setError(msg)
       throw err
     } finally {
       setLoading(false)
     }
   }, [])
 
+  /** Stocking batches not yet backed by Nsuo in this app — keep empty for compatibility. */
   const refreshStockings = useCallback(async () => {
-    setLoading(true)
-    try {
-      const { data, error } = await stockingService.getAllStockings()
-      if (error) throw error
-      setStockings(data)
-      return data
-    } catch (err) {
-      setError(err.message)
-      throw err
-    } finally {
-      setLoading(false)
-    }
+    setStockings([])
+    return []
   }, [])
 
   const refreshDailyRecords = useCallback(async (cageId) => {
+    if (!cageId) {
+      setDailyRecords([])
+      return []
+    }
     setLoading(true)
+    setError(null)
     try {
-      const { data, error } = await dailyRecordService.getDailyRecords(cageId)
-      if (error) throw error
-      setDailyRecords(data)
-      return data
+      const { data: raw } = await apiClient.get(API.units.dailyRecords(cageId), {
+        params: { limit: 200 },
+      })
+      const normalized = normalizeDailyRecordList(raw).map((r) => ({
+        ...r,
+        cage_id: cageId,
+        feed_amount: r.feedQuantityKg,
+        feed_type: r.feedType,
+        mortality: r.mortalityCount,
+      }))
+      setDailyRecords(normalized)
+      return normalized
     } catch (err) {
-      setError(err.message)
+      const msg = err?.message || String(err)
+      setError(msg)
       throw err
     } finally {
       setLoading(false)
@@ -57,14 +73,28 @@ export function DataProvider({ children }) {
   }, [])
 
   const refreshBiweeklyRecords = useCallback(async (cageId) => {
+    if (!cageId) {
+      setBiweeklyRecords([])
+      return []
+    }
     setLoading(true)
+    setError(null)
     try {
-      const { data, error } = await biweeklyRecordService.getBiweeklyRecords(cageId)
-      if (error) throw error
-      setBiweeklyRecords(data)
-      return data
+      let unitRef = { id: cageId, name: cageId.slice(0, 8) }
+      const farmId = await resolveFarmIdForRedux()
+      if (farmId) {
+        const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
+        const found = legacy.find((c) => c.id === cageId)
+        if (found) unitRef = { id: found.id, name: found.name }
+      }
+      const rows = await fetchLegacyBiweeklyRowsForUnit(unitRef, {
+        samplesLimit: 200,
+      })
+      setBiweeklyRecords(rows)
+      return rows
     } catch (err) {
-      setError(err.message)
+      const msg = err?.message || String(err)
+      setError(msg)
       throw err
     } finally {
       setLoading(false)
@@ -73,13 +103,12 @@ export function DataProvider({ children }) {
 
   const refreshAll = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
-      await Promise.all([
-        refreshCages(),
-        refreshStockings()
-      ])
+      await Promise.all([refreshCages(), refreshStockings()])
     } catch (err) {
-      setError(err.message)
+      const msg = err?.message || String(err)
+      setError(msg)
       throw err
     } finally {
       setLoading(false)
@@ -97,13 +126,11 @@ export function DataProvider({ children }) {
     refreshStockings,
     refreshDailyRecords,
     refreshBiweeklyRecords,
-    refreshAll
+    refreshAll,
   }
 
   return (
-    <DataContext.Provider value={value}>
-      {children}
-    </DataContext.Provider>
+    <DataContext.Provider value={value}>{children}</DataContext.Provider>
   )
 }
 
@@ -113,4 +140,4 @@ export const useData = () => {
     throw new Error('useData must be used within a DataProvider')
   }
   return context
-} 
+}
