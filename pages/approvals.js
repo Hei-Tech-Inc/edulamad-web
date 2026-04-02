@@ -1,6 +1,5 @@
 // pages/approvals.js
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -9,12 +8,14 @@ import {
   AlertCircle,
   Calendar,
   Clock,
-  User,
   Info,
 } from 'lucide-react'
 import ProtectedRoute from '../components/ProtectedRoute'
-import { useAuth } from '../contexts/AuthContext'
-import stockingService from '../lib/stockingService'
+import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
+import {
+  fetchPendingStockCycleApprovals,
+  approveStockCycle,
+} from '@/lib/farm-cycle-approvals'
 import { useToast } from '../components/Toast'
 
 export default function ApprovalsPage() {
@@ -26,8 +27,6 @@ export default function ApprovalsPage() {
 }
 
 function PendingApprovals() {
-  const router = useRouter()
-  const { user } = useAuth()
   const { showToast } = useToast()
 
   const [loading, setLoading] = useState(true)
@@ -43,28 +42,31 @@ function PendingApprovals() {
   const [processingAction, setProcessingAction] = useState(false)
   const [error, setError] = useState('')
 
-  // Fetch pending approvals on mount
-  useEffect(() => {
-    fetchPendingApprovals()
-  }, [])
-
-  const fetchPendingApprovals = async () => {
+  const fetchPendingApprovals = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
-      const { data, error } = await stockingService.getPendingApprovals()
-
-      if (error) throw error
-
-      console.log('Pending approvals:', data)
-      setApprovals(data || { all: [], stockings: [], topups: [] })
-    } catch (error) {
-      console.error('Error fetching pending approvals:', error)
-      setError('Failed to load pending approvals')
-      showToast('error', 'Failed to load pending approvals')
+      const farmId = await resolveFarmIdForRedux()
+      if (!farmId) {
+        throw new Error(
+          'No farm selected. Choose a farm in the app or ensure you have farm access.',
+        )
+      }
+      const data = await fetchPendingStockCycleApprovals(farmId)
+      setApprovals(data)
+    } catch (err) {
+      console.error('Error fetching pending approvals:', err)
+      const msg = err?.message || 'Failed to load pending approvals'
+      setError(msg)
+      showToast(msg, 'error')
     } finally {
       setLoading(false)
     }
-  }
+  }, [showToast])
+
+  useEffect(() => {
+    fetchPendingApprovals()
+  }, [fetchPendingApprovals])
 
   const handleApprove = (record) => {
     setCurrentRecord(record)
@@ -82,29 +84,21 @@ function PendingApprovals() {
 
     setProcessingAction(true)
     try {
-      const { error } = await stockingService.approveRecord(
-        currentRecord.type,
-        currentRecord.id,
-        user.id,
-      )
+      const unitId = currentRecord.unitId || currentRecord.cageId
+      await approveStockCycle(unitId, currentRecord.id)
 
-      if (error) throw error
+      const label =
+        currentRecord.type === 'stocking' ? 'Stock cycle' : 'Top-up'
+      showToast(`${label} approved successfully`, 'success')
 
-      showToast(
-        'success',
-        `${
-          currentRecord.type === 'stocking' ? 'Stocking' : 'Top-up'
-        } approved successfully`,
-      )
-
-      // Close modal and refresh data
       setShowApproveModal(false)
       setCurrentRecord(null)
       fetchPendingApprovals()
-    } catch (error) {
-      console.error('Error approving record:', error)
-      setError(error.message)
-      showToast('error', `Failed to approve: ${error.message}`)
+    } catch (err) {
+      console.error('Error approving record:', err)
+      const msg = err?.message || String(err)
+      setError(msg)
+      showToast(`Failed to approve: ${msg}`, 'error')
     } finally {
       setProcessingAction(false)
     }
@@ -113,36 +107,15 @@ function PendingApprovals() {
   const confirmReject = async () => {
     if (!currentRecord) return
 
-    if (!rejectionReason.trim()) {
-      setError('Please provide a reason for rejection')
-      return
-    }
-
     setProcessingAction(true)
     try {
-      const { error } = await stockingService.rejectRecord(
-        currentRecord.type,
-        currentRecord.id,
-        user.id,
-        rejectionReason,
-      )
-
-      if (error) throw error
-
       showToast(
-        'success',
-        `${currentRecord.type === 'stocking' ? 'Stocking' : 'Top-up'} rejected`,
+        'The Nsuo API does not expose stock-cycle rejection here. Decline or remove the cycle in Nsuo if your workflow supports it.',
+        'error',
       )
-
-      // Close modal and refresh data
       setShowRejectModal(false)
       setCurrentRecord(null)
       setRejectionReason('')
-      fetchPendingApprovals()
-    } catch (error) {
-      console.error('Error rejecting record:', error)
-      setError(error.message)
-      showToast('error', `Failed to reject: ${error.message}`)
     } finally {
       setProcessingAction(false)
     }
@@ -181,7 +154,8 @@ function PendingApprovals() {
 
         <div className="mb-6">
           <p className="text-gray-600">
-            Review and manage pending stocking and top-up approvals.
+            Review pending stock cycles for your farm (Nsuo). Legacy top-up
+            approvals are not listed here.
           </p>
         </div>
 
@@ -249,7 +223,9 @@ function PendingApprovals() {
                               : 'bg-orange-100 text-orange-800'
                           }`}
                         >
-                          {record.type === 'stocking' ? 'Stocking' : 'Top-up'}
+                              {record.type === 'stocking'
+                                ? 'Stock cycle'
+                                : 'Top-up'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -307,9 +283,9 @@ function PendingApprovals() {
                             <XCircle className="h-5 w-5" />
                           </button>
                           <Link
-                            href={`/${record.type}/${record.id}/details`}
+                            href={`/cages/${record.cageId ?? record.unitId}`}
                             className="text-blue-600 hover:text-blue-900"
-                            title="View Details"
+                            title="View pond / unit"
                           >
                             <Info className="h-5 w-5" />
                           </Link>
@@ -325,7 +301,7 @@ function PendingApprovals() {
               <AlertCircle className="h-12 w-12 text-gray-400 mx-auto" />
               <p className="mt-3 text-gray-500">No pending approvals found.</p>
               <p className="text-sm text-gray-400">
-                All stocking and top-up requests have been processed.
+                All visible stock cycles have been approved or are not pending.
               </p>
             </div>
           )}
@@ -345,8 +321,7 @@ function PendingApprovals() {
             </h3>
 
             <p className="text-gray-600 mb-4">
-              Are you sure you want to approve this{' '}
-              {currentRecord.type === 'stocking' ? 'stocking' : 'top-up'} for{' '}
+              Are you sure you want to approve this stock cycle for{' '}
               <span className="font-medium">{currentRecord.batchNumber}</span>{' '}
               in <span className="font-medium">{currentRecord.cageName}</span>?
             </p>
@@ -421,20 +396,24 @@ function PendingApprovals() {
           ></div>
           <div className="relative bg-white rounded-lg max-w-md w-full mx-4 p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Confirm Rejection
+              Reject in Nsuo
             </h3>
 
             <p className="text-gray-600 mb-4">
-              Are you sure you want to reject this{' '}
-              {currentRecord.type === 'stocking' ? 'stocking' : 'top-up'} for{' '}
+              Rejection is not wired to the Nsuo API from this screen. You can
+              note a reason below for your records, then use Nsuo to decline the
+              cycle if your organisation supports it.
+            </p>
+            <p className="text-gray-600 mb-4 text-sm">
+              Batch{' '}
               <span className="font-medium">{currentRecord.batchNumber}</span>{' '}
-              in <span className="font-medium">{currentRecord.cageName}</span>?
+              ·{' '}
+              <span className="font-medium">{currentRecord.cageName}</span>
             </p>
 
-            {/* Rejection Reason */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reason for Rejection <span className="text-red-500">*</span>
+                Reason (optional)
               </label>
               <textarea
                 value={rejectionReason}
@@ -471,7 +450,7 @@ function PendingApprovals() {
                     : 'bg-red-600 hover:bg-red-700'
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500`}
               >
-                {processingAction ? 'Processing...' : 'Reject'}
+                {processingAction ? '…' : 'Got it'}
               </button>
             </div>
           </div>
