@@ -58,7 +58,15 @@ function AuthWrapper({ children }) {
   const router = useRouter()
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/login', '/signup', '/reset-password', '/verify-email']
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/signup',
+    '/register-company',
+    '/pending-approval',
+    '/reset-password',
+    '/verify-email',
+  ]
 
   const currentPath = router.pathname
 

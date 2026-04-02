@@ -7,10 +7,10 @@ export default function PendingApproval() {
   return (
     <>
       <Head>
-        <title>Registration Status - PBA Farm Management</title>
+        <title>Registration status — Nsuo</title>
         <meta
           name="description"
-          content="Check your company registration status"
+          content="Check your organisation registration status on Nsuo."
         />
       </Head>
       <PendingApprovalPage />

@@ -7,10 +7,10 @@ export default function RegisterCompany() {
   return (
     <>
       <Head>
-        <title>Register Your Company - PBA Farm Management</title>
+        <title>Create your organisation — Nsuo</title>
         <meta
           name="description"
-          content="Register your company to access PBA Farm Management features"
+          content="Register your aquaculture organisation on Nsuo and start company onboarding."
         />
       </Head>
       <CompanyRegistrationPage />
