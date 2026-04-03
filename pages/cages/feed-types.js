@@ -11,7 +11,7 @@ export default function FeedTypesPage() {
           <div className="flex items-center mb-6">
             <Link
               href="/cages"
-              className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+              className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back to Cages

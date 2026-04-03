@@ -17,7 +17,7 @@ export default function BulkUploadPage() {
             <div className="flex items-center mb-6">
               <Link
                 href="/dashboard"
-                className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+                className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
               >
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Back to Dashboard
@@ -42,7 +42,7 @@ export default function BulkUploadPage() {
                     onClick={() => setActiveTab('daily')}
                     className={`px-4 py-4 text-sm font-medium ${
                       activeTab === 'daily'
-                        ? 'border-b-2 border-indigo-500 text-indigo-600'
+                        ? 'border-b-2 border-sky-500 text-sky-600'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
@@ -55,7 +55,7 @@ export default function BulkUploadPage() {
                     onClick={() => setActiveTab('biweekly')}
                     className={`px-4 py-4 text-sm font-medium ${
                       activeTab === 'biweekly'
-                        ? 'border-b-2 border-indigo-500 text-indigo-600'
+                        ? 'border-b-2 border-sky-500 text-sky-600'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >

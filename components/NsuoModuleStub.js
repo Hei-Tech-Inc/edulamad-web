@@ -16,7 +16,7 @@ export default function NsuoModuleStub({
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link
           href={backHref}
-          className="text-indigo-600 hover:text-indigo-800 inline-flex items-center text-sm mb-6"
+          className="text-sky-600 hover:text-sky-800 inline-flex items-center text-sm mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           {backLabel}
@@ -24,7 +24,7 @@ export default function NsuoModuleStub({
 
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex items-start gap-3">
-            <Info className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+            <Info className="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5" />
             <div>
               <h1 className="text-xl font-bold text-gray-900">{title}</h1>
               <p className="mt-2 text-gray-700">{summary}</p>

@@ -220,7 +220,7 @@ function CageDetail() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto"></div>
           <p className="mt-3 text-gray-700">Loading cage data...</p>
         </div>
       </div>
@@ -239,7 +239,7 @@ function CageDetail() {
             <p className="mt-2 text-gray-600">{error}</p>
             <div className="mt-6">
               <Link href="/cages">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700">
                   Return to Cages
                 </button>
               </Link>
@@ -265,7 +265,7 @@ function CageDetail() {
             </p>
             <div className="mt-6">
               <Link href="/cages">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700">
                   Return to Cages
                 </button>
               </Link>
@@ -283,7 +283,7 @@ function CageDetail() {
           <div>
             <Link
               href="/cages"
-              className="inline-flex items-center text-indigo-600 hover:text-indigo-800"
+              className="inline-flex items-center text-sky-600 hover:text-sky-800"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back to Cages
@@ -373,7 +373,7 @@ function CageDetail() {
                 onClick={() => setActiveTab('overview')}
                 className={`px-4 py-4 text-sm font-medium ${
                   activeTab === 'overview'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600'
+                    ? 'border-b-2 border-sky-500 text-sky-600'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -383,7 +383,7 @@ function CageDetail() {
                 onClick={() => setActiveTab('daily')}
                 className={`px-4 py-4 text-sm font-medium ${
                   activeTab === 'daily'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600'
+                    ? 'border-b-2 border-sky-500 text-sky-600'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -393,7 +393,7 @@ function CageDetail() {
                 onClick={() => setActiveTab('growth')}
                 className={`px-4 py-4 text-sm font-medium ${
                   activeTab === 'growth'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600'
+                    ? 'border-b-2 border-sky-500 text-sky-600'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -404,7 +404,7 @@ function CageDetail() {
                   onClick={() => setActiveTab('harvest')}
                   className={`px-4 py-4 text-sm font-medium ${
                     activeTab === 'harvest'
-                      ? 'border-b-2 border-indigo-500 text-indigo-600'
+                      ? 'border-b-2 border-sky-500 text-sky-600'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -567,7 +567,7 @@ function CageDetail() {
                     Daily Records
                   </h3>
                   <Link href={`/daily-entry/${id}${farmQuerySuffix}`}>
-                    <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700">
                       Add Record
                     </button>
                   </Link>
@@ -664,7 +664,7 @@ function CageDetail() {
                     Growth Records
                   </h3>
                   <Link href={`/biweekly-entry/${id}${farmQuerySuffix}`}>
-                    <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700">
                       Add Record
                     </button>
                   </Link>

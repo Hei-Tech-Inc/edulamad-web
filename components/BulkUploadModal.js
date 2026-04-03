@@ -419,12 +419,12 @@ const BulkUploadModal = ({
           <div className="flex items-center">
             <div
               className={`flex items-center ${
-                step >= 1 ? 'text-indigo-600' : 'text-gray-400'
+                step >= 1 ? 'text-sky-600' : 'text-gray-400'
               }`}
             >
               <div
                 className={`rounded-full h-6 w-6 flex items-center justify-center ${
-                  step >= 1 ? 'bg-indigo-100' : 'bg-gray-100'
+                  step >= 1 ? 'bg-sky-100' : 'bg-gray-100'
                 }`}
               >
                 <span className="text-sm font-medium">1</span>
@@ -433,17 +433,17 @@ const BulkUploadModal = ({
             </div>
             <div
               className={`w-10 h-0.5 mx-2 ${
-                step >= 2 ? 'bg-indigo-600' : 'bg-gray-300'
+                step >= 2 ? 'bg-sky-600' : 'bg-gray-300'
               }`}
             ></div>
             <div
               className={`flex items-center ${
-                step >= 2 ? 'text-indigo-600' : 'text-gray-400'
+                step >= 2 ? 'text-sky-600' : 'text-gray-400'
               }`}
             >
               <div
                 className={`rounded-full h-6 w-6 flex items-center justify-center ${
-                  step >= 2 ? 'bg-indigo-100' : 'bg-gray-100'
+                  step >= 2 ? 'bg-sky-100' : 'bg-gray-100'
                 }`}
               >
                 <span className="text-sm font-medium">2</span>
@@ -452,17 +452,17 @@ const BulkUploadModal = ({
             </div>
             <div
               className={`w-10 h-0.5 mx-2 ${
-                step >= 3 ? 'bg-indigo-600' : 'bg-gray-300'
+                step >= 3 ? 'bg-sky-600' : 'bg-gray-300'
               }`}
             ></div>
             <div
               className={`flex items-center ${
-                step >= 3 ? 'text-indigo-600' : 'text-gray-400'
+                step >= 3 ? 'text-sky-600' : 'text-gray-400'
               }`}
             >
               <div
                 className={`rounded-full h-6 w-6 flex items-center justify-center ${
-                  step >= 3 ? 'bg-indigo-100' : 'bg-gray-100'
+                  step >= 3 ? 'bg-sky-100' : 'bg-gray-100'
                 }`}
               >
                 <span className="text-sm font-medium">3</span>
@@ -506,7 +506,7 @@ const BulkUploadModal = ({
 
               <div className="flex flex-col items-center w-full max-w-md">
                 <div
-                  className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors"
+                  className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-sky-500 transition-colors"
                   onClick={() => xlsxLibLoaded && fileInputRef.current?.click()}
                 >
                   <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
@@ -518,7 +518,7 @@ const BulkUploadModal = ({
                       </>
                     ) : (
                       <>
-                        <span className="text-indigo-600 font-medium">
+                        <span className="text-sky-600 font-medium">
                           Click to upload
                         </span>{' '}
                         or drag and drop
@@ -557,8 +557,8 @@ const BulkUploadModal = ({
                     disabled={!fileData || processing || !xlsxLibLoaded}
                     className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                       !fileData || processing || !xlsxLibLoaded
-                        ? 'bg-indigo-400 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700'
+                        ? 'bg-sky-400 cursor-not-allowed'
+                        : 'bg-sky-600 hover:bg-sky-700'
                     }`}
                   >
                     {processing ? 'Processing...' : 'Continue'}
@@ -700,8 +700,8 @@ const BulkUploadModal = ({
                   disabled={processing || validationErrors.length > 0}
                   className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                     processing || validationErrors.length > 0
-                      ? 'bg-indigo-400 cursor-not-allowed'
-                      : 'bg-indigo-600 hover:bg-indigo-700'
+                      ? 'bg-sky-400 cursor-not-allowed'
+                      : 'bg-sky-600 hover:bg-sky-700'
                   }`}
                 >
                   {validationErrors.length > 0

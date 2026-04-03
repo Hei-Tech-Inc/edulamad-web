@@ -17,17 +17,17 @@ const PendingApprovalPage = () => {
     <MarketingShell maxWidthClass="max-w-lg">
       <Link
         href="/"
-        className="mb-8 inline-flex items-center text-sm font-medium text-teal-300/90 transition hover:text-teal-200"
+        className="mb-8 inline-flex items-center text-sm font-medium text-slate-400 transition hover:text-white"
       >
         <ArrowLeft className="mr-1.5 h-4 w-4" />
         Back to overview
       </Link>
 
-      <div className="rounded-2xl border border-white/10 bg-slate-900/35 p-8 text-center shadow-2xl backdrop-blur-md sm:p-10">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-teal-400/10 text-teal-300 ring-1 ring-teal-400/20">
+      <div className="rounded-lg border border-slate-800 bg-slate-900 p-8 text-center sm:p-10">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded border border-slate-700 bg-slate-950 text-sky-400">
           <Mail className="h-7 w-7" strokeWidth={1.75} />
         </div>
-        <h1 className="font-['Fraunces',serif] text-2xl font-semibold text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-white">
           Check your email
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-400">
@@ -42,13 +42,13 @@ const PendingApprovalPage = () => {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
             href="/login"
-            className="inline-flex justify-center rounded-xl bg-gradient-to-r from-teal-400 to-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg transition hover:brightness-105"
+            className="inline-flex justify-center rounded bg-sky-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-800"
           >
             Sign in
           </Link>
           <Link
             href="/register-company"
-            className="inline-flex justify-center rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white transition hover:bg-white/10"
+            className="inline-flex justify-center rounded border border-slate-600 bg-slate-950 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
           >
             Register organisation
           </Link>

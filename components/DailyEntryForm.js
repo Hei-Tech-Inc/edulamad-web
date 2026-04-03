@@ -6,6 +6,7 @@ import API from '@/api/endpoints'
 import { queryKeys } from '@/api/query-keys'
 import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
 import { fetchActiveCycleIdForUnit } from '@/lib/unit-cycles-api'
+import posthog from 'posthog-js'
 
 const FEED_TYPE_SUGGESTIONS = [
   'floating pellet 2mm',
@@ -114,8 +115,10 @@ const DailyEntryForm = ({ cage }) => {
 
   if (!cage) {
     return (
-      <div className="bg-white shadow rounded-lg p-8">
-        <p className="text-center text-gray-600">Please select a cage first</p>
+      <div className="rounded border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
+        <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+          Please select a cage first
+        </p>
       </div>
     )
   }
@@ -195,6 +198,13 @@ const DailyEntryForm = ({ cage }) => {
         source: 'web',
       })
 
+      posthog.capture('daily_entry_submitted', {
+        cage_id: cage.id,
+        record_date: formData.date,
+        feed_amount_kg: parseFloat(formData.feed_amount),
+        feed_type: formData.feed_type.trim(),
+        mortality_count: parseInt(formData.mortality, 10) || 0,
+      })
       setMessage('Record saved successfully!')
       queryClient.invalidateQueries({ queryKey: queryKeys.dailyRecords.all })
       await reloadRecent()
@@ -209,6 +219,7 @@ const DailyEntryForm = ({ cage }) => {
       })
     } catch (err) {
       console.error('Error saving record:', err)
+      posthog.captureException(err)
       setError(err?.message || 'Failed to save')
     } finally {
       setSubmitting(false)
@@ -243,10 +254,12 @@ const DailyEntryForm = ({ cage }) => {
 
   if (loading) {
     return (
-      <div className="bg-white shadow rounded-lg p-8">
-        <div className="flex justify-center items-center h-32">
-          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="ml-2 text-gray-600">Loading...</p>
+      <div className="rounded border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex h-32 items-center justify-center">
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600 dark:border-slate-700 dark:border-t-sky-500" />
+          <p className="ml-3 text-sm text-slate-600 dark:text-slate-400">
+            Loading…
+          </p>
         </div>
       </div>
     )
@@ -255,16 +268,16 @@ const DailyEntryForm = ({ cage }) => {
   const titleRef = cage.code || cage.id?.slice(0, 8) || cage.id
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="font-medium text-gray-700">
-          Daily Data Entry — {cage.name}{' '}
-          <span className="text-xs text-gray-500">({titleRef})</span>
+    <div className="overflow-hidden rounded border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+          Daily data entry — {cage.name}{' '}
+          <span className="text-xs font-normal text-slate-500">({titleRef})</span>
         </h2>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-slate-500 dark:text-slate-400">
           Location: {cage.location || 'N/A'} |{' '}
           {!cycleLoading && !activeCycleId && (
-            <span className="text-amber-700 font-medium">
+            <span className="font-medium text-amber-800 dark:text-amber-400">
               No active cycle — daily records are disabled until a stock cycle
               exists.
             </span>
@@ -273,13 +286,13 @@ const DailyEntryForm = ({ cage }) => {
       </div>
       <div className="p-6">
         {error && (
-          <div className="mb-4 bg-red-50 text-red-800 p-4 rounded-md">
+          <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
             {error}
           </div>
         )}
 
         {message && (
-          <div className="mb-4 bg-green-50 text-green-800 p-4 rounded-md">
+          <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
             {message}
           </div>
         )}
@@ -287,7 +300,7 @@ const DailyEntryForm = ({ cage }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                 Date
               </label>
               <input
@@ -295,13 +308,13 @@ const DailyEntryForm = ({ cage }) => {
                 name="date"
                 value={formData.date}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-600 focus:outline-none focus:ring-1 focus:ring-sky-600 dark:border-slate-600 dark:bg-slate-950"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                 Feed Amount (kg)
               </label>
               <input
@@ -310,14 +323,14 @@ const DailyEntryForm = ({ cage }) => {
                 value={formData.feed_amount}
                 onChange={handleChange}
                 step="0.1"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-600 focus:outline-none focus:ring-1 focus:ring-sky-600 dark:border-slate-600 dark:bg-slate-950"
                 placeholder="0.0"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                 Feed type
               </label>
               <input
@@ -326,7 +339,7 @@ const DailyEntryForm = ({ cage }) => {
                 value={formData.feed_type}
                 onChange={handleChange}
                 list="feed-type-suggestions"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-600 focus:outline-none focus:ring-1 focus:ring-sky-600 dark:border-slate-600 dark:bg-slate-950"
                 placeholder="e.g. floating pellet 2mm"
                 required
               />
@@ -338,7 +351,7 @@ const DailyEntryForm = ({ cage }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                 Feed Price/kg (GHS)
               </label>
               <input
@@ -347,25 +360,25 @@ const DailyEntryForm = ({ cage }) => {
                 value={formData.feed_price}
                 onChange={handleChange}
                 step="0.01"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-600 focus:outline-none focus:ring-1 focus:ring-sky-600 dark:border-slate-600 dark:bg-slate-950"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                 Feed Cost (GHS)
               </label>
               <input
                 type="text"
                 value={feedCost}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 focus:outline-none sm:text-sm"
+                className="block w-full rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:outline-none dark:border-slate-700 dark:bg-slate-800"
                 readOnly
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                 Mortality (fish count)
               </label>
               <input
@@ -373,7 +386,7 @@ const DailyEntryForm = ({ cage }) => {
                 name="mortality"
                 value={formData.mortality}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-600 focus:outline-none focus:ring-1 focus:ring-sky-600 dark:border-slate-600 dark:bg-slate-950"
                 min="0"
                 required
               />
@@ -381,7 +394,7 @@ const DailyEntryForm = ({ cage }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
               Notes
             </label>
             <textarea
@@ -389,7 +402,7 @@ const DailyEntryForm = ({ cage }) => {
               value={formData.notes}
               onChange={handleChange}
               rows="3"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="block w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sky-600 focus:outline-none focus:ring-1 focus:ring-sky-600 dark:border-slate-600 dark:bg-slate-950"
               placeholder="Optional notes"
             />
           </div>
@@ -398,11 +411,11 @@ const DailyEntryForm = ({ cage }) => {
             <button
               type="submit"
               disabled={submitting || !activeCycleId}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+              className={`flex w-full justify-center rounded border border-transparent px-4 py-2.5 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${
                 submitting || !activeCycleId
-                  ? 'bg-indigo-400'
-                  : 'bg-indigo-600 hover:bg-indigo-700'
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                  ? 'bg-slate-400 dark:bg-slate-600'
+                  : 'bg-slate-900 hover:bg-slate-800 dark:bg-sky-700 dark:hover:bg-sky-800'
+              } `}
             >
               {submitting ? 'Saving...' : 'Save Daily Record'}
             </button>
@@ -410,48 +423,48 @@ const DailyEntryForm = ({ cage }) => {
         </form>
       </div>
 
-      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-        <h3 className="text-sm font-medium text-gray-700 mb-4">
-          Recent Daily Records
+      <div className="border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+          Recent daily records
         </h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-100">
+          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+            <thead className="bg-slate-100 dark:bg-slate-800">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                   Feed (kg)
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                   Feed type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                   Cost
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                   Mortality
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
               {recentRecords.length > 0 ? (
                 recentRecords.map((record) => (
                   <tr key={record.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
                       {record.date}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
                       {displayAmount(record)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
                       {getFeedTypeName(record)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
                       {displayCost(record)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
                       {displayMortality(record)}
                     </td>
                   </tr>
@@ -460,7 +473,7 @@ const DailyEntryForm = ({ cage }) => {
                 <tr>
                   <td
                     colSpan="5"
-                    className="px-6 py-4 text-center text-sm text-gray-500"
+                    className="px-6 py-4 text-center text-sm text-slate-500"
                   >
                     No recent records found
                   </td>

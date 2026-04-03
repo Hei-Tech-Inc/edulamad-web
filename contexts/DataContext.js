@@ -12,10 +12,12 @@ import { useUiStore } from '@/stores/ui.store'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
 import { fetchLegacyBiweeklyRowsForUnit } from '@/lib/farm-weight-samples-legacy'
+import { useAuth } from './AuthContext'
 
 const DataContext = createContext()
 
 export function DataProvider({ children }) {
+  const { user, initialized } = useAuth()
   const activeFarmId = useUiStore((s) => s.activeFarmId)
   const [cages, setCages] = useState([])
   const [stockings, setStockings] = useState([])
@@ -35,21 +37,31 @@ export function DataProvider({ children }) {
       }
       const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
       setCages(legacy)
+      setError(null)
       return legacy
     } catch (err) {
       const msg = err?.message || String(err)
       setError(msg)
-      throw err
+      setCages([])
+      return []
     } finally {
       setLoading(false)
     }
   }, [activeFarmId])
 
   useEffect(() => {
-    refreshCages()
-  }, [activeFarmId, refreshCages])
+    if (!initialized) return
+    if (!user) {
+      setCages([])
+      setStockings([])
+      setDailyRecords([])
+      setBiweeklyRecords([])
+      setError(null)
+      return
+    }
+    void refreshCages()
+  }, [activeFarmId, initialized, refreshCages, user])
 
-  /** Stocking batches not yet backed by Nsuo in this app — keep empty for compatibility. */
   const refreshStockings = useCallback(async () => {
     setStockings([])
     return []
@@ -74,44 +86,53 @@ export function DataProvider({ children }) {
         mortality: r.mortalityCount,
       }))
       setDailyRecords(normalized)
+      setError(null)
       return normalized
     } catch (err) {
       const msg = err?.message || String(err)
       setError(msg)
-      throw err
+      setDailyRecords([])
+      return []
     } finally {
       setLoading(false)
     }
   }, [])
 
-  const refreshBiweeklyRecords = useCallback(async (cageId) => {
-    if (!cageId) {
-      setBiweeklyRecords([])
-      return []
-    }
-    setLoading(true)
-    setError(null)
-    try {
-      let unitRef = { id: cageId, name: cageId.slice(0, 8) }
-      const farmId = activeFarmId || (await resolveFarmIdForRedux())
-      if (farmId) {
-        const { legacy } = await fetchLegacyUnitsForFarm(farmId, { limit: 500 })
-        const found = legacy.find((c) => c.id === cageId)
-        if (found) unitRef = { id: found.id, name: found.name }
+  const refreshBiweeklyRecords = useCallback(
+    async (cageId) => {
+      if (!cageId) {
+        setBiweeklyRecords([])
+        return []
       }
-      const rows = await fetchLegacyBiweeklyRowsForUnit(unitRef, {
-        samplesLimit: 200,
-      })
-      setBiweeklyRecords(rows)
-      return rows
-    } catch (err) {
-      const msg = err?.message || String(err)
-      setError(msg)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [activeFarmId])
+      setLoading(true)
+      setError(null)
+      try {
+        let unitRef = { id: cageId, name: cageId.slice(0, 8) }
+        const farmId = activeFarmId || (await resolveFarmIdForRedux())
+        if (farmId) {
+          const { legacy } = await fetchLegacyUnitsForFarm(farmId, {
+            limit: 500,
+          })
+          const found = legacy.find((c) => c.id === cageId)
+          if (found) unitRef = { id: found.id, name: found.name }
+        }
+        const rows = await fetchLegacyBiweeklyRowsForUnit(unitRef, {
+          samplesLimit: 200,
+        })
+        setBiweeklyRecords(rows)
+        setError(null)
+        return rows
+      } catch (err) {
+        const msg = err?.message || String(err)
+        setError(msg)
+        setBiweeklyRecords([])
+        return []
+      } finally {
+        setLoading(false)
+      }
+    },
+    [activeFarmId],
+  )
 
   const refreshAll = useCallback(async () => {
     setLoading(true)
@@ -121,7 +142,6 @@ export function DataProvider({ children }) {
     } catch (err) {
       const msg = err?.message || String(err)
       setError(msg)
-      throw err
     } finally {
       setLoading(false)
     }
@@ -142,7 +162,9 @@ export function DataProvider({ children }) {
   }
 
   return (
-    <DataContext.Provider value={value}>{children}</DataContext.Provider>
+    <DataContext.Provider value={value}>
+      {children}
+    </DataContext.Provider>
   )
 }
 

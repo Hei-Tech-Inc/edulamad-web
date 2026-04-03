@@ -260,24 +260,24 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Summary Section - Moved to top */}
-        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-8 rounded-xl border-2 border-indigo-100 shadow-sm">
-          <h3 className="text-xl font-semibold text-indigo-900 mb-6">Summary</h3>
+        <div className="rounded border border-slate-200 bg-slate-50 p-8 dark:border-slate-700 dark:bg-slate-900/50">
+          <h3 className="text-xl font-semibold text-sky-900 mb-6">Summary</h3>
           <dl className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-indigo-100">
-              <dt className="text-base font-medium text-indigo-700 mb-2">Total Fish Count</dt>
-              <dd className="text-3xl font-bold text-indigo-900">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-sky-100">
+              <dt className="text-base font-medium text-sky-700 mb-2">Total Fish Count</dt>
+              <dd className="text-3xl font-bold text-sky-900">
                 {samplings.reduce((sum, s) => sum + Number(s.fish_count || 0), 0).toLocaleString()}
               </dd>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-indigo-100">
-              <dt className="text-base font-medium text-indigo-700 mb-2">Total Weight</dt>
-              <dd className="text-3xl font-bold text-indigo-900">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-sky-100">
+              <dt className="text-base font-medium text-sky-700 mb-2">Total Weight</dt>
+              <dd className="text-3xl font-bold text-sky-900">
                 {samplings.reduce((sum, s) => sum + Number(s.total_weight || 0), 0).toFixed(2)}g
               </dd>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-indigo-100">
-              <dt className="text-base font-medium text-indigo-700 mb-2">Average ABW</dt>
-              <dd className="text-3xl font-bold text-indigo-900">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-sky-100">
+              <dt className="text-base font-medium text-sky-700 mb-2">Average ABW</dt>
+              <dd className="text-3xl font-bold text-sky-900">
                 {calculateAverageABW().toFixed(2)}g
               </dd>
             </div>
@@ -285,18 +285,18 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
         </div>
 
         {/* Batch Code Display */}
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border-2 border-gray-200 shadow-sm">
+        <div className="rounded border border-slate-200 bg-slate-50 p-6 dark:border-slate-700 dark:bg-slate-900/50">
           <div className="flex items-center justify-between">
             <div>
               <label className="block text-base font-medium text-gray-700 mb-2">Batch Code</label>
-              <p className="text-3xl font-mono font-bold text-indigo-600 tracking-wider bg-white px-4 py-3 rounded-lg border-2 border-indigo-200 shadow-sm">
+              <p className="text-3xl font-mono font-bold text-sky-600 tracking-wider bg-white px-4 py-3 rounded-lg border-2 border-sky-200 shadow-sm">
                 {batchCode}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setBatchCode(generateBatchCode())}
-              className="inline-flex items-center px-4 py-3 border-2 border-gray-300 shadow-sm text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              className="inline-flex items-center px-4 py-3 border-2 border-gray-300 shadow-sm text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors"
             >
               <RefreshCw className="w-5 h-5 mr-2" />
               Generate New Code
@@ -314,7 +314,7 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
             id="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="mt-1 block w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base"
+            className="mt-1 block w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-base"
             required
           />
         </div>
@@ -326,7 +326,7 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
             <button
               type="button"
               onClick={addSampling}
-              className="inline-flex items-center px-4 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              className="inline-flex items-center px-4 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors"
             >
               <Plus className="w-5 h-5 mr-2" />
               Add Sampling
@@ -335,7 +335,7 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
 
           <div className="space-y-6">
             {samplings.map((sampling, index) => (
-              <div key={sampling.id} className="bg-white p-6 rounded-lg border-2 border-gray-200 shadow-sm hover:border-indigo-300 transition-colors">
+              <div key={sampling.id} className="bg-white p-6 rounded-lg border-2 border-gray-200 shadow-sm hover:border-sky-300 transition-colors">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-gray-900">Sampling {index + 1}</h4>
                   {samplings.length > 1 && (
@@ -359,7 +359,7 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
                       type="number"
                       value={sampling.fish_count}
                       onChange={(e) => updateSampling(index, 'fish_count', e.target.value)}
-                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base placeholder-gray-400"
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-base placeholder-gray-400"
                       placeholder="Enter fish count"
                       min="0"
                     />
@@ -374,7 +374,7 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
                       type="number"
                       value={sampling.total_weight}
                       onChange={(e) => updateSampling(index, 'total_weight', e.target.value)}
-                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base placeholder-gray-400"
+                      className="block w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-base placeholder-gray-400"
                       placeholder="0.00"
                       min="0"
                       step="0.01"
@@ -408,8 +408,8 @@ const BiweeklyEntryForm = ({ cage, onComplete }) => {
             disabled={loading || cycleLoading || !activeCycleId}
             className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white transition-colors ${
               loading || cycleLoading || !activeCycleId
-                ? 'bg-indigo-400 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                ? 'bg-sky-400 cursor-not-allowed'
+                : 'bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500'
             }`}
           >
             {loading ? (

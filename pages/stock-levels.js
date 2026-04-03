@@ -39,7 +39,7 @@ function StockLevels() {
           <div className="flex items-center">
             <Link
               href="/dashboard"
-              className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+              className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back to Dashboard
@@ -51,7 +51,7 @@ function StockLevels() {
             type="button"
             onClick={refresh}
             disabled={loading}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 disabled:opacity-60"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             {loading ? '…' : 'Refresh'}

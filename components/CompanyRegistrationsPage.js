@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Building, Mail, Phone, User, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import MarketingShell from './marketing/MarketingShell'
+import posthog from 'posthog-js'
 
 const CompanyRegistrationPage = () => {
   const router = useRouter()
@@ -54,10 +55,19 @@ const CompanyRegistrationPage = () => {
         return
       }
 
+      posthog.identify(formData.admin_email, {
+        email: formData.admin_email,
+        name: formData.admin_name,
+      })
+      posthog.capture('company_registered', {
+        company_name: formData.name.trim(),
+        admin_email: formData.admin_email,
+      })
       setSuccess(true)
       router.push('/dashboard')
     } catch (err) {
       console.error('Error registering company:', err)
+      posthog.captureException(err)
       setError(err?.message || 'Registration failed')
     } finally {
       setLoading(false)
@@ -65,24 +75,24 @@ const CompanyRegistrationPage = () => {
   }
 
   const fieldClass =
-    'block w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-teal-400/40 focus:outline-none focus:ring-2 focus:ring-teal-400/20'
+    'block w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500'
   const labelClass = 'mb-1.5 block text-sm font-medium text-slate-300'
 
   return (
     <MarketingShell maxWidthClass="max-w-3xl">
       <Link
         href="/"
-        className="mb-8 inline-flex items-center text-sm font-medium text-teal-300/90 transition hover:text-teal-200"
+        className="mb-8 inline-flex items-center text-sm font-medium text-slate-400 transition hover:text-white"
       >
         <ArrowLeft className="mr-1.5 h-4 w-4" />
         Back to overview
       </Link>
 
       <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wider text-teal-200/80">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
           Company onboarding · Step 1
         </p>
-        <h1 className="mt-2 font-['Fraunces',serif] text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
           Create your organisation
         </h1>
         <p className="mt-2 max-w-xl text-slate-400">
@@ -92,8 +102,8 @@ const CompanyRegistrationPage = () => {
       </div>
 
       {success ? (
-        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-950/20 p-10 text-center backdrop-blur-sm">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-10 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded border border-slate-700 bg-slate-950 text-emerald-400">
             <svg
               className="h-8 w-8"
               fill="none"
@@ -108,7 +118,7 @@ const CompanyRegistrationPage = () => {
               />
             </svg>
           </div>
-          <h2 className="font-['Fraunces',serif] text-xl font-semibold text-white">
+          <h2 className="text-xl font-semibold text-white">
             You&apos;re in
           </h2>
           <p className="mt-2 text-slate-400">
@@ -117,14 +127,14 @@ const CompanyRegistrationPage = () => {
           </p>
           <Link
             href="/dashboard"
-            className="mt-6 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-teal-400 to-cyan-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg transition hover:brightness-105"
+            className="mt-6 inline-flex items-center justify-center rounded bg-sky-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-800"
           >
             Open dashboard
           </Link>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/35 shadow-2xl shadow-black/20 backdrop-blur-md">
-          <div className="border-b border-white/5 px-6 py-4 sm:px-8">
+        <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
+          <div className="border-b border-slate-800 px-6 py-4 sm:px-8">
             <h2 className="font-medium text-slate-200">Organisation details</h2>
             <p className="text-xs text-slate-500">
               Fields marked * are required before we provision your workspace.
@@ -139,7 +149,7 @@ const CompanyRegistrationPage = () => {
             )}
 
             <div className="grid grid-cols-1 gap-6">
-              <h3 className="font-['Fraunces',serif] text-lg font-semibold text-white">
+              <h3 className="text-lg font-semibold text-white">
                 Company information
               </h3>
 
@@ -232,7 +242,7 @@ const CompanyRegistrationPage = () => {
               </div>
 
               <div className="border-t border-white/10 pt-8">
-                <h3 className="font-['Fraunces',serif] text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-white">
                   Owner account
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
@@ -300,15 +310,15 @@ const CompanyRegistrationPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`flex w-full items-center justify-center rounded-xl py-3.5 text-sm font-semibold text-slate-950 shadow-lg transition ${
+              className={`flex w-full items-center justify-center rounded py-3.5 text-sm font-semibold text-white transition ${
                 loading
-                  ? 'cursor-not-allowed bg-teal-400/50'
-                  : 'bg-gradient-to-r from-teal-400 to-cyan-500 hover:brightness-105'
+                  ? 'cursor-not-allowed bg-sky-900/50'
+                  : 'bg-sky-700 hover:bg-sky-800'
               }`}
             >
               {loading ? (
                 <>
-                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-slate-900/30 border-t-slate-900" />
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Creating organisation…
                 </>
               ) : (
@@ -320,7 +330,7 @@ const CompanyRegistrationPage = () => {
               Already have an account?{' '}
               <Link
                 href="/login"
-                className="font-medium text-teal-300 hover:text-teal-200"
+                className="font-medium text-sky-400 hover:text-sky-300"
               >
                 Sign in
               </Link>

@@ -11,6 +11,7 @@ import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { useUiStore } from '@/stores/ui.store'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 import { fetchActiveCycleIdForUnit } from '@/lib/unit-cycles-api'
+import posthog from 'posthog-js'
 
 // Excel serial number to YYYY-MM-DD string
 const excelSerialDateToJSDate = (serial) => {
@@ -234,11 +235,16 @@ const BulkDailyUploadForm = () => {
         })
       }
 
+      posthog.capture('bulk_upload_submitted', {
+        record_type: 'daily_records',
+        record_count: total,
+      })
       setMessage(`Successfully uploaded ${total} records`)
       showToast(`Successfully uploaded ${total} records`, 'success')
       return { success: true }
     } catch (error) {
       console.error('Error processing upload:', error)
+      posthog.captureException(error)
       showToast(error.message || 'Upload failed', 'error')
       throw error
     }
@@ -368,9 +374,9 @@ const BulkDailyUploadForm = () => {
             disabled={loading}
             className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
               loading
-                ? 'bg-indigo-400 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700'
-            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                ? 'bg-sky-400 cursor-not-allowed'
+                : 'bg-sky-600 hover:bg-sky-700'
+            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
           >
             <CloudUpload className="h-5 w-5 mr-2" />
             Upload Daily Records

@@ -8,7 +8,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        montserrat: ['Montserrat', 'sans-serif'],
+        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+        montserrat: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
       },
       colors: {
         primary: {

@@ -227,7 +227,7 @@ function CagesManagement() {
       cell: (row) => (
         <Link
           href={`/cages/${row.id}?farmId=${encodeURIComponent(row.farmId)}`}
-          className="text-indigo-600 hover:text-indigo-900 font-medium"
+          className="text-sky-600 hover:text-sky-900 font-medium"
         >
           {row.name}
         </Link>
@@ -292,7 +292,7 @@ function CagesManagement() {
       <div className="min-h-screen bg-gray-100 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-sky-600 border-t-transparent"></div>
             <p className="mt-2 text-gray-600">Loading units...</p>
           </div>
         </div>
@@ -323,7 +323,7 @@ function CagesManagement() {
               API before adding units.
             </p>
             <Link href="/dashboard">
-              <span className="text-indigo-600 hover:text-indigo-800">
+              <span className="text-sky-600 hover:text-sky-800">
                 Back to Dashboard
               </span>
             </Link>
@@ -342,7 +342,7 @@ function CagesManagement() {
               <Link href="/dashboard">
                 <button
                   type="button"
-                  className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+                  className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
                 >
                   <ArrowLeft className="w-4 h-4 mr-1" />
                   Back to Dashboard
@@ -361,7 +361,7 @@ function CagesManagement() {
                     onChange={(e) =>
                       setActiveFarmId(e.target.value || null)
                     }
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500"
                   >
                     {farmItems.map((f) => (
                       <option key={f.id} value={f.id}>
@@ -374,7 +374,7 @@ function CagesManagement() {
               <Link href="/create-cage">
                 <button
                   type="button"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Unit
@@ -484,14 +484,14 @@ function CagesManagement() {
                 placeholder="Search by name or location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
             <div className="flex gap-4">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                className="px-4 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500"
               >
                 <option value="all">All Statuses</option>
                 <option value="active">Active</option>

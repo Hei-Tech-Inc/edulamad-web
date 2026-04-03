@@ -188,7 +188,7 @@ const CageManagementSidebar = () => {
         <div className="mt-6">
           <Link
             href="/create-cage"
-            className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
           >
             <Plus className="w-5 h-5 mr-2" />
             Create New Cage

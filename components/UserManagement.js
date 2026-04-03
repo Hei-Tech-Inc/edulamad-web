@@ -181,14 +181,14 @@ const UserManagement = () => {
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
             />
           </div>
         </div>
         <button
           type="button"
           onClick={() => setShowAddUser(!showAddUser)}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700"
         >
           <UserPlus className="h-4 w-4 mr-2" />
           Add member
@@ -219,7 +219,7 @@ const UserManagement = () => {
                   name="userId"
                   value={formData.userId}
                   onChange={handleChange}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm px-3 py-2"
                   placeholder="123e4567-e89b-12d3-a456-426614174000"
                   required
                 />
@@ -240,7 +240,7 @@ const UserManagement = () => {
                     name="roleId"
                     value={formData.roleId}
                     onChange={handleChange}
-                    className="pl-10 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-2"
+                    className="pl-10 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm py-2"
                   >
                     {roles.length === 0 ? (
                       <option value="">Loading roles…</option>
@@ -266,7 +266,7 @@ const UserManagement = () => {
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700"
               >
                 Add member
               </button>
@@ -297,7 +297,7 @@ const UserManagement = () => {
             {loading ? (
               <tr>
                 <td colSpan="4" className="px-6 py-4 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600 mx-auto" />
                 </td>
               </tr>
             ) : filteredUsers.length > 0 ? (
@@ -305,8 +305,8 @@ const UserManagement = () => {
                 <tr key={user.memberId || user.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <span className="text-indigo-800 font-semibold text-sm">
+                      <div className="flex-shrink-0 h-10 w-10 bg-sky-100 rounded-full flex items-center justify-center">
+                        <span className="text-sky-800 font-semibold text-sm">
                           {user.full_name?.charAt(0) ||
                             user.email?.charAt(0) ||
                             '?'}

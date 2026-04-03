@@ -13,6 +13,7 @@ import {
   buildTopUpNoteBlock,
 } from '@/lib/farm-topup-api'
 import { useToast } from './Toast'
+import posthog from 'posthog-js'
 
 const TopUpForm = ({ onComplete }) => {
   const router = useRouter()
@@ -159,6 +160,14 @@ const TopUpForm = ({ onComplete }) => {
         sourceLocation: formData.source_location,
       })
 
+      posthog.capture('batch_topped_up', {
+        unit_id: parsed.unitId,
+        cycle_id: parsed.cycleId,
+        fish_count: parseInt(formData.fish_count, 10),
+        abw_g: parseFloat(formData.abw),
+        biomass_kg: calculateBiomass(),
+        topup_date: formData.topup_date,
+      })
       showToast(
         'Top-up recorded on the stock cycle notes in Nsuo.',
         'success',
@@ -182,6 +191,7 @@ const TopUpForm = ({ onComplete }) => {
       }
     } catch (err) {
       console.error(err)
+      posthog.captureException(err)
       const msg = err?.message || 'Failed to record top-up.'
       setError(msg)
       showToast(msg, 'error')
@@ -211,7 +221,7 @@ const TopUpForm = ({ onComplete }) => {
             </label>
             {fetchingData ? (
               <div className="flex items-center space-x-2 h-10">
-                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-sm text-gray-500">Loading…</span>
               </div>
             ) : (
@@ -220,7 +230,7 @@ const TopUpForm = ({ onComplete }) => {
                   name="stocking_id"
                   value={formData.stocking_id}
                   onChange={handleChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   required
                   disabled={activeStockings.length === 0}
                 >
@@ -276,7 +286,7 @@ const TopUpForm = ({ onComplete }) => {
                 name="topup_date"
                 value={formData.topup_date}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 required
               />
             </div>
@@ -291,7 +301,7 @@ const TopUpForm = ({ onComplete }) => {
                 value={formData.fish_count}
                 onChange={handleChange}
                 min="1"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Number of fish to add"
                 required
               />
@@ -308,7 +318,7 @@ const TopUpForm = ({ onComplete }) => {
                 onChange={handleChange}
                 step="0.1"
                 min="0.1"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="ABW in grams"
                 required
               />
@@ -338,7 +348,7 @@ const TopUpForm = ({ onComplete }) => {
                 name="source_location"
                 value={formData.source_location}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Optional — also updates cycle source location"
               />
             </div>
@@ -352,7 +362,7 @@ const TopUpForm = ({ onComplete }) => {
                 name="transfer_supervisor"
                 value={formData.transfer_supervisor}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Recorded in notes only"
               />
             </div>
@@ -367,7 +377,7 @@ const TopUpForm = ({ onComplete }) => {
               value={formData.notes}
               onChange={handleChange}
               rows="3"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
               placeholder="Appended to the stock cycle notes together with the top-up block"
             ></textarea>
           </div>

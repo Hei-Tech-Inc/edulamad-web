@@ -6,7 +6,7 @@ import { useUiStore } from '@/stores/ui.store'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 
 const SIZE_CATEGORIES = [
-  { category: 'S3', range: '800g above', color: 'bg-purple-100 text-purple-800' },
+  { category: 'S3', range: '800g above', color: 'bg-slate-200 text-slate-900' },
   { category: 'S2', range: '700g-800g', color: 'bg-blue-100 text-blue-800' },
   { category: 'S1', range: '600g-700g', color: 'bg-green-100 text-green-800' },
   { category: 'Reg', range: '500g-600g', color: 'bg-yellow-100 text-yellow-800' },
@@ -130,10 +130,10 @@ export default function HarvestSampling() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="min-h-screen bg-slate-100">
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto mb-4"></div>
             <div className="text-lg text-gray-700">Loading cages...</div>
           </div>
         </div>
@@ -142,14 +142,14 @@ export default function HarvestSampling() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-slate-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center mb-4">
             <button
               onClick={() => router.push('/harvest')}
-              className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mr-4 transition-colors"
+              className="inline-flex items-center text-sky-600 hover:text-sky-800 mr-4 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 mr-1" />
               Back to Harvest
@@ -180,14 +180,14 @@ export default function HarvestSampling() {
           ) : preview ? (
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
               {/* Preview Header */}
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6">
+              <div className="bg-slate-800 px-8 py-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                     <Eye className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">Harvest Sampling Preview</h2>
-                    <p className="text-indigo-100">Review your data before saving</p>
+                    <p className="text-sky-100">Review your data before saving</p>
                   </div>
                 </div>
               </div>
@@ -195,7 +195,7 @@ export default function HarvestSampling() {
               <div className="p-8">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
                     <div className="flex items-center mb-3">
                       <Fish className="w-5 h-5 text-blue-600 mr-2" />
                       <span className="text-sm font-medium text-blue-700">Cage</span>
@@ -214,7 +214,7 @@ export default function HarvestSampling() {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6">
                     <div className="flex items-center mb-3">
                       <Calendar className="w-5 h-5 text-green-600 mr-2" />
                       <span className="text-sm font-medium text-green-700">Sampling Date</span>
@@ -223,16 +223,16 @@ export default function HarvestSampling() {
                     <div className="text-sm text-green-600">DOC: {doc} days</div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+                  <div className="rounded-xl border border-slate-200 bg-slate-100 p-6">
                     <div className="flex items-center mb-3">
-                      <Scale className="w-5 h-5 text-purple-600 mr-2" />
-                      <span className="text-sm font-medium text-purple-700">Sample Weight</span>
+                      <Scale className="w-5 h-5 text-slate-600 mr-2" />
+                      <span className="text-sm font-medium text-slate-700">Sample Weight</span>
                     </div>
-                    <div className="text-lg font-bold text-purple-900">{form.weight}g</div>
-                    <div className="text-sm text-purple-600">{form.fishCount} fish</div>
+                    <div className="text-lg font-bold text-slate-900">{form.weight}g</div>
+                    <div className="text-sm text-slate-600">{form.fishCount} fish</div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200">
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
                     <div className="flex items-center mb-3">
                       <Calculator className="w-5 h-5 text-orange-600 mr-2" />
                       <span className="text-sm font-medium text-orange-700">Average Body Weight</span>
@@ -245,8 +245,8 @@ export default function HarvestSampling() {
                 {/* Size Breakdown */}
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                      <BarChart3 className="w-4 h-4 text-indigo-600" />
+                    <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="w-4 h-4 text-sky-600" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900">Size Distribution</h3>
                   </div>
@@ -280,7 +280,7 @@ export default function HarvestSampling() {
                   </button>
                   <button
                     onClick={handleConfirm}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg"
+                    className="flex-1 px-6 py-3 bg-slate-800 text-white font-medium rounded-xl hover:bg-slate-900 transition-all shadow-lg"
                     disabled={!!sizeSumWarning}
                   >
                     Confirm & Save
@@ -298,14 +298,14 @@ export default function HarvestSampling() {
           ) : (
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
               {/* Form Header */}
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6">
+              <div className="bg-slate-800 px-8 py-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                     <Fish className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">Enter Sampling Data</h2>
-                    <p className="text-indigo-100">Fill in the details below to record your harvest sampling</p>
+                    <p className="text-sky-100">Fill in the details below to record your harvest sampling</p>
                   </div>
                 </div>
               </div>
@@ -329,7 +329,7 @@ export default function HarvestSampling() {
                           value={form.cageId}
                           onChange={handleChange}
                           required
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm"
                         >
                           <option value="">Select a cage</option>
                           {cages.map(cage => (
@@ -348,7 +348,7 @@ export default function HarvestSampling() {
                           value={form.date}
                           onChange={handleChange}
                           required
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm"
                         />
                       </div>
                     </div>
@@ -363,7 +363,7 @@ export default function HarvestSampling() {
                           onChange={handleChange}
                           min="1"
                           required
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm"
                           placeholder="Total weight of sampled fish"
                         />
                         <p className="mt-1 text-xs text-gray-500">Total weight of all sampled fish in grams</p>
@@ -378,7 +378,7 @@ export default function HarvestSampling() {
                           onChange={handleChange}
                           min="1"
                           required
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm"
                           placeholder="Number of fish sampled"
                         />
                         <p className="mt-1 text-xs text-gray-500">Number of fish in the sample</p>
@@ -388,7 +388,7 @@ export default function HarvestSampling() {
                   
                   {/* Calculated Values */}
                   <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                       <div className="flex items-center mb-2">
                         <Calendar className="w-4 h-4 text-green-600 mr-2" />
                         <span className="text-sm font-medium text-green-700">Days of Culture (DOC)</span>
@@ -398,15 +398,15 @@ export default function HarvestSampling() {
                       </div>
                     </div>
                     
-                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+                    <div className="rounded-xl border border-slate-200 bg-slate-100 p-4">
                       <div className="flex items-center mb-2">
-                        <Calculator className="w-4 h-4 text-purple-600 mr-2" />
-                        <span className="text-sm font-medium text-purple-700">Average Body Weight (ABW)</span>
+                        <Calculator className="mr-2 h-4 w-4 text-slate-600" />
+                        <span className="text-sm font-medium text-slate-700">Average Body Weight (ABW)</span>
                       </div>
-                      <div className="text-lg font-bold text-purple-900">
+                      <div className="text-lg font-bold text-slate-900">
                         {abw !== '' ? `${abw}g` : 'Not available'}
                       </div>
-                      <div className="text-xs text-purple-600">Auto-calculated: weight ÷ count</div>
+                      <div className="text-xs text-slate-600">Auto-calculated: weight ÷ count</div>
                     </div>
                   </div>
                 </div>
@@ -414,8 +414,8 @@ export default function HarvestSampling() {
                 {/* Size Breakdown Section */}
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                      <BarChart3 className="w-4 h-4 text-indigo-600" />
+                    <div className="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="w-4 h-4 text-sky-600" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900">Size Distribution</h3>
                   </div>
@@ -436,13 +436,13 @@ export default function HarvestSampling() {
                             value={form.sizes[size.category]}
                             onChange={handleChange}
                             min="0"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                             placeholder="0"
                           />
                         </div>
                       ))}
                     </div>
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-slate-200">
                       <p className="text-sm text-blue-700">
                         <Info className="w-4 h-4 inline mr-1" />
                         The sum of all size counts must equal the total fish count ({form.fishCount || 0}).
@@ -455,7 +455,7 @@ export default function HarvestSampling() {
                 <div className="sticky bottom-0 bg-white py-4 border-t border-gray-200">
                   <button
                     type="submit"
-                    className="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg text-lg flex items-center justify-center"
+                    className="w-full px-6 py-4 bg-slate-800 text-white font-semibold rounded-xl hover:bg-slate-900 transition-all shadow-lg text-lg flex items-center justify-center"
                     disabled={!!sizeSumWarning}
                   >
                     <Eye className="w-5 h-5 mr-2" />

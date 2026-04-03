@@ -184,7 +184,7 @@ export default function BiweeklyRecords() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
               <div className="bg-white shadow rounded-lg p-8">
                 <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-sky-600 border-t-transparent"></div>
                   <p className="mt-4 text-lg text-gray-600">Loading biweekly records...</p>
                 </div>
               </div>
@@ -205,7 +205,7 @@ export default function BiweeklyRecords() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
                   <Link href="/dashboard">
-                    <button className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4">
+                    <button className="text-sky-600 hover:text-sky-800 flex items-center mr-4">
                       <ArrowLeft className="w-4 h-4 mr-1" />
                       Back to Dashboard
                     </button>
@@ -214,7 +214,7 @@ export default function BiweeklyRecords() {
                 </div>
                 <div className="flex space-x-3">
                   <Link href="/biweekly-entry">
-                    <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700">
+                    <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-sky-600 hover:bg-sky-700">
                       <Plus className="w-4 h-4 mr-2" />
                       New Record
                     </button>
@@ -238,7 +238,7 @@ export default function BiweeklyRecords() {
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <FileText className="h-8 w-8 text-indigo-600" />
+                    <FileText className="h-8 w-8 text-sky-600" />
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-500">Total Records</p>
@@ -308,7 +308,7 @@ export default function BiweeklyRecords() {
                       placeholder="Search by cage or batch code..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      className="pl-10 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500"
                     />
                   </div>
                 </div>
@@ -318,7 +318,7 @@ export default function BiweeklyRecords() {
                   <select
                     value={selectedCage}
                     onChange={(e) => setSelectedCage(e.target.value)}
-                    className="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500"
                   >
                     <option value="all">All Cages</option>
                     {cages.map(cage => (
@@ -332,7 +332,7 @@ export default function BiweeklyRecords() {
                   <select
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
-                    className="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500"
                   >
                     <option value="all">All Time</option>
                     <option value="recent">Last 30 Days</option>
@@ -389,7 +389,7 @@ export default function BiweeklyRecords() {
                   </p>
                   <div className="mt-6">
                     <Link href="/biweekly-entry">
-                      <button className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700">
+                      <button className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-sky-600 hover:bg-sky-700">
                         <Plus className="w-4 h-4 mr-2" />
                         Create Record
                       </button>
@@ -444,7 +444,7 @@ export default function BiweeklyRecords() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm font-mono text-indigo-600 font-medium">
+                            <span className="text-sm font-mono text-sky-600 font-medium">
                               {record.batch_code}
                             </span>
                           </td>
@@ -473,14 +473,14 @@ export default function BiweeklyRecords() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-800">
                               {record.biweekly_sampling?.length || 0} samples
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button
                               onClick={() => handleViewDetails(record)}
-                              className="text-indigo-600 hover:text-indigo-900 flex items-center"
+                              className="text-sky-600 hover:text-sky-900 flex items-center"
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               View Details
@@ -557,7 +557,7 @@ export default function BiweeklyRecords() {
                       </div>
                       <div>
                         <dt className="text-sm font-medium text-gray-700">Batch Code</dt>
-                        <dd className="text-sm font-mono text-indigo-600">{selectedRecord.batch_code}</dd>
+                        <dd className="text-sm font-mono text-sky-600">{selectedRecord.batch_code}</dd>
                       </div>
                     </dl>
                   </div>

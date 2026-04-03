@@ -74,7 +74,7 @@ function MaintenanceCages() {
       <div className="min-h-screen bg-gray-100 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-sky-600 border-t-transparent"></div>
             <p className="mt-2 text-gray-600">Loading maintenance cages...</p>
           </div>
         </div>
@@ -122,7 +122,7 @@ function MaintenanceCages() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <Link href="/cages">
-              <button className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4">
+              <button className="text-sky-600 hover:text-sky-800 flex items-center mr-4">
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Back to Cages
               </button>
@@ -135,7 +135,7 @@ function MaintenanceCages() {
           {maintenanceData.map((cage) => (
             <div
               key={cage.id}
-              className="bg-white rounded-lg shadow p-6 border border-gray-200 hover:border-indigo-400 transition-colors"
+              className="bg-white rounded-lg shadow p-6 border border-gray-200 hover:border-sky-400 transition-colors"
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">{cage.name}</h3>
@@ -196,7 +196,7 @@ function MaintenanceCages() {
                   <Link
                     href={`/cages/${cage.id}?farmId=${encodeURIComponent(cage.farmId)}`}
                   >
-                    <button className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button className="w-full px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
                       View Details
                     </button>
                   </Link>

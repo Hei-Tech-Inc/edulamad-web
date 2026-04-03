@@ -20,8 +20,8 @@ const AdminCompanyRegistrationsPage = () => {
 
         <div className="bg-white shadow rounded-lg p-8">
           <div className="flex items-start gap-4">
-            <div className="bg-indigo-100 rounded-full p-3">
-              <Briefcase className="h-6 w-6 text-indigo-600" />
+            <div className="bg-sky-100 rounded-full p-3">
+              <Briefcase className="h-6 w-6 text-sky-600" />
             </div>
             <div>
               <h2 className="text-lg font-medium text-gray-900">
@@ -33,7 +33,7 @@ const AdminCompanyRegistrationsPage = () => {
               </p>
               <Link
                 href="/admin/admin"
-                className="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium text-sm"
+                className="mt-4 inline-flex items-center text-sky-600 hover:text-sky-800 font-medium text-sm"
               >
                 Open company management
                 <ArrowRight className="ml-1 h-4 w-4" />

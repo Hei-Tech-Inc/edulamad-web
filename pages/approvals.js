@@ -144,7 +144,7 @@ function PendingApprovals() {
         <div className="flex items-center mb-6">
           <Link
             href="/dashboard"
-            className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+            className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
@@ -165,7 +165,7 @@ function PendingApprovals() {
         <div className="bg-white shadow rounded-lg overflow-hidden">
           {loading ? (
             <div className="py-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto"></div>
               <p className="mt-3 text-gray-500">Loading pending approvals...</p>
             </div>
           ) : approvals.all.length > 0 ? (
@@ -421,7 +421,7 @@ function PendingApprovals() {
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 rows="3"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Please provide a reason for rejection"
                 required
               ></textarea>

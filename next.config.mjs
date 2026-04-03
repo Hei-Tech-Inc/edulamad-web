@@ -5,13 +5,29 @@ const apiProxyTarget =
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
-    return [
+    const rules = [
       {
         source: '/api/backend/:path*',
         destination: `${apiProxyTarget}/:path*`,
       },
     ]
+    // Only proxy PostHog in production builds — in dev the proxy runs in Node and often
+    // ETIMEDOUTs (jamming the terminal) while the browser can reach PostHog directly.
+    if (process.env.NODE_ENV !== 'development') {
+      rules.push(
+        {
+          source: '/ingest/static/:path*',
+          destination: 'https://us-assets.i.posthog.com/static/:path*',
+        },
+        {
+          source: '/ingest/:path*',
+          destination: 'https://us.i.posthog.com/:path*',
+        },
+      )
+    }
+    return rules
   },
+  skipTrailingSlashRedirect: true,
   // Fix chunk loading issues
   webpack: (config, { isServer }) => {
     // Ensure proper module resolution

@@ -6,6 +6,7 @@ import {
   mapMeResponseToRequestUser,
 } from '@/api/types/auth.types'
 import { toCompatUser } from '@/lib/auth-compat'
+import { AppApiError } from '@/lib/api-error'
 import { queryClient } from '@/lib/query-client'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -19,8 +20,11 @@ export const fetchUser = createAsyncThunk('auth/fetchUser', async () => {
     const ru = mapMeResponseToRequestUser(data)
     useAuthStore.getState().setUser(ru)
     return toCompatUser(ru)
-  } catch {
-    useAuthStore.getState().clearAuth()
+  } catch (e) {
+    // Only drop session on auth rejection — keep tokens if the API is unreachable.
+    if (e instanceof AppApiError && (e.status === 401 || e.status === 403)) {
+      useAuthStore.getState().clearAuth()
+    }
     return null
   }
 })

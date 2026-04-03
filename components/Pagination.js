@@ -90,7 +90,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             onClick={() => onPageChange(page)}
             className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
               currentPage === page
-                ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                ? 'z-10 bg-sky-50 border-sky-500 text-sky-600'
                 : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
             }`}
             aria-current={currentPage === page ? 'page' : undefined}

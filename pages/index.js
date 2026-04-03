@@ -17,9 +17,9 @@ export default function Home() {
 
   if (!initialized || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#070b14]">
+      <div className="flex min-h-screen items-center justify-center bg-slate-950">
         <div
-          className="h-10 w-10 animate-spin rounded-full border-2 border-teal-400/25 border-t-teal-400"
+          className="h-10 w-10 animate-spin rounded-full border-2 border-slate-700 border-t-sky-500"
           aria-hidden
         />
         <span className="sr-only">Loading</span>
@@ -29,9 +29,9 @@ export default function Home() {
 
   if (user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#070b14]">
+      <div className="flex min-h-screen items-center justify-center bg-slate-950">
         <div
-          className="h-10 w-10 animate-spin rounded-full border-2 border-teal-400/25 border-t-teal-400"
+          className="h-10 w-10 animate-spin rounded-full border-2 border-slate-700 border-t-sky-500"
           aria-hidden
         />
         <span className="sr-only">Redirecting</span>
@@ -45,12 +45,12 @@ export default function Home() {
         <title>Nsuo — Aquaculture operations platform</title>
         <meta
           name="description"
-          content="Multi-tenant operations software for aquaculture: organisations, farms, units, daily records, harvests, and audit-ready reporting."
+          content="The operations layer for aquaculture: organisations, farms, units, daily records, harvests, and audit-ready reporting — one disciplined system."
         />
         <meta property="og:title" content="Nsuo — Aquaculture operations platform" />
         <meta
           property="og:description"
-          content="Run every farm with one system — from stocking to harvest."
+          content="Unify every farm you run — stocking through harvest, with a command centre your team actually uses."
         />
       </Head>
       <LandingPage />

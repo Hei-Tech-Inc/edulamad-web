@@ -145,7 +145,7 @@ function BiweeklyEntry() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600"></div>
         </div>
       </Layout>
     )
@@ -158,7 +158,7 @@ function BiweeklyEntry() {
           <div className="mb-6">
             <button
               onClick={() => setSelectedCage(null)}
-              className="text-indigo-600 hover:text-indigo-800 flex items-center"
+              className="text-sky-600 hover:text-sky-800 flex items-center"
             >
               <X className="w-4 h-4 mr-2" />
               Back to Cage Selection
@@ -199,7 +199,7 @@ function BiweeklyEntry() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search cages by name, code, or location..."
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm"
               />
             </div>
 
@@ -207,7 +207,7 @@ function BiweeklyEntry() {
             <div className="flex items-center justify-between">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 <Filter className="w-4 h-4 mr-2" />
                 {showFilters ? 'Hide Filters' : 'Show Filters'}
@@ -216,7 +216,7 @@ function BiweeklyEntry() {
               {(searchQuery || statusFilter !== 'active' || locationFilter !== 'all' || sizeFilter !== 'all' || growthFilter !== 'all') && (
                 <button
                   onClick={clearFilters}
-                  className="text-sm text-indigo-600 hover:text-indigo-800"
+                  className="text-sm text-sky-600 hover:text-sky-800"
                 >
                   Clear all filters
                 </button>
@@ -231,7 +231,7 @@ function BiweeklyEntry() {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="block w-full px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -246,7 +246,7 @@ function BiweeklyEntry() {
                   <select
                     value={locationFilter}
                     onChange={(e) => setLocationFilter(e.target.value)}
-                    className="block w-full px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                   >
                     <option value="all">All Locations</option>
                     {uniqueLocations.map(location => (
@@ -260,7 +260,7 @@ function BiweeklyEntry() {
                   <select
                     value={sizeFilter}
                     onChange={(e) => setSizeFilter(e.target.value)}
-                    className="block w-full px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                   >
                     <option value="all">All Sizes</option>
                     <option value="Small (<50m³)">Small (&lt;50m³)</option>
@@ -274,7 +274,7 @@ function BiweeklyEntry() {
                   <select
                     value={growthFilter}
                     onChange={(e) => setGrowthFilter(e.target.value)}
-                    className="block w-full px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                   >
                     <option value="all">All Growth Rates</option>
                     <option value="Low (<50%)">Low (&lt;50%)</option>
@@ -291,7 +291,7 @@ function BiweeklyEntry() {
               <select
                 value={sortBy}
                 onChange={(e) => handleSort(e.target.value)}
-                className="block px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="block px-3 py-2 text-sm border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               >
                 <option value="name">Name</option>
                 <option value="code">Code</option>
@@ -329,7 +329,7 @@ function BiweeklyEntry() {
               <button
                 key={cage.id}
                 onClick={() => setSelectedCage(cage)}
-                className="relative block w-full bg-white border border-gray-200 rounded-xl hover:border-indigo-500 hover:ring-2 hover:ring-indigo-500 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="relative block w-full bg-white border border-gray-200 rounded-xl hover:border-sky-500 hover:ring-2 hover:ring-sky-500 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100">
@@ -423,7 +423,7 @@ function BiweeklyEntry() {
                 {/* Footer */}
                 <div className="px-6 py-3 bg-gray-50 rounded-b-xl">
                   <div className="text-center">
-                    <span className="text-sm font-medium text-indigo-600">
+                    <span className="text-sm font-medium text-sky-600">
                       Click to enter bi-weekly data
                     </span>
                   </div>
@@ -445,7 +445,7 @@ function BiweeklyEntry() {
             <div className="mt-6">
               <button
                 onClick={clearFilters}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700"
               >
                 Clear all filters
               </button>

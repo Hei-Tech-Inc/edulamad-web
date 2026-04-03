@@ -157,7 +157,7 @@ function Reports() {
         <div className="flex items-center mb-6">
           <Link
             href="/dashboard"
-            className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+            className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
@@ -181,7 +181,7 @@ function Reports() {
                   <select
                     value={reportType}
                     onChange={(e) => setReportType(e.target.value)}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   >
                     <option value="production">Production Summary</option>
                     <option value="feed">Feed Usage</option>
@@ -206,7 +206,7 @@ function Reports() {
                         name="startDate"
                         value={dateRange.startDate}
                         onChange={handleDateRangeChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                       />
                     </div>
                     <div>
@@ -218,7 +218,7 @@ function Reports() {
                         name="endDate"
                         value={dateRange.endDate}
                         onChange={handleDateRangeChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                       />
                     </div>
                   </div>
@@ -239,7 +239,7 @@ function Reports() {
                           cages.length > 0
                         }
                         onChange={handleSelectAllCages}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
                       />
                       <label
                         htmlFor="select-all"
@@ -256,7 +256,7 @@ function Reports() {
                             id={`cage-${cage.id}`}
                             checked={selectedCages.includes(cage.id)}
                             onChange={() => handleCageToggle(cage.id)}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
                           />
                           <label
                             htmlFor={`cage-${cage.id}`}
@@ -285,9 +285,9 @@ function Reports() {
                     disabled={loading}
                     className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                       loading
-                        ? 'bg-indigo-400'
-                        : 'bg-indigo-600 hover:bg-indigo-700'
-                    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                        ? 'bg-sky-400'
+                        : 'bg-sky-600 hover:bg-sky-700'
+                    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
                   >
                     {loading ? (
                       <>
@@ -445,7 +445,7 @@ function Reports() {
                       )}
 
                       {reportType === 'growth' && (
-                        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 text-sm text-indigo-950">
+                        <div className="bg-sky-50 border border-sky-100 rounded-lg p-4 text-sm text-sky-950">
                           <p>
                             Weight samples:{' '}
                             <strong>{reportData.data.weightSampleCount}</strong>.

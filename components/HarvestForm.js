@@ -8,6 +8,7 @@ import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 import { useUiStore } from '@/stores/ui.store'
 import { fetchActiveCycleIdForUnit } from '@/lib/unit-cycles-api'
+import posthog from 'posthog-js'
 
 const SIZE_CATEGORIES = [
   { category: 'S3', range: '800g above' },
@@ -165,11 +166,21 @@ const HarvestForm = ({ onComplete }) => {
         queryKey: queryKeys.harvests.byUnit(formData.cageId),
       })
 
+      posthog.capture('harvest_recorded', {
+        cage_id: formData.cageId,
+        harvest_type: formData.harvestType,
+        total_weight_kg: parseFloat(formData.totalWeight),
+        average_body_weight_g: parseFloat(formData.averageBodyWeight),
+        estimated_count: parseInt(formData.estimatedCount, 10),
+        fcr: parseFloat(formData.fcr),
+        harvest_date: formData.harvestDate,
+      })
       showToast('Harvest record saved successfully', 'success')
       setShowPreview(false)
       if (onComplete) onComplete()
     } catch (error) {
       console.error('Error saving harvest record:', error)
+      posthog.captureException(error)
       showToast(error.message || 'Error saving harvest record', 'error')
       setShowPreview(false)
     } finally {
@@ -214,7 +225,7 @@ const HarvestForm = ({ onComplete }) => {
                   name="cageId"
                   value={formData.cageId}
                   onChange={handleChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   required
                 >
                   <option value="">Select a cage</option>
@@ -235,7 +246,7 @@ const HarvestForm = ({ onComplete }) => {
                   name="harvestDate"
                   value={formData.harvestDate}
                   onChange={handleChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   required
                 />
               </div>
@@ -248,7 +259,7 @@ const HarvestForm = ({ onComplete }) => {
                   name="harvestType"
                   value={formData.harvestType}
                   onChange={handleChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   required
                 >
                   <option value="complete">Complete Harvest</option>
@@ -266,7 +277,7 @@ const HarvestForm = ({ onComplete }) => {
                   value={formData.totalWeight}
                   onChange={handleChange}
                   step="0.01"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   required
                 />
               </div>
@@ -281,7 +292,7 @@ const HarvestForm = ({ onComplete }) => {
                   value={formData.averageBodyWeight}
                   onChange={handleChange}
                   step="0.01"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   required
                 />
               </div>
@@ -295,7 +306,7 @@ const HarvestForm = ({ onComplete }) => {
                   name="estimatedCount"
                   value={formData.estimatedCount}
                   onChange={handleChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   required
                 />
               </div>
@@ -310,7 +321,7 @@ const HarvestForm = ({ onComplete }) => {
                   value={formData.fcr}
                   onChange={handleChange}
                   step="0.01"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   required
                 />
               </div>
@@ -331,7 +342,7 @@ const HarvestForm = ({ onComplete }) => {
                       value={size.weight}
                       onChange={(e) => handleSizeBreakdownChange(index, e.target.value)}
                       step="0.01"
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                       required
                     />
                   </div>
@@ -348,7 +359,7 @@ const HarvestForm = ({ onComplete }) => {
                 value={formData.notes}
                 onChange={handleChange}
                 rows="3"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Optional notes about the harvest"
               />
             </div>
@@ -365,7 +376,7 @@ const HarvestForm = ({ onComplete }) => {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
             >
               Preview Harvest Record
             </button>
@@ -423,7 +434,7 @@ const HarvestForm = ({ onComplete }) => {
               type="button"
               onClick={handleConfirmSave}
               disabled={loading}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
             >
               {loading ? 'Saving...' : 'Confirm Save'}
             </button>

@@ -118,7 +118,7 @@ const SamplingForm = ({ unitId, harvestId, onComplete }) => {
           <select
             value={formData.crateSize}
             onChange={(e) => handleCrateSizeChange(e.target.value)}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
           >
             <option value="50">50 kg</option>
             <option value="25">25 kg</option>
@@ -161,7 +161,7 @@ const SamplingForm = ({ unitId, harvestId, onComplete }) => {
                         type="number"
                         value={sample.quantity}
                         onChange={(e) => handleSamplingDataChange(index, 'quantity', e.target.value)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -170,7 +170,7 @@ const SamplingForm = ({ unitId, harvestId, onComplete }) => {
                         value={sample.abw}
                         onChange={(e) => handleSamplingDataChange(index, 'abw', e.target.value)}
                         step="0.1"
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                       />
                     </td>
                   </tr>
@@ -192,7 +192,7 @@ const SamplingForm = ({ unitId, harvestId, onComplete }) => {
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
         >
           {loading ? 'Saving...' : 'Save Sampling Data'}
         </button>

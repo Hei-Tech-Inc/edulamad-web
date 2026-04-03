@@ -8,6 +8,7 @@ import { fetchLegacyUnitsForFarm } from '@/lib/cages-redux-api'
 import { useUiStore } from '@/stores/ui.store'
 import { fetchAllStockCyclesForUnit } from '@/lib/unit-cycles-api'
 import { buildCreateStockCycleBody } from '@/lib/build-create-stock-cycle-payload'
+import posthog from 'posthog-js'
 
 function isAvailableForStocking(unit) {
   const s = (unit.status || '').toLowerCase()
@@ -184,6 +185,14 @@ const StockingForm = () => {
       const body = buildCreateStockCycleBody(formData)
       await apiClient.post(API.units.cycles(formData.cageId), body)
 
+      posthog.capture('cage_stocked', {
+        cage_id: formData.cageId,
+        species: formData.species,
+        fish_count: parseFloat(formData.fishCount),
+        initial_abw_g: parseFloat(formData.initialABW),
+        initial_biomass_kg: parseFloat(formData.initialBiomass),
+        stocking_date: formData.stockingDate,
+      })
       setMessage('Stock cycle created successfully.')
       setFormData({
         cageId: '',
@@ -205,6 +214,7 @@ const StockingForm = () => {
       }, 2000)
     } catch (err) {
       console.error(err)
+      posthog.captureException(err)
       setError(err?.message || 'Failed to create stock cycle.')
     } finally {
       setLoading(false)
@@ -238,7 +248,7 @@ const StockingForm = () => {
               </label>
               {fetchingData ? (
                 <div className="flex items-center space-x-2 h-10">
-                  <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-sm text-gray-500">Loading…</span>
                 </div>
               ) : (
@@ -247,7 +257,7 @@ const StockingForm = () => {
                     name="cageId"
                     value={formData.cageId}
                     onChange={(e) => handleCageSelect(e.target.value)}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                     required
                     disabled={availableCages.length === 0}
                   >
@@ -280,7 +290,7 @@ const StockingForm = () => {
                 name="species"
                 value={formData.species}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 required
               >
                 <option value="tilapia_nile">Nile tilapia</option>
@@ -299,7 +309,7 @@ const StockingForm = () => {
                 name="sourceName"
                 value={formData.sourceName}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="e.g. Volta Fish Hatchery"
                 required
               />
@@ -314,7 +324,7 @@ const StockingForm = () => {
                 name="batchNumber"
                 value={formData.batchNumber}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
@@ -332,7 +342,7 @@ const StockingForm = () => {
                 name="stockingDate"
                 value={formData.stockingDate}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 required
               />
             </div>
@@ -346,7 +356,7 @@ const StockingForm = () => {
                 name="fishCount"
                 value={formData.fishCount}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Number of fish"
                 required
               />
@@ -362,7 +372,7 @@ const StockingForm = () => {
                 value={formData.initialABW}
                 onChange={handleChange}
                 step="0.1"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Average body weight in grams"
                 required
               />
@@ -377,7 +387,7 @@ const StockingForm = () => {
                 name="initialBiomass"
                 value={formData.initialBiomass}
                 step="0.01"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm bg-gray-50"
                 readOnly
                 required
               />
@@ -395,7 +405,7 @@ const StockingForm = () => {
                 name="sourceLocation"
                 value={formData.sourceLocation}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Geographic source"
               />
             </div>
@@ -409,7 +419,7 @@ const StockingForm = () => {
                 name="sourceCage"
                 value={formData.sourceCage}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Recorded in cycle notes"
               />
             </div>
@@ -423,7 +433,7 @@ const StockingForm = () => {
                 name="transferSupervisor"
                 value={formData.transferSupervisor}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Recorded in cycle notes"
               />
             </div>
@@ -437,7 +447,7 @@ const StockingForm = () => {
                 name="samplingSupervisor"
                 value={formData.samplingSupervisor}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Recorded in cycle notes"
               />
             </div>
@@ -455,8 +465,8 @@ const StockingForm = () => {
               type="submit"
               disabled={loading}
               className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                loading ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                loading ? 'bg-sky-400' : 'bg-sky-600 hover:bg-sky-700'
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
             >
               {loading ? 'Saving…' : 'Create stock cycle'}
             </button>

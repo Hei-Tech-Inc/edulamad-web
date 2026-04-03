@@ -6,6 +6,7 @@ import { ArrowLeft, Download, Database, FileDown } from 'lucide-react'
 import ProtectedRoute from '../components/ProtectedRoute'
 import { resolveFarmIdForRedux } from '@/lib/resolve-farm-for-redux'
 import { fetchExportDataset } from '@/lib/farm-export-data'
+import posthog from 'posthog-js'
 
 export default function ExportPage() {
   return (
@@ -81,9 +82,17 @@ function ExportData() {
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 
+      posthog.capture('data_exported', {
+        export_type: exportType,
+        format,
+        record_count: data.length,
+        start_date: dateRange.startDate,
+        end_date: dateRange.endDate,
+      })
       setMessage(`Successfully exported ${data.length} ${exportType} records`)
     } catch (error) {
       console.error('Error exporting data:', error.message)
+      posthog.captureException(error)
       setError(error.message)
     } finally {
       setLoading(false)
@@ -119,7 +128,7 @@ function ExportData() {
         <div className="flex items-center mb-6">
           <Link
             href="/dashboard"
-            className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+            className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
@@ -153,7 +162,7 @@ function ExportData() {
               <select
                 value={exportType}
                 onChange={(e) => setExportType(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
               >
                 <option value="cages">Cages</option>
                 <option value="daily">Daily Records</option>
@@ -176,7 +185,7 @@ function ExportData() {
                     value="csv"
                     checked={format === 'csv'}
                     onChange={() => setFormat('csv')}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                    className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300"
                   />
                   <label
                     htmlFor="format-csv"
@@ -193,7 +202,7 @@ function ExportData() {
                     value="json"
                     checked={format === 'json'}
                     onChange={() => setFormat('json')}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                    className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300"
                   />
                   <label
                     htmlFor="format-json"
@@ -221,7 +230,7 @@ function ExportData() {
                       name="startDate"
                       value={dateRange.startDate}
                       onChange={handleDateRangeChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                     />
                   </div>
                   <div>
@@ -233,7 +242,7 @@ function ExportData() {
                       name="endDate"
                       value={dateRange.endDate}
                       onChange={handleDateRangeChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                     />
                   </div>
                 </div>
@@ -247,9 +256,9 @@ function ExportData() {
                 disabled={loading}
                 className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                   loading
-                    ? 'bg-indigo-400'
-                    : 'bg-indigo-600 hover:bg-indigo-700'
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                    ? 'bg-sky-400'
+                    : 'bg-sky-600 hover:bg-sky-700'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
               >
                 {loading ? (
                   <>

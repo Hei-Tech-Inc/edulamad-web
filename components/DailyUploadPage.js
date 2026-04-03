@@ -216,7 +216,7 @@ const DailyUploadPage = () => {
           <div className="flex items-center">
             <Link
               href="/dashboard"
-              className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+              className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
             >
               <ArrowLeft className="w-5 h-5 mr-1" />
               Back to Dashboard
@@ -253,7 +253,7 @@ const DailyUploadPage = () => {
                       placeholder="Search cages..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                      className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500"
                     />
                   </div>
                 </div>
@@ -270,13 +270,13 @@ const DailyUploadPage = () => {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-sky-100 text-sky-600' : 'text-gray-600 hover:bg-gray-100'}`}
                   >
                     <Grid className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-sky-100 text-sky-600' : 'text-gray-600 hover:bg-gray-100'}`}
                   >
                     <List className="w-5 h-5" />
                   </button>
@@ -285,7 +285,7 @@ const DailyUploadPage = () => {
                 <button
                   onClick={() => setCompactView(!compactView)}
                   className={`px-3 py-2 text-sm font-medium rounded-md ${
-                    compactView ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-100'
+                    compactView ? 'bg-sky-100 text-sky-600' : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
                   Compact View
@@ -324,7 +324,7 @@ const DailyUploadPage = () => {
                             onClick={() => handleSort(option.value)}
                             className={`px-3 py-1 rounded-md text-sm font-medium ${
                               sortBy === option.value
-                                ? 'bg-indigo-100 text-indigo-600'
+                                ? 'bg-sky-100 text-sky-600'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                             }`}
                           >
@@ -377,7 +377,7 @@ const DailyUploadPage = () => {
                   <button
                     key={cage.id}
                     onClick={() => setSelectedCage(cage)}
-                    className={`bg-white rounded-lg shadow hover:shadow-lg transition p-4 flex flex-col items-start border border-gray-200 hover:border-indigo-400 focus:outline-none ${
+                    className={`bg-white rounded-lg shadow hover:shadow-lg transition p-4 flex flex-col items-start border border-gray-200 hover:border-sky-400 focus:outline-none ${
                       compactView ? 'text-sm' : ''
                     }`}
                   >
@@ -507,7 +507,7 @@ const DailyUploadPage = () => {
                       onClick={() => setPage(i + 1)}
                       className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
                         page === i + 1
-                          ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                          ? 'z-10 bg-sky-50 border-sky-500 text-sky-600'
                           : 'text-gray-500 hover:bg-gray-50'
                       }`}
                     >
@@ -532,7 +532,7 @@ const DailyUploadPage = () => {
                 <p className="text-gray-500">No cages found matching your criteria.</p>
                 <button
                   onClick={clearFilters}
-                  className="mt-4 text-indigo-600 hover:text-indigo-800"
+                  className="mt-4 text-sky-600 hover:text-sky-800"
                 >
                   Clear all filters
                 </button>
@@ -543,7 +543,7 @@ const DailyUploadPage = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <button
               onClick={() => setSelectedCage(null)}
-              className="mb-4 text-indigo-600 hover:text-indigo-800 flex items-center"
+              className="mb-4 text-sky-600 hover:text-sky-800 flex items-center"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back to Cage Selection

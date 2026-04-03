@@ -194,7 +194,7 @@ function CompanySettings() {
         <div className="flex items-center mb-6">
           <Link
             href="/dashboard"
-            className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+            className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
@@ -206,7 +206,7 @@ function CompanySettings() {
         <div className="bg-white shadow rounded-lg overflow-hidden">
           {loading ? (
             <div className="p-8 flex justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600"></div>
             </div>
           ) : (
             <div className="p-6">
@@ -229,7 +229,7 @@ function CompanySettings() {
                   >
                     {uploading ? (
                       <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
                       </div>
                     ) : company.logo_url ? (
                       <div className="h-full w-full relative">
@@ -291,7 +291,7 @@ function CompanySettings() {
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                            className="focus:ring-sky-500 focus:border-sky-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                             placeholder="Company Name"
                             required
                           />
@@ -311,7 +311,7 @@ function CompanySettings() {
                             name="abbreviation"
                             value={formData.abbreviation}
                             onChange={handleChange}
-                            className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                            className="focus:ring-sky-500 focus:border-sky-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                             placeholder="Company Abbreviation"
                             maxLength={5}
                           />
@@ -331,7 +331,7 @@ function CompanySettings() {
                           value={formData.address}
                           onChange={handleChange}
                           rows="3"
-                          className="focus:ring-indigo-500 focus:border-indigo-500 block w-full py-2 px-3 sm:text-sm border-gray-300 rounded-md"
+                          className="focus:ring-sky-500 focus:border-sky-500 block w-full py-2 px-3 sm:text-sm border-gray-300 rounded-md"
                           placeholder="Company Address"
                         ></textarea>
                       </div>
@@ -350,7 +350,7 @@ function CompanySettings() {
                               name="contact_email"
                               value={formData.contact_email}
                               onChange={handleChange}
-                              className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                              className="focus:ring-sky-500 focus:border-sky-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                               placeholder="Contact Email"
                             />
                           </div>
@@ -369,7 +369,7 @@ function CompanySettings() {
                               name="contact_phone"
                               value={formData.contact_phone}
                               onChange={handleChange}
-                              className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                              className="focus:ring-sky-500 focus:border-sky-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
                               placeholder="Contact Phone"
                             />
                           </div>
@@ -383,9 +383,9 @@ function CompanySettings() {
                         disabled={saving}
                         className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                           saving
-                            ? 'bg-indigo-400'
-                            : 'bg-indigo-600 hover:bg-indigo-700'
-                        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                            ? 'bg-sky-400'
+                            : 'bg-sky-600 hover:bg-sky-700'
+                        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
                       >
                         {saving ? (
                           <>

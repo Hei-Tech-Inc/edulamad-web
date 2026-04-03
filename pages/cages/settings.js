@@ -156,7 +156,7 @@ export default function CageSettingsPage() {
                           key={cage.id}
                           className={`p-4 rounded-lg border ${
                             selectedCage?.id === cage.id
-                              ? 'border-indigo-500 bg-indigo-50'
+                              ? 'border-sky-500 bg-sky-50'
                               : 'border-gray-200'
                           }`}
                         >
@@ -231,7 +231,7 @@ export default function CageSettingsPage() {
                               setFormData({ ...formData, name: e.target.value })
                             }
                             disabled={!editMode}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"
                           />
                         </div>
 
@@ -246,7 +246,7 @@ export default function CageSettingsPage() {
                               setFormData({ ...formData, location: e.target.value })
                             }
                             disabled={!editMode}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"
                           />
                         </div>
 
@@ -261,7 +261,7 @@ export default function CageSettingsPage() {
                               setFormData({ ...formData, size: e.target.value })
                             }
                             disabled={!editMode}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"
                           />
                         </div>
 
@@ -276,7 +276,7 @@ export default function CageSettingsPage() {
                               setFormData({ ...formData, capacity: e.target.value })
                             }
                             disabled={!editMode}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"
                           />
                         </div>
 
@@ -291,7 +291,7 @@ export default function CageSettingsPage() {
                               setFormData({ ...formData, material: e.target.value })
                             }
                             disabled={!editMode}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"
                           />
                         </div>
 
@@ -306,7 +306,7 @@ export default function CageSettingsPage() {
                             }
                             disabled={!editMode}
                             rows="3"
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"
                           />
                         </div>
                       </div>

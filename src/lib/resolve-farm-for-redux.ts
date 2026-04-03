@@ -8,12 +8,16 @@ export async function resolveFarmIdForRedux(): Promise<string | null> {
   const existing = useUiStore.getState().activeFarmId;
   if (existing) return existing;
 
-  const { data } = await apiClient.get(API.farms.list, { params: { limit: 100 } });
-  const { items } = normalizeFarmListBody(data);
-  const first = items[0];
-  if (first?.id) {
-    useUiStore.getState().setActiveFarmId(first.id);
-    return first.id;
+  try {
+    const { data } = await apiClient.get(API.farms.list, { params: { limit: 100 } });
+    const { items } = normalizeFarmListBody(data);
+    const first = items[0];
+    if (first?.id) {
+      useUiStore.getState().setActiveFarmId(first.id);
+      return first.id;
+    }
+    return null;
+  } catch {
+    return null;
   }
-  return null;
 }

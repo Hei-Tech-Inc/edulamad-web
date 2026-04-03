@@ -256,7 +256,7 @@ function StockingManagement() {
             <div className="flex items-center">
               <Link
                 href="/cages"
-                className="text-indigo-600 hover:text-indigo-800 flex items-center mr-4"
+                className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
               >
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Back to Cages
@@ -267,7 +267,7 @@ function StockingManagement() {
             </div>
 
             <Link href="/stocking">
-              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700">
                 <Plus className="w-4 h-4 mr-2" />
                 New Stocking
               </button>
@@ -291,7 +291,7 @@ function StockingManagement() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search stockings..."
-                className="pl-10 block w-full sm:text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                className="pl-10 block w-full sm:text-sm border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
 
@@ -316,7 +316,7 @@ function StockingManagement() {
                         <select
                           value={yearFilter}
                           onChange={(e) => setYearFilter(e.target.value)}
-                          className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                          className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm rounded-md"
                         >
                           <option value="all">All Years</option>
                           {availableYears.map((year) => (
@@ -334,7 +334,7 @@ function StockingManagement() {
                         <select
                           value={cageFilter}
                           onChange={(e) => setCageFilter(e.target.value)}
-                          className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                          className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm rounded-md"
                         >
                           <option value="all">All Cages</option>
                           {uniqueCages.map((cage) => (
@@ -355,7 +355,7 @@ function StockingManagement() {
           <div className="overflow-x-auto">
             {loading ? (
               <div className="py-12 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto"></div>
                 <p className="mt-3 text-sm text-gray-500">
                   Loading stocking data...
                 </p>
@@ -489,7 +489,7 @@ function StockingManagement() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredStockings.map((stocking) => (
                     <tr key={stocking.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-indigo-600">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-sky-600">
                         {stocking.batch_number}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -513,7 +513,7 @@ function StockingManagement() {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
                         <button
                           onClick={() => handleEditStocking(stocking)}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className="text-sky-600 hover:text-sky-900"
                           title="Edit Stocking"
                         >
                           <Edit className="w-4 h-4" />
@@ -527,7 +527,7 @@ function StockingManagement() {
               <div className="py-12 text-center">
                 <p className="text-gray-500">No stocking records found.</p>
                 <Link href="/stocking">
-                  <button className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                  <button className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700">
                     <Plus className="w-4 h-4 mr-2" />
                     Create New Stocking
                   </button>
@@ -614,7 +614,7 @@ function StockingManagement() {
                 <input
                   type="text"
                   value={calculateBiomass().toFixed(2)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm bg-gray-50"
                   readOnly
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -631,7 +631,7 @@ function StockingManagement() {
                   name="source_location"
                   value={formData.source_location}
                   onChange={handleChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 />
               </div>
 
@@ -644,7 +644,7 @@ function StockingManagement() {
                   value={formData.notes}
                   onChange={handleChange}
                   rows="3"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                   placeholder="Optional notes"
                 ></textarea>
               </div>
@@ -659,7 +659,7 @@ function StockingManagement() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700"
                 >
                   Save source and notes
                 </button>

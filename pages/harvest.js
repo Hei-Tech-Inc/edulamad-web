@@ -157,7 +157,7 @@ const HarvestPage = () => {
         <div className="flex space-x-2">
           <button
             onClick={() => handleAddSampling(record)}
-            className="text-indigo-600 hover:text-indigo-900"
+            className="text-sky-600 hover:text-sky-900"
           >
             Add Sampling
           </button>
@@ -190,7 +190,7 @@ const HarvestPage = () => {
               </button>
               <button
                 onClick={handleAddHarvest}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700"
               >
                 Add Harvest
               </button>
@@ -209,7 +209,7 @@ const HarvestPage = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search by cage name or code"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 />
               </div>
               <div>
@@ -220,7 +220,7 @@ const HarvestPage = () => {
                   type="date"
                   value={dateRange.start}
                   onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 />
               </div>
               <div>
@@ -231,7 +231,7 @@ const HarvestPage = () => {
                   type="date"
                   value={dateRange.end}
                   onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -240,7 +240,7 @@ const HarvestPage = () => {
           {/* Content */}
           {loading ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto"></div>
               <p className="mt-4 text-gray-600">Loading harvest records...</p>
             </div>
           ) : error ? (

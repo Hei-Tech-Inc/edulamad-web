@@ -586,7 +586,7 @@ function Dashboard({ selectedCage }) {
       sortable: true,
       searchable: true,
       cell: (row) => (
-        <span className="font-medium text-indigo-600">{row.batch_number}</span>
+        <span className="font-medium text-sky-600">{row.batch_number}</span>
       ),
     },
     {
@@ -735,30 +735,58 @@ function Dashboard({ selectedCage }) {
     return data
   }
 
-  // Add color mapping
-  const colorMap = {
-    blue: '#2563eb',
-    red: '#dc2626',
-    green: '#16a34a',
-    yellow: '#ca8a04',
-    purple: '#9333ea',
-    indigo: '#4f46e5',
-    pink: '#db2777',
-    teal: '#0d9488'
+  /** Full Tailwind classes + sparkline stroke — dynamic `bg-${x}` never worked with JIT. */
+  const METRIC_ACCENTS = {
+    blue: {
+      iconWrap: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300',
+      stroke: '#0369a1',
+    },
+    red: {
+      iconWrap: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300',
+      stroke: '#be123c',
+    },
+    green: {
+      iconWrap:
+        'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300',
+      stroke: '#047857',
+    },
+    yellow: {
+      iconWrap:
+        'bg-amber-100 text-amber-950 dark:bg-amber-950 dark:text-amber-200',
+      stroke: '#b45309',
+    },
+    purple: {
+      iconWrap:
+        'bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-300',
+      stroke: '#6d28d9',
+    },
+    sky: {
+      iconWrap: 'bg-sky-100 text-sky-900 dark:bg-slate-800 dark:text-sky-300',
+      stroke: '#0284c7',
+    },
+    pink: {
+      iconWrap: 'bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-300',
+      stroke: '#e11d48',
+    },
+    teal: {
+      iconWrap: 'bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300',
+      stroke: '#0f766e',
+    },
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Time Range Selector */}
-      <div className="flex justify-end space-x-2">
-        {['7d', '30d', '90d', '1y'].map(range => (
+      <div className="flex justify-end gap-1 rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900">
+        {['7d', '30d', '90d', '1y'].map((range) => (
           <button
             key={range}
+            type="button"
             onClick={() => setTimeRange(range)}
-            className={`px-3 py-1 rounded-md text-sm ${
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
               timeRange === range
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-slate-900 text-white shadow-sm dark:bg-sky-700 dark:text-white'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
             }`}
           >
             {range}
@@ -844,7 +872,7 @@ function Dashboard({ selectedCage }) {
             title: 'Days to Harvest',
             value: metrics.daysToHarvest === 'N/A' ? 0 : parseFloat(metrics.daysToHarvest),
             icon: Calendar,
-            color: 'indigo',
+            color: 'sky',
             trend: calculateTrend(metrics.daysToHarvest === 'N/A' ? 0 : parseFloat(metrics.daysToHarvest), 10),
             tooltip: 'Time until fish are ready for harvest',
             unit: 'days',
@@ -878,34 +906,49 @@ function Dashboard({ selectedCage }) {
             parseFloat(metric.value) || 0,
             metric.trend
           )
-          
+          const accent =
+            METRIC_ACCENTS[metric.color] || METRIC_ACCENTS.blue
+
           return (
             <div
               key={index}
-              className={`bg-${metric.color}-50 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-${metric.color}-100`}
+              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
             >
               <div className="p-5">
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center">
-                    <div className={`p-2 rounded-lg bg-${metric.color}-100 mr-3`}>
-                      <metric.icon className={`w-5 h-5 text-${metric.color}-600`} />
+                    <div
+                      className={`mr-3 rounded-md p-2 ${accent.iconWrap}`}
+                    >
+                      <metric.icon className="h-5 w-5" strokeWidth={2} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-600">{metric.title}</h3>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        {metric.title}
+                      </h3>
                       <div className="flex items-baseline">
-                        <p className="text-2xl font-semibold text-gray-900">
-                          {metric.unit === '₵' ? metric.unit : ''}{metric.value.toFixed(metric.unit === '%' ? 1 : 0)}
+                        <p className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                          {metric.unit === '₵' ? metric.unit : ''}
+                          {metric.value.toFixed(metric.unit === '%' ? 1 : 0)}
                           {metric.unit !== '₵' ? ` ${metric.unit}` : ''}
                         </p>
                         {metric.trend && metric.trend.value > 0 && (
-                          <span className={`ml-2 text-sm flex items-center ${
-                            metric.trend.direction === 'up' ? 'text-green-600' : 
-                            metric.trend.direction === 'down' ? 'text-red-600' : 
-                            'text-gray-600'
-                          }`}>
-                            {metric.trend.direction === 'up' ? <ArrowUp className="w-3 h-3 mr-1" /> : 
-                             metric.trend.direction === 'down' ? <ArrowDown className="w-3 h-3 mr-1" /> : 
-                             ''}
+                          <span
+                            className={`ml-2 flex items-center text-sm ${
+                              metric.trend.direction === 'up'
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : metric.trend.direction === 'down'
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : 'text-slate-500 dark:text-slate-400'
+                            }`}
+                          >
+                            {metric.trend.direction === 'up' ? (
+                              <ArrowUp className="mr-1 h-3 w-3" />
+                            ) : metric.trend.direction === 'down' ? (
+                              <ArrowDown className="mr-1 h-3 w-3" />
+                            ) : (
+                              ''
+                            )}
                             {metric.trend.value}%
                           </span>
                         )}
@@ -913,25 +956,25 @@ function Dashboard({ selectedCage }) {
                     </div>
                   </div>
                 </div>
-                
-                {/* Mini sparkline chart */}
-                <div className="h-10 mt-2">
+
+                <div className="mt-2 h-10">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsLineChart data={sparklineData}>
                       <Line
                         type="monotone"
                         dataKey="value"
-                        stroke={colorMap[metric.color]}
+                        stroke={accent.stroke}
                         strokeWidth={2}
                         dot={false}
                       />
                     </RechartsLineChart>
                   </ResponsiveContainer>
                 </div>
-                
-                {/* Description and subtext */}
-                <div className="mt-2 pt-2 border-t border-gray-200">
-                  <p className="text-xs text-gray-600">{metric.subtext}</p>
+
+                <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                  <p className="text-xs leading-snug text-slate-600 dark:text-slate-400">
+                    {metric.subtext}
+                  </p>
                 </div>
               </div>
             </div>
@@ -940,12 +983,17 @@ function Dashboard({ selectedCage }) {
       </div>
 
       {/* Charts Section */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-medium text-gray-900">Performance Analytics</h2>
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            Performance analytics
+          </h2>
           <button
-            onClick={() => setExpandedSections(prev => ({...prev, charts: !prev.charts}))}
-            className="text-gray-500 hover:text-gray-700"
+            type="button"
+            onClick={() =>
+              setExpandedSections((prev) => ({ ...prev, charts: !prev.charts }))
+            }
+            className="rounded p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           >
             {expandedSections.charts ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
@@ -954,12 +1002,14 @@ function Dashboard({ selectedCage }) {
         {expandedSections.charts && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Growth Performance Chart */}
-            <div className="bg-white rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-4">Growth Performance</h3>
+            <div className="rounded-md border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                Growth performance
+              </h3>
               <div className="h-64">
                 {loading ? (
                   <div className="h-full flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
                   </div>
                 ) : growthData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -1010,7 +1060,7 @@ function Dashboard({ selectedCage }) {
                     </RechartsLineChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-gray-500">
+                  <div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-400">
                     No growth data available
                   </div>
                 )}
@@ -1018,12 +1068,14 @@ function Dashboard({ selectedCage }) {
             </div>
 
             {/* Feed Consumption Chart */}
-            <div className="bg-white rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-4">Feed Consumption</h3>
+            <div className="rounded-md border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                Feed consumption
+              </h3>
               <div className="h-64">
                 {loading ? (
                   <div className="h-full flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
                   </div>
                 ) : feedData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -1071,7 +1123,7 @@ function Dashboard({ selectedCage }) {
                     </RechartsBarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-gray-500">
+                  <div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-400">
                     No feed data available
                   </div>
                 )}
@@ -1079,8 +1131,10 @@ function Dashboard({ selectedCage }) {
             </div>
 
             {/* Mortality Trend Chart */}
-            <div className="bg-white rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-4">Mortality Trend</h3>
+            <div className="rounded-md border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                Mortality trend
+              </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={mortalityData}>
@@ -1111,8 +1165,10 @@ function Dashboard({ selectedCage }) {
             </div>
 
             {/* Feed Efficiency Chart */}
-            <div className="bg-white rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-4">Feed Efficiency (FCR)</h3>
+            <div className="rounded-md border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                Feed efficiency (FCR)
+              </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsLineChart data={feedEfficiencyData}>
@@ -1132,8 +1188,10 @@ function Dashboard({ selectedCage }) {
             </div>
 
             {/* Biomass Projection Chart */}
-            <div className="bg-white rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-4">Biomass Projection</h3>
+            <div className="rounded-md border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                Biomass projection
+              </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsLineChart data={biomassProjection}>
@@ -1160,17 +1218,17 @@ function Dashboard({ selectedCage }) {
             </div>
 
             {/* Weather observations (farm-level, Nsuo API) */}
-            <div className="bg-white rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-1">
+            <div className="rounded-md border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                 Farm weather observations
               </h3>
-              <p className="text-xs text-gray-500 mb-3">
+              <p className="mb-3 text-xs text-slate-500 dark:text-slate-500">
                 Rainfall (mm) and water-level trend (+1 risen, 0 stable, −1
                 fallen) from the last ~120 days.
               </p>
               <div className="h-64">
                 {waterQualityData.length === 0 ? (
-                  <p className="text-sm text-gray-500 flex items-center justify-center h-full">
+                  <p className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-400">
                     No weather observations in range — record them in Nsuo for
                     this farm.
                   </p>
@@ -1219,18 +1277,27 @@ function Dashboard({ selectedCage }) {
       </div>
 
       {/* Recent Stockings Section */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="font-medium text-gray-700">Recent Stockings</h2>
-          <div className="flex items-center space-x-4">
-            <Link href="/stocking-management">
-              <button className="text-sm text-indigo-600 hover:text-indigo-800">
-                View All Stockings
-              </button>
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+          <h2 className="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            Recent stockings
+          </h2>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/stocking-management"
+              className="text-sm font-medium text-sky-700 hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300"
+            >
+              View all stockings
             </Link>
             <button
-              onClick={() => setExpandedSections(prev => ({...prev, stockings: !prev.stockings}))}
-              className="text-gray-500 hover:text-gray-700"
+              type="button"
+              onClick={() =>
+                setExpandedSections((prev) => ({
+                  ...prev,
+                  stockings: !prev.stockings,
+                }))
+              }
+              className="rounded p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
               {expandedSections.stockings ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
@@ -1328,7 +1395,7 @@ function Dashboard({ selectedCage }) {
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-4">
         <Link href="/create-cage">
-          <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+          <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-sky-600 hover:bg-sky-700">
             <Plus className="w-4 h-4 mr-2" />
             New Cage
           </button>

@@ -8,6 +8,7 @@ import { queryKeys } from '@/api/query-keys'
 import { useFarms } from '@/hooks/farms/useFarms'
 import { useUnits } from '@/hooks/farms/useUnits'
 import { useUiStore } from '@/stores/ui.store'
+import posthog from 'posthog-js'
 
 const CreateCageForm = () => {
   const router = useRouter()
@@ -72,8 +73,13 @@ const CreateCageForm = () => {
       const { data } = await apiClient.post(API.farms.units(farmId), payload)
       return data
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.units.all })
+      posthog.capture('cage_created', {
+        cage_name: formData.name.trim(),
+        status: formData.status,
+        farm_id: farmId,
+      })
       setMessage('Unit created successfully.')
       setFormData({
         name: '',
@@ -91,6 +97,7 @@ const CreateCageForm = () => {
       }, 1500)
     },
     onError: (e) => {
+      posthog.captureException(e)
       setError(e?.message ?? 'Failed to create unit')
     },
   })
@@ -210,7 +217,7 @@ const CreateCageForm = () => {
               <select
                 value={farmId ?? ''}
                 onChange={(e) => setSelectedFarmId(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 required
               >
                 {farmItems.map((f) => (
@@ -234,7 +241,7 @@ const CreateCageForm = () => {
                 onChange={handleChange}
                 className={`block w-full px-3 py-2 border ${
                   nameError ? 'border-red-300' : 'border-gray-300'
-                } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                } rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm`}
                 placeholder="e.g. Cage 2, Unit A1"
                 required
               />
@@ -252,7 +259,7 @@ const CreateCageForm = () => {
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="e.g. 5.6037, -0.187"
               />
             </div>
@@ -267,7 +274,7 @@ const CreateCageForm = () => {
                 value={formData.size}
                 onChange={handleChange}
                 step="0.1"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Surface area in square metres"
               />
             </div>
@@ -281,7 +288,7 @@ const CreateCageForm = () => {
                 name="capacity"
                 value={formData.capacity}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="Stored in notes until cycles are linked"
               />
             </div>
@@ -295,7 +302,7 @@ const CreateCageForm = () => {
                 name="dimensions"
                 value={formData.dimensions}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="e.g. 5m × 5m"
               />
             </div>
@@ -309,7 +316,7 @@ const CreateCageForm = () => {
                 name="material"
                 value={formData.material}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 placeholder="e.g. HDPE net"
               />
             </div>
@@ -323,7 +330,7 @@ const CreateCageForm = () => {
                 name="installation_date"
                 value={formData.installation_date}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
               />
               <p className="mt-1 text-xs text-gray-500">
                 Year is taken from this date for the API.
@@ -338,7 +345,7 @@ const CreateCageForm = () => {
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
                 required
               >
                 <option value="empty">Empty</option>
@@ -357,7 +364,7 @@ const CreateCageForm = () => {
               value={formData.notes}
               onChange={handleChange}
               rows="3"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
               placeholder="Optional notes"
             />
           </div>
@@ -375,9 +382,9 @@ const CreateCageForm = () => {
               disabled={submitting || !!nameError}
               className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                 submitting || nameError
-                  ? 'bg-indigo-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-700'
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                  ? 'bg-sky-400 cursor-not-allowed'
+                  : 'bg-sky-600 hover:bg-sky-700'
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
             >
               {submitting ? 'Creating…' : 'Create unit'}
             </button>
