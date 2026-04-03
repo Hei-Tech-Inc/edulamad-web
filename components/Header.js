@@ -1,11 +1,19 @@
 // components/Header.js (Updated)
 import React, { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { Bell, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { useAuthStore } from '@/stores/auth.store'
 
 const TopBar = ({ title }) => {
   const { user, signOut } = useAuth()
+  const actAsOrgId = useAuthStore((s) => s.actAsOrgId)
+  const actAsOrgLabel = useAuthStore((s) => s.actAsOrgLabel)
+  const isPlatformSuperAdmin = useAuthStore(
+    (s) => s.user?.isPlatformSuperAdmin,
+  )
+  const setActAsOrg = useAuthStore((s) => s.setActAsOrg)
   const { theme, toggleTheme } = useTheme()
   const fullName = user?.user_metadata?.full_name || user?.email || 'User'
   const role = user?.user_metadata?.role || 'User'
@@ -71,6 +79,32 @@ const TopBar = ({ title }) => {
           Dev · Nsuo API: {apiDevNote}
         </div>
       )}
+      {actAsOrgId && isPlatformSuperAdmin ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-violet-200 bg-violet-100 px-4 py-2 text-sm text-violet-950 dark:border-violet-900 dark:bg-violet-950/50 dark:text-violet-100">
+          <span>
+            <strong className="font-semibold">Tenant view:</strong>{' '}
+            {actAsOrgLabel || actAsOrgId}
+            <span className="ml-2 font-mono text-xs opacity-80">
+              (X-Act-As-Org-Id on tenant APIs)
+            </span>
+          </span>
+          <span className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/platform/tenants"
+              className="font-medium text-violet-800 underline decoration-violet-400 underline-offset-2 hover:text-violet-950 dark:text-violet-200 dark:hover:text-white"
+            >
+              Tenant console
+            </Link>
+            <button
+              type="button"
+              onClick={() => setActAsOrg(null)}
+              className="rounded-md border border-violet-300 bg-white px-2.5 py-1 text-xs font-semibold text-violet-900 shadow-sm hover:bg-violet-50 dark:border-violet-700 dark:bg-violet-900 dark:text-violet-100 dark:hover:bg-violet-800"
+            >
+              Exit tenant view
+            </button>
+          </span>
+        </div>
+      ) : null}
       <div className="flex items-center justify-between px-6 py-3.5">
         {/* Page Title */}
         <h1 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">

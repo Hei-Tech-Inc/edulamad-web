@@ -61,6 +61,14 @@ const API = {
     list: '/tasks',
     detail: (id: string) => `/tasks/${id}`,
   },
+  /**
+   * Platform super-admin: list/detail (`GET`, optional `includeDeleted`), `PUT`/`DELETE` by id (same DTOs as admin org where applicable).
+   * `POST` create may use `admin.organizations` if not exposed under `/platform`.
+   */
+  platform: {
+    organisations: '/platform/organisations',
+    organisation: (orgId: string) => `/platform/organisations/${orgId}`,
+  },
   health: '/health',
   files: {
     upload: '/files/upload',

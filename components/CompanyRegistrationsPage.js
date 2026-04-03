@@ -4,14 +4,31 @@ import Link from 'next/link'
 import { Building, Mail, Phone, User, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import MarketingShell from './marketing/MarketingShell'
-import posthog from 'posthog-js'
+import {
+  safePosthogCapture,
+  safePosthogCaptureException,
+  safePosthogIdentify,
+} from '@/lib/safe-analytics'
+
+function formatRegistrationError(regError) {
+  if (!regError) return 'Registration failed'
+  if (typeof regError === 'string') return regError
+  const lines = [regError.message || 'Registration failed']
+  if (Array.isArray(regError.details) && regError.details.length) {
+    for (const d of regError.details) {
+      const field = d.field != null ? String(d.field) : 'field'
+      const msg = d.message != null ? String(d.message) : ''
+      lines.push(`• ${field}: ${msg}`)
+    }
+  }
+  return lines.join('\n')
+}
 
 const CompanyRegistrationPage = () => {
   const router = useRouter()
   const { signUpWithEmail } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     abbreviation: '',
@@ -21,6 +38,7 @@ const CompanyRegistrationPage = () => {
     admin_name: '',
     admin_email: '',
     admin_password: '',
+    farm_name: 'Main farm',
   })
 
   const handleChange = (e) => {
@@ -33,6 +51,12 @@ const CompanyRegistrationPage = () => {
     setLoading(true)
     setError('')
 
+    if (String(formData.admin_password || '').length < 8) {
+      setError('Password must be at least 8 characters.')
+      setLoading(false)
+      return
+    }
+
     const slugRaw = String(formData.abbreviation || '')
       .trim()
       .toLowerCase()
@@ -40,6 +64,8 @@ const CompanyRegistrationPage = () => {
       .replace(/^-+|-+$/g, '')
 
     try {
+      const farmName =
+        String(formData.farm_name || '').trim() || 'Main farm'
       const { error: regError } = await signUpWithEmail(
         formData.admin_email,
         formData.admin_password,
@@ -47,28 +73,31 @@ const CompanyRegistrationPage = () => {
         {
           orgName: formData.name.trim(),
           orgSlug: slugRaw || undefined,
+          createDefaultFarm: farmName,
         },
       )
 
       if (regError) {
-        setError(regError.message || 'Registration failed')
+        setError(formatRegistrationError(regError))
         return
       }
 
-      posthog.identify(formData.admin_email, {
+      safePosthogIdentify(formData.admin_email, {
         email: formData.admin_email,
         name: formData.admin_name,
       })
-      posthog.capture('company_registered', {
+      safePosthogCapture('company_registered', {
         company_name: formData.name.trim(),
         admin_email: formData.admin_email,
       })
-      setSuccess(true)
-      router.push('/dashboard')
+      router.replace('/dashboard')
     } catch (err) {
-      console.error('Error registering company:', err)
-      posthog.captureException(err)
-      setError(err?.message || 'Registration failed')
+      safePosthogCaptureException(err)
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Something went wrong. Please try again.',
+      )
     } finally {
       setLoading(false)
     }
@@ -79,7 +108,7 @@ const CompanyRegistrationPage = () => {
   const labelClass = 'mb-1.5 block text-sm font-medium text-slate-300'
 
   return (
-    <MarketingShell maxWidthClass="max-w-3xl">
+    <MarketingShell maxWidthClass="max-w-3xl" headerMode="auth">
       <Link
         href="/"
         className="mb-8 inline-flex items-center text-sm font-medium text-slate-400 transition hover:text-white"
@@ -96,44 +125,13 @@ const CompanyRegistrationPage = () => {
           Create your organisation
         </h1>
         <p className="mt-2 max-w-xl text-slate-400">
-          Register as the owner. You&apos;ll use the admin account to verify
-          email, invite your team, and add farms.
+          Register as the owner. We create your organisation, a first farm (you
+          can rename it later), and your owner account so you can sign in right
+          away.
         </p>
       </div>
 
-      {success ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-10 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded border border-slate-700 bg-slate-950 text-emerald-400">
-            <svg
-              className="h-8 w-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-white">
-            You&apos;re in
-          </h2>
-          <p className="mt-2 text-slate-400">
-            Your organisation and owner account are ready. Continue to the
-            dashboard.
-          </p>
-          <Link
-            href="/dashboard"
-            className="mt-6 inline-flex items-center justify-center rounded bg-sky-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-800"
-          >
-            Open dashboard
-          </Link>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
+      <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
           <div className="border-b border-slate-800 px-6 py-4 sm:px-8">
             <h2 className="font-medium text-slate-200">Organisation details</h2>
             <p className="text-xs text-slate-500">
@@ -143,7 +141,7 @@ const CompanyRegistrationPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-8 p-6 sm:p-8">
             {error && (
-              <div className="rounded-xl border border-red-400/25 bg-red-950/30 px-4 py-3 text-sm text-red-200">
+              <div className="whitespace-pre-wrap rounded-xl border border-red-400/25 bg-red-950/30 px-4 py-3 text-sm text-red-200">
                 {error}
               </div>
             )}
@@ -203,10 +201,8 @@ const CompanyRegistrationPage = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className={labelClass}>
-                    Contact email <span className="text-red-400">*</span>
-                  </label>
+              <div>
+                <label className={labelClass}>Contact email (optional)</label>
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
                       <Mail className="h-5 w-5" />
@@ -218,7 +214,6 @@ const CompanyRegistrationPage = () => {
                       onChange={handleChange}
                       className={`${fieldClass} pl-10`}
                       placeholder="ops@company.com"
-                      required
                     />
                   </div>
                 </div>
@@ -305,6 +300,25 @@ const CompanyRegistrationPage = () => {
                   required
                 />
               </div>
+
+              <div>
+                <label className={labelClass}>
+                  First farm name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="farm_name"
+                  value={formData.farm_name}
+                  onChange={handleChange}
+                  className={fieldClass}
+                  placeholder="Main farm"
+                  required
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Creates your first farm via the API (POST /farms) right after
+                  registration.
+                </p>
+              </div>
             </div>
 
             <button
@@ -337,7 +351,6 @@ const CompanyRegistrationPage = () => {
             </p>
           </form>
         </div>
-      )}
     </MarketingShell>
   )
 }

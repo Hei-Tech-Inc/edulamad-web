@@ -5,6 +5,12 @@ import { mapUnitsToLegacyCages } from '@/lib/map-unit-to-legacy-cage';
 import type { LegacyCageRow } from '@/lib/map-unit-to-legacy-cage';
 import { mergeUnitSummaryIntoLegacy } from '@/lib/unit-summary-merge';
 
+/**
+ * Per-request cap for GET /farms/:id/units. Backend validators often reject
+ * large `limit` (e.g. 500) with 422; fetch aggregates across pages when needed.
+ */
+export const UNITS_MAX_LIMIT_PER_REQUEST = 100;
+
 async function runPool<T>(
   items: T[],
   poolSize: number,
@@ -47,6 +53,19 @@ function normalizeUnitList(body: unknown): UnitListResponse {
   };
 }
 
+function listUnitsParams(
+  page: number,
+  limit: number,
+  status: UnitStatus | undefined,
+): Record<string, string | number> {
+  const q: Record<string, string | number> = {
+    page,
+    limit: Math.min(Math.max(1, limit), UNITS_MAX_LIMIT_PER_REQUEST),
+  };
+  if (status !== undefined) q.status = status;
+  return q;
+}
+
 export async function fetchLegacyUnitsForFarm(
   farmId: string,
   params: {
@@ -59,16 +78,52 @@ export async function fetchLegacyUnitsForFarm(
   total: number;
   pages: number;
 }> {
-  const { data: raw } = await apiClient.get<UnitListResponse | unknown[]>(
-    API.farms.units(farmId),
-    { params },
-  );
-  const normalized = normalizeUnitList(raw);
-  const legacy = mapUnitsToLegacyCages(normalized.items, farmId);
+  const status = params.status;
+  const explicitPage = params.page !== undefined;
+  const page = explicitPage ? Math.max(1, params.page ?? 1) : 1;
+  const requestedLimit = params.limit ?? 20;
+
+  if (explicitPage) {
+    const { data: raw } = await apiClient.get<UnitListResponse | unknown[]>(
+      API.farms.units(farmId),
+      { params: listUnitsParams(page, requestedLimit, status) },
+    );
+    const normalized = normalizeUnitList(raw);
+    const legacy = mapUnitsToLegacyCages(normalized.items, farmId);
+    return {
+      legacy,
+      total: normalized.pagination.total,
+      pages: normalized.pagination.pages,
+    };
+  }
+
+  const all: LegacyCageRow[] = [];
+  let total = 0;
+  let pages = 1;
+  let currentPage = 1;
+
+  while (all.length < requestedLimit) {
+    const remaining = requestedLimit - all.length;
+    const batchLimit = Math.min(UNITS_MAX_LIMIT_PER_REQUEST, remaining);
+    const { data: raw } = await apiClient.get<UnitListResponse | unknown[]>(
+      API.farms.units(farmId),
+      { params: listUnitsParams(currentPage, batchLimit, status) },
+    );
+    const normalized = normalizeUnitList(raw);
+    total = normalized.pagination.total;
+    pages = Math.max(1, normalized.pagination.pages);
+    const batch = mapUnitsToLegacyCages(normalized.items, farmId);
+    all.push(...batch);
+    if (batch.length === 0 || currentPage >= pages || all.length >= requestedLimit) {
+      break;
+    }
+    currentPage += 1;
+  }
+
   return {
-    legacy,
-    total: normalized.pagination.total,
-    pages: normalized.pagination.pages,
+    legacy: all.slice(0, requestedLimit),
+    total,
+    pages,
   };
 }
 

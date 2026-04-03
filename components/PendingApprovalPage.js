@@ -47,7 +47,7 @@ const PendingApprovalPage = () => {
             Sign in
           </Link>
           <Link
-            href="/register-company"
+            href="/register"
             className="inline-flex justify-center rounded border border-slate-600 bg-slate-950 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
           >
             Register organisation

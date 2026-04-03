@@ -27,6 +27,7 @@ import {
   Quote,
   ArrowUp,
   HelpCircle,
+  Code2,
 } from 'lucide-react'
 
 const landingFocus =
@@ -467,6 +468,7 @@ export default function LandingPage() {
                 ['#onboarding', 'Onboarding'],
                 ['#faq', 'FAQ'],
                 ['#platform', 'Platform'],
+                ['#developers', 'Developers'],
               ].map(([href, label]) => (
                 <a
                   key={href}
@@ -485,7 +487,7 @@ export default function LandingPage() {
                 Sign in
               </Link>
               <Link
-                href="/register-company"
+                href="/register"
                 className={`inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-gradient-to-r from-sky-400 to-cyan-400 px-3 py-2 text-sm font-semibold text-slate-950 shadow-[0_8px_28px_rgba(34,211,238,0.28),inset_0_1px_0_0_rgba(255,255,255,0.35)] transition hover:brightness-110 sm:px-4 ${landingFocus}`}
               >
                 Get started
@@ -525,6 +527,7 @@ export default function LandingPage() {
                 ['#onboarding', 'Onboarding'],
                 ['#faq', 'FAQ'],
                 ['#platform', 'Platform'],
+                ['#developers', 'Developers'],
               ].map(([href, label]) => (
                 <a
                   key={href}
@@ -544,7 +547,7 @@ export default function LandingPage() {
                   Sign in
                 </Link>
                 <Link
-                  href="/register-company"
+                  href="/register"
                   className={`flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-500 py-3 text-sm font-semibold text-white shadow-[0_12px_32px_rgba(14,165,233,0.3)] ${landingFocus}`}
                   onClick={() => setMobileNavOpen(false)}
                 >
@@ -693,7 +696,7 @@ export default function LandingPage() {
                       className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
                     >
                       <Link
-                        href="/register-company"
+                        href="/register"
                         className={`group inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_20px_50px_rgba(14,165,233,0.35),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition duration-200 hover:brightness-110 hover:shadow-[0_22px_56px_rgba(249,115,22,0.22)] sm:px-7 sm:text-base ${landingFocus}`}
                       >
                         Get started free
@@ -1014,7 +1017,7 @@ export default function LandingPage() {
                   className="max-w-xl"
                 />
                 <Link
-                  href="/register-company"
+                  href="/register"
                   className={`group inline-flex shrink-0 cursor-pointer items-center gap-2 self-start rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_44px_rgba(14,165,233,0.3)] transition duration-200 hover:brightness-110 lg:self-auto ${landingFocus}`}
                 >
                   <Users className="h-4 w-4" strokeWidth={2} />
@@ -1241,7 +1244,7 @@ export default function LandingPage() {
                       </p>
                       <div className="mt-7 flex flex-col gap-3">
                         <Link
-                          href="/register-company"
+                          href="/register"
                           className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-500 px-6 py-3.5 text-base font-semibold text-white shadow-[0_16px_48px_rgba(14,165,233,0.35)] transition duration-200 hover:brightness-110 ${landingFocus}`}
                         >
                           Create your organisation
@@ -1258,6 +1261,58 @@ export default function LandingPage() {
                   </div>
                 </div>
               </motion.div>
+            </div>
+          </section>
+
+          <section
+            id="developers"
+            className="relative scroll-mt-24 border-t border-white/[0.07] py-20 sm:py-24"
+            aria-labelledby="developers-heading"
+          >
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+              <div className="landing-glass rounded-2xl border border-white/[0.1] p-8 sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-12">
+                <div className="max-w-xl">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-300">
+                    <Code2 className="h-3.5 w-3.5" aria-hidden />
+                    Developers
+                  </div>
+                  <h2
+                    id="developers-heading"
+                    className="mt-4 font-[Outfit,system-ui,sans-serif] text-2xl font-semibold tracking-tight text-white sm:text-3xl"
+                  >
+                    API access for integrations
+                  </h2>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-400 sm:text-base">
+                    Scoped API keys, the{' '}
+                    <code className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-sky-200 sm:text-sm">
+                      X-Api-Key
+                    </code>{' '}
+                    header, and OpenAPI tooling. Organisation owners and admins
+                    create and rotate keys inside the app.
+                  </p>
+                  <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                    Live interactive docs (Swagger UI) are served by your API
+                    deployment — often at{' '}
+                    <code className="rounded bg-white/5 px-1 py-0.5">/api</code>{' '}
+                    on the backend host.
+                  </p>
+                </div>
+                <div className="mt-8 flex w-full shrink-0 flex-col gap-3 sm:max-w-md lg:mt-0 lg:w-auto">
+                  <Link
+                    href="/login?next=%2Fdeveloper%2Fapi-keys"
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(14,165,233,0.3)] transition hover:brightness-110 ${landingFocus}`}
+                  >
+                    Sign in for API keys
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                  <p className="text-center text-xs text-slate-500 lg:text-left">
+                    In the app:{' '}
+                    <span className="font-medium text-slate-400">
+                      Sidebar → Developer → API keys
+                    </span>
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -1323,6 +1378,14 @@ export default function LandingPage() {
                         Platform &amp; audit
                       </a>
                     </li>
+                    <li>
+                      <a
+                        href="#developers"
+                        className={`cursor-pointer transition hover:text-white ${landingFocus}`}
+                      >
+                        Developers &amp; API
+                      </a>
+                    </li>
                   </ul>
                 </div>
                 <div className="lg:col-span-4">
@@ -1340,7 +1403,7 @@ export default function LandingPage() {
                     </li>
                     <li>
                       <Link
-                        href="/register-company"
+                        href="/register"
                         className={`cursor-pointer transition hover:text-white ${landingFocus}`}
                       >
                         Register company

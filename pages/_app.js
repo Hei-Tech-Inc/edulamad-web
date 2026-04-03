@@ -14,6 +14,8 @@ import { ToastProvider } from '../components/Toast'
 import { Provider } from 'react-redux'
 import { store } from '../store'
 import { queryClient } from '@/lib/query-client'
+import { getSafeInternalPath } from '@/lib/safe-next-path'
+import { isPublicAuthRoute } from '@/lib/public-auth-routes'
 import '../styles/globals.css'
 
 const ReactQueryDevtools = dynamic(
@@ -57,17 +59,6 @@ function AuthWrapper({ children }) {
   const { user, initialized, loading } = useAuth()
   const router = useRouter()
 
-  // Public routes that don't require authentication
-  const publicRoutes = [
-    '/',
-    '/login',
-    '/signup',
-    '/register-company',
-    '/pending-approval',
-    '/reset-password',
-    '/verify-email',
-  ]
-
   const currentPath = router.pathname
 
   // Redirect unauthenticated users to login
@@ -75,20 +66,28 @@ function AuthWrapper({ children }) {
     if (!initialized || loading) return
 
     // If not logged in and trying to access protected route, redirect to login
-    if (!user && !publicRoutes.includes(currentPath)) {
+    if (!user && !isPublicAuthRoute(currentPath)) {
       router.push('/login')
     }
 
-    // If logged in and trying to access login/signup pages, redirect to dashboard
-    if (user && publicRoutes.includes(currentPath)) {
-      router.push('/dashboard')
+    // If logged in on marketing/auth entry pages, redirect (not Developer preview — that works signed in too)
+    if (
+      user &&
+      isPublicAuthRoute(currentPath) &&
+      currentPath !== '/developer/api-keys'
+    ) {
+      const dest =
+        currentPath === '/login'
+          ? getSafeInternalPath(router.query.next) || '/dashboard'
+          : '/dashboard'
+      router.push(dest)
     }
-  }, [user, initialized, loading, currentPath, router])
+  }, [user, initialized, loading, currentPath, router, router.query.next])
 
   // Loading state
   if (loading || !initialized) {
     // Show loading indicator only for protected routes
-    if (!publicRoutes.includes(currentPath)) {
+    if (!isPublicAuthRoute(currentPath)) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600"></div>

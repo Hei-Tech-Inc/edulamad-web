@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
 
+/** @typedef {{ showToast: (message: string, type?: string) => void }} ToastApi */
+
+/** @type {React.Context<ToastApi | null>} */
 const ToastContext = createContext(null)
 
 export const ToastProvider = ({ children }) => {

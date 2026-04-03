@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react'
-import { apiClient } from '@/api/client'
+import { apiClient, apiClientPublic } from '@/api/client'
 import API from '@/api/endpoints'
 import {
   mapAuthUserToRequestUser,
@@ -17,7 +17,23 @@ import { AppApiError } from '@/lib/api-error'
 import { queryClient } from '@/lib/query-client'
 import { useAuthStore } from '@/stores/auth.store'
 import { store } from '../store'
-import { fetchUser, resetState } from '../store/slices/authSlice'
+import {
+  fetchUser,
+  resetState,
+  syncReduxUserFromZustand,
+} from '../store/slices/authSlice'
+
+async function hydrateReduxUserAfterSession() {
+  try {
+    await store.dispatch(fetchUser()).unwrap()
+  } catch {
+    try {
+      await store.dispatch(syncReduxUserFromZustand()).unwrap()
+    } catch {
+      /* Zustand is source of truth for token + user */
+    }
+  }
+}
 
 const AuthContext = createContext()
 
@@ -35,7 +51,11 @@ export function AuthProvider({ children }) {
       try {
         await store.dispatch(fetchUser()).unwrap()
       } catch {
-        // fetchUser clears session on auth failure
+        try {
+          await store.dispatch(syncReduxUserFromZustand()).unwrap()
+        } catch {
+          /* no persisted session */
+        }
       }
       if (alive) {
         setLoading(false)
@@ -48,19 +68,24 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signInWithEmail = async (email, password) => {
+    let data
     try {
-      const { data } = await apiClient.post(API.auth.login, {
+      const res = await apiClientPublic.post(API.auth.login, {
         email,
         password,
       })
+      data = res.data
+      useAuthStore.getState().setOrg(null)
       useAuthStore.getState().setTokens(data.accessToken, data.refreshToken)
-      useAuthStore.getState().setUser(mapAuthUserToRequestUser(data.user))
-      await store.dispatch(fetchUser()).unwrap()
-      return { data, error: null }
+      useAuthStore
+        .getState()
+        .setUser(mapAuthUserToRequestUser(data.user, data.accessToken))
     } catch (e) {
       const message = e instanceof AppApiError ? e.message : 'Login failed'
       return { data: null, error: { message } }
     }
+    await hydrateReduxUserAfterSession()
+    return { data, error: null }
   }
 
   const signInWithGoogle = async () => {
@@ -93,15 +118,107 @@ export function AuthProvider({ children }) {
       ) {
         body.orgSlug = orgOptions.orgSlug.trim()
       }
-      const { data } = await apiClient.post(API.auth.register, body)
-      useAuthStore.getState().setTokens(data.accessToken, data.refreshToken)
-      useAuthStore.getState().setUser(mapAuthUserToRequestUser(data.user))
-      await store.dispatch(fetchUser()).unwrap()
-      return { data, error: null }
+      // Per API (see `contexts/api-docs.json`): register creates org + user; login issues
+      // the JWT used by `/auth/me`, `/farms`, etc.
+      const { data: regData } = await apiClientPublic.post(API.auth.register, body)
+      let loginData
+      try {
+        const res = await apiClientPublic.post(API.auth.login, {
+          email,
+          password,
+        })
+        loginData = res.data
+      } catch (loginErr) {
+        const hint =
+          loginErr instanceof AppApiError
+            ? loginErr.message
+            : 'Sign-in failed after registration.'
+        return {
+          data: null,
+          error: {
+            message: `Your organisation was created, but sign-in failed: ${hint} Try signing in with the same email and password.`,
+            details:
+              loginErr instanceof AppApiError ? loginErr.details : undefined,
+            code: loginErr instanceof AppApiError ? loginErr.code : undefined,
+          },
+          farmCreateError: null,
+        }
+      }
+      useAuthStore.getState().setTokens(
+        loginData.accessToken,
+        loginData.refreshToken,
+      )
+      useAuthStore
+        .getState()
+        .setUser(
+          mapAuthUserToRequestUser(loginData.user, loginData.accessToken),
+        )
+      if (regData.org && typeof regData.org === 'object') {
+        useAuthStore.getState().setOrg(regData.org)
+      }
+      await hydrateReduxUserAfterSession()
+
+      const farmOpt = orgOptions.createDefaultFarm
+      let farmCreateError = null
+      const orgStatusRaw =
+        regData.org && typeof regData.org === 'object'
+          ? String(regData.org.status ?? '')
+          : ''
+      const orgStatus = orgStatusRaw.toLowerCase()
+      const orgBlocksFarmCreate =
+        orgStatus === 'pending' ||
+        orgStatus === 'pending_approval' ||
+        orgStatus === 'suspended'
+
+      if (
+        farmOpt !== undefined &&
+        farmOpt !== null &&
+        farmOpt !== false &&
+        orgBlocksFarmCreate
+      ) {
+        useAuthStore.getState().setOnboardingFarmNotice(
+          `Your organisation status is “${orgStatusRaw || 'pending'}”, so the API may not allow creating a farm yet. After your organisation is active, add a farm from farm or cage settings.`,
+        )
+      } else if (farmOpt !== undefined && farmOpt !== null && farmOpt !== false) {
+        const farmName =
+          typeof farmOpt === 'string' && farmOpt.trim()
+            ? farmOpt.trim()
+            : 'Main farm'
+        try {
+          await apiClient.post(API.farms.create, { name: farmName })
+        } catch (farmErr) {
+          farmCreateError =
+            farmErr instanceof AppApiError
+              ? farmErr.message
+              : 'Could not create your first farm. You can add one from the app.'
+        }
+        if (farmCreateError) {
+          useAuthStore.getState().setOnboardingFarmNotice(farmCreateError)
+        }
+      }
+
+      return { data: { ...regData, session: loginData }, error: null, farmCreateError }
     } catch (e) {
-      const message =
-        e instanceof AppApiError ? e.message : 'Registration failed'
-      return { data: null, error: { message } }
+      if (e instanceof AppApiError) {
+        return {
+          data: null,
+          error: {
+            message: e.message,
+            details: e.details,
+            code: e.code,
+          },
+          farmCreateError: null,
+        }
+      }
+      const fallback =
+        e instanceof Error && e.message
+          ? e.message
+          : 'Registration failed. Check your connection and try again.'
+      return {
+        data: null,
+        error: { message: fallback },
+        farmCreateError: null,
+      }
     }
   }
 
@@ -131,10 +248,17 @@ export function AuthProvider({ children }) {
       if (Object.keys(body).length > 0) {
         await apiClient.patch(API.users.profile, body)
       }
-      const { data } = await apiClient.get(API.auth.me)
-      const ru = mapMeResponseToRequestUser(data)
-      useAuthStore.getState().setUser(ru)
-      await store.dispatch(fetchUser()).unwrap()
+      try {
+        const { data } = await apiClient.get(API.auth.me)
+        const ru = mapMeResponseToRequestUser(
+          data,
+          useAuthStore.getState().accessToken,
+        )
+        useAuthStore.getState().setUser(ru)
+      } catch {
+        /* Profile may have saved; /auth/me is best-effort for client state */
+      }
+      await hydrateReduxUserAfterSession()
       const u = useAuthStore.getState().user
       return { data: toCompatUser(u), error: null }
     } catch (error) {
@@ -161,6 +285,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     initialized,
+    isPlatformSuperAdmin: Boolean(requestUser?.isPlatformSuperAdmin),
     signInWithEmail,
     signInWithGoogle,
     signUpWithEmail,
@@ -172,7 +297,7 @@ export function AuthProvider({ children }) {
       useAuthStore.getState().hasPermission(permission),
     profile: user,
     refreshUserDetails: async () => {
-      await store.dispatch(fetchUser()).unwrap()
+      await hydrateReduxUserAfterSession()
       return toCompatUser(useAuthStore.getState().user)
     },
   }

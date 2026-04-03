@@ -6,7 +6,7 @@ import axios, {
 import { nanoid } from 'nanoid';
 import API from '@/api/endpoints';
 import type { ApiResponse } from '@/api/types/common.types';
-import { AppApiError } from '@/lib/api-error';
+import { AppApiError, parseApiErrorPayload } from '@/lib/api-error';
 import { useAuthStore } from '@/stores/auth.store';
 
 declare module 'axios' {
@@ -23,7 +23,7 @@ declare module 'axios' {
 function getApiBaseURL(): string {
   const envRaw = process.env.NEXT_PUBLIC_API_URL?.trim();
   const env = envRaw?.replace(/\/$/, '') ?? '';
-  const devDefault = 'http://127.0.0.1:3000';
+  const devDefault = 'http://127.0.0.1:5001';
 
   if (typeof window === 'undefined') {
     return env || devDefault;
@@ -47,6 +47,14 @@ function getApiBaseURL(): string {
 
 const baseURL = getApiBaseURL();
 
+/** Never send act-as on platform-admin catalogue routes. */
+function requestPathIsPlatformAdmin(config: InternalAxiosRequestConfig): boolean {
+  const u = config.url ?? '';
+  const path = u.startsWith('http') ? new URL(u).pathname : u;
+  const normalized = path.replace(/^\//, '');
+  return normalized.startsWith('platform/');
+}
+
 function unwrapEnvelope<T>(raw: unknown): T {
   if (
     raw &&
@@ -62,6 +70,30 @@ function unwrapEnvelope<T>(raw: unknown): T {
 
 /** No auth interceptor — used for token refresh only. */
 const refreshClient = axios.create({ baseURL });
+
+/**
+ * Unauthenticated API calls only (`/auth/register`, `/auth/login`, etc.).
+ * Never attaches `Authorization`, so a stale session cannot break onboarding.
+ */
+export const apiClientPublic = axios.create({ baseURL });
+
+apiClientPublic.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const h = config.headers;
+  if (h && typeof h.set === 'function') {
+    h.set('X-Request-ID', nanoid());
+  } else {
+    config.headers['X-Request-ID'] = nanoid();
+  }
+  return config;
+});
+
+apiClientPublic.interceptors.response.use(
+  (response: AxiosResponse) => {
+    response.data = unwrapEnvelope(response.data);
+    return response;
+  },
+  async (error: AxiosError) => Promise.reject(toAppError(error)),
+);
 
 export const apiClient = axios.create({ baseURL });
 
@@ -81,6 +113,21 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   } else {
     config.headers['X-Request-ID'] = nanoid();
   }
+
+  const state = useAuthStore.getState();
+  const actAs = state.actAsOrgId;
+  if (
+    actAs &&
+    !requestPathIsPlatformAdmin(config) &&
+    state.user?.isPlatformSuperAdmin
+  ) {
+    if (h && typeof h.set === 'function') {
+      h.set('X-Act-As-Org-Id', actAs);
+    } else {
+      config.headers['X-Act-As-Org-Id'] = actAs;
+    }
+  }
+
   return config;
 });
 
@@ -150,34 +197,11 @@ function toAppError(error: AxiosError): AppApiError {
   }
 
   const status = error.response.status;
-  const data = error.response.data as Record<string, unknown> | undefined;
-
-  let message =
-    (typeof data?.message === 'string' ? data.message : undefined) ??
-    error.message;
-  let code: string | undefined;
-  let details:
-    | import('@/api/types/common.types').ValidationErrorDetail[]
-    | undefined;
-
-  const nested = data?.error;
-  if (nested && typeof nested === 'object') {
-    const err = nested as Record<string, unknown>;
-    if (typeof err.message === 'string') message = err.message;
-    if (typeof err.code === 'string') code = err.code;
-    if (Array.isArray(err.details)) {
-      details = err.details as import('@/api/types/common.types').ValidationErrorDetail[];
-    }
-  }
-
-  if (Array.isArray(data?.details)) {
-    details = data.details as import('@/api/types/common.types').ValidationErrorDetail[];
-  }
-
+  const parsed = parseApiErrorPayload(error.response.data, status);
   return new AppApiError(
     status,
-    message || 'Request failed',
-    code,
-    details,
+    parsed.message,
+    parsed.code,
+    parsed.details,
   );
 }

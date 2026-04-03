@@ -105,4 +105,23 @@ export const queryKeys = {
   auth: {
     me: ['auth', 'me'] as const,
   },
+  apiKeys: {
+    all: ['api-keys'] as const,
+    list: () => [...queryKeys.apiKeys.all, 'list'] as const,
+  },
+  platform: {
+    all: ['platform'] as const,
+    organisations: (filters: Record<string, unknown>) =>
+      [...queryKeys.platform.all, 'organisations', filters] as const,
+    organisation: (
+      orgId: string,
+      opts?: { includeDeleted?: boolean },
+    ) =>
+      [
+        ...queryKeys.platform.all,
+        'organisation',
+        orgId,
+        opts?.includeDeleted === true ? 'withDeleted' : 'default',
+      ] as const,
+  },
 } as const;

@@ -35,6 +35,7 @@ import {
 } from '@/lib/cages-redux-api'
 import { normalizeDailyRecordList } from '@/hooks/units/useDailyRecords'
 import { useUiStore } from '@/stores/ui.store'
+import { useAuthStore } from '@/stores/auth.store'
 import BiweeklyForm from './BiweeklyForm'
 import HarvestForm from './HarvestForm'
 import DailyEntryForm from './DailyEntryForm'
@@ -69,6 +70,15 @@ function Dashboard({ selectedCage }) {
   })
   const [timeRange, setTimeRange] = useState('30d') // '7d', '30d', '90d', '1y'
   const [waterQualityData, setWaterQualityData] = useState([])
+  const [onboardingFarmBanner, setOnboardingFarmBanner] = useState('')
+
+  useEffect(() => {
+    const msg = useAuthStore.getState().onboardingFarmNotice
+    if (msg) {
+      setOnboardingFarmBanner(msg)
+      useAuthStore.getState().setOnboardingFarmNotice(null)
+    }
+  }, [])
 
   // Load units + weather for the farm selected in the UI store (refetch on switch)
   useEffect(() => {
@@ -776,6 +786,15 @@ function Dashboard({ selectedCage }) {
 
   return (
     <div className="space-y-8">
+      {onboardingFarmBanner ? (
+        <div
+          className="rounded-lg border border-amber-500/40 bg-amber-950/35 px-4 py-3 text-sm text-amber-100 dark:border-amber-500/30"
+          role="status"
+        >
+          <span className="font-medium">First farm: </span>
+          {onboardingFarmBanner} You can add a farm from farm or cage settings.
+        </div>
+      ) : null}
       {/* Time Range Selector */}
       <div className="flex justify-end gap-1 rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900">
         {['7d', '30d', '90d', '1y'].map((range) => (

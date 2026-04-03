@@ -8,6 +8,7 @@ export function hasPermission(
   user: RequestUser | null,
   permission: Permission,
 ): boolean {
+  if (user?.isPlatformSuperAdmin === true) return true;
   if (!user?.permissions?.length) return false;
   return user.permissions.includes(permission);
 }

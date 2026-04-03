@@ -23,8 +23,11 @@ import {
   LayoutGrid,
   Target,
   Activity,
+  Code2,
+  KeyRound,
   Shield,
   Building,
+  Globe2,
   FileSpreadsheet,
   Upload,
   CheckCircle,
@@ -34,6 +37,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useAuthStore } from '@/stores/auth.store'
 import LogoutConfirmationModal from './LogoutConfirmationModal'
 import { useToast } from './Toast'
 import { useDispatch } from 'react-redux'
@@ -41,6 +45,9 @@ import { signOut } from '../store/slices/authSlice'
 
 const Sidebar = () => {
   const { user } = useAuth()
+  const isPlatformSuperAdmin = useAuthStore(
+    (s) => s.user?.isPlatformSuperAdmin === true,
+  )
   const router = useRouter()
   const dispatch = useDispatch()
   const [showLogoutModal, setShowLogoutModal] = useState(false)
@@ -51,7 +58,9 @@ const Sidebar = () => {
     inventory: true,
     analytics: true,
     management: true,
+    developer: true,
     admin: true,
+    platform: true,
   })
   const { showToast } = useToast()
 
@@ -75,7 +84,8 @@ const Sidebar = () => {
     }))
   }
 
-  const isActive = (path) => router.pathname === path
+  const isActive = (path) =>
+    router.pathname === path || router.pathname.startsWith(`${path}/`)
 
   const menuItems = {
     production: {
@@ -159,6 +169,17 @@ const Sidebar = () => {
         { title: 'Bulk Upload', path: '/bulk-upload', icon: Upload },
       ],
     },
+    developer: {
+      title: 'Developer',
+      icon: Code2,
+      items: [
+        {
+          title: 'API keys',
+          path: '/developer/api-keys',
+          icon: KeyRound,
+        },
+      ],
+    },
     admin: {
       title: 'Admin',
       icon: Shield,
@@ -171,6 +192,21 @@ const Sidebar = () => {
         },
       ],
     },
+    ...(isPlatformSuperAdmin
+      ? {
+          platform: {
+            title: 'Platform',
+            icon: Globe2,
+            items: [
+              {
+                title: 'Tenants',
+                path: '/platform/tenants',
+                icon: Building,
+              },
+            ],
+          },
+        }
+      : {}),
   }
 
   return (

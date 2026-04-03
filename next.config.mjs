@@ -1,9 +1,28 @@
 /** @type {import('next').NextConfig} */
 const apiProxyTarget =
-  (process.env.API_PROXY_TARGET || 'http://127.0.0.1:3000').replace(/\/$/, '')
+  (process.env.API_PROXY_TARGET || 'http://127.0.0.1:5001').replace(/\/$/, '')
 
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return [
+      {
+        source: '/register-company',
+        destination: '/register',
+        permanent: true,
+      },
+      {
+        source: '/platform/organisations',
+        destination: '/platform/tenants',
+        permanent: false,
+      },
+      {
+        source: '/platform/organisations/:orgId',
+        destination: '/platform/tenants?org=:orgId',
+        permanent: false,
+      },
+    ]
+  },
   async rewrites() {
     const rules = [
       {

@@ -23,11 +23,16 @@ const Layout = ({
     refreshCages: refreshDataCages,
   } = useData()
 
+  const isPlatformShell = router.pathname.startsWith('/platform')
+
   useEffect(() => {
     // Set active tab and title based on current route
     const path = router.pathname
     let newTitle = 'Dashboard'
-    if (path === '/dashboard') {
+    if (path.startsWith('/platform')) {
+      setActiveTab('platform')
+      newTitle = path === '/platform/tenants' ? 'Tenant console' : 'Platform'
+    } else if (path === '/dashboard') {
       setActiveTab('dashboard')
       newTitle = 'Dashboard'
     } else if (path.includes('/cages')) {
@@ -47,10 +52,12 @@ const Layout = ({
   }, [router.pathname])
 
   useEffect(() => {
-    dispatch(fetchCages())
-  }, [dispatch])
+    if (!isPlatformShell) {
+      dispatch(fetchCages())
+    }
+  }, [dispatch, isPlatformShell])
 
-  if (loading) {
+  if (!isPlatformShell && loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600"></div>
@@ -67,6 +74,7 @@ const Layout = ({
   const dataErr = dataError || ''
   const errorMessage = reduxErr || dataErr
   const bannerLoading = loading || dataLoading
+  const showDataBanner = Boolean(errorMessage) && !isPlatformShell
 
   return (
     <div>
@@ -76,7 +84,7 @@ const Layout = ({
       <div className="ml-64 min-h-screen bg-slate-100 dark:bg-slate-950">
         {/* Header is sticky at the top */}
         <Header />
-        {errorMessage ? (
+        {showDataBanner ? (
           <DataApiBanner
             embedded
             error={errorMessage}
