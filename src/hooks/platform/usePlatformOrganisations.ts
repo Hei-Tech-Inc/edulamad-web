@@ -26,7 +26,7 @@ export function usePlatformOrganisations(filters: {
       search,
       includeDeleted,
     }),
-    queryFn: async (): Promise<PlatformOrganisationListBody> => {
+    queryFn: async ({ signal }): Promise<PlatformOrganisationListBody> => {
       const { data: raw } = await apiClient.get<unknown>(
         API.platform.organisations,
         {
@@ -36,6 +36,7 @@ export function usePlatformOrganisations(filters: {
             ...(search ? { search } : {}),
             ...(includeDeleted ? { includeDeleted: true } : {}),
           },
+          signal,
         },
       );
       return normalizePlatformOrganisationList(raw);

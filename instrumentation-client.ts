@@ -1,6 +1,21 @@
 import posthog from 'posthog-js'
+import type { CaptureResult } from 'posthog-js'
 
 const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
+
+/** Drop benign request aborts from autocapture (navigation, timeouts, query cancel). */
+function shouldDropExceptionEvent(cr: CaptureResult): boolean {
+  if (cr.event !== '$exception') return false
+  const props = cr.properties
+  if (!props || typeof props !== 'object') return false
+  const rec = props as Record<string, unknown>
+  if (rec.$exception_type === 'AbortError') return true
+  const msg = String(rec.$exception_message ?? '')
+  if (msg.includes('signal is aborted')) return true
+  if (msg.includes('The user aborted')) return true
+  if (msg.includes('The operation was aborted')) return true
+  return false
+}
 
 const disabled =
   process.env.NEXT_PUBLIC_POSTHOG_DISABLED === '1' ||
@@ -22,12 +37,24 @@ function resolveApiHost(): string {
   return '/ingest'
 }
 
+const appNameForAnalytics =
+  process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'
+
 if (typeof window !== 'undefined' && token && !disabled) {
   posthog.init(token, {
     api_host: resolveApiHost(),
     ui_host: 'https://us.posthog.com',
     defaults: '2026-01-30',
     capture_exceptions: true,
+    loaded: (ph) => {
+      ph.register({
+        app_name: appNameForAnalytics,
+      })
+    },
+    before_send: (cr) => {
+      if (cr && shouldDropExceptionEvent(cr)) return null
+      return cr
+    },
     debug: process.env.NODE_ENV === 'development',
   })
 }

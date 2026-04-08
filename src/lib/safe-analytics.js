@@ -1,5 +1,13 @@
 import posthog from 'posthog-js'
 
+function isAbortLikeError(err) {
+  if (err == null || typeof err !== 'object') return false
+  if (err.name === 'AbortError') return true
+  if (err.name === 'CanceledError') return true
+  if (err.code === 'ERR_CANCELED') return true
+  return false
+}
+
 /** Never let product analytics throw into user-facing flows. */
 
 export function safePosthogIdentify(distinctId, props) {
@@ -22,6 +30,7 @@ export function safePosthogCapture(eventName, props) {
 
 export function safePosthogCaptureException(err) {
   if (typeof window === 'undefined') return
+  if (isAbortLikeError(err)) return
   try {
     if (typeof posthog.captureException === 'function') {
       posthog.captureException(err)

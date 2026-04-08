@@ -1,6 +1,9 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { Fish } from 'lucide-react'
+import { GraduationCap } from 'lucide-react'
+import { getMarketingBrandName } from '@/lib/landing-brand'
+
+const BRAND = getMarketingBrandName()
 
 /**
  * Public auth / onboarding layout — flat navy, no gradient mesh or glass stacks.
@@ -25,17 +28,17 @@ export default function MarketingShell({
           rel="stylesheet"
         />
       </Head>
-      <div className="min-h-screen bg-slate-950 text-slate-100 antialiased">
-        <header className="border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-sm">
+      <div className="min-h-screen bg-[#050505] text-neutral-100 antialiased">
+        <header className="border-b border-white/[0.08] bg-[#0a0a0a]/95 backdrop-blur-sm">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
             <Link
               href="/"
               className="flex items-center gap-3 text-base font-semibold tracking-tight text-white transition hover:text-sky-100"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-sky-400/25 bg-gradient-to-br from-sky-500/20 to-cyan-500/10 text-sky-300 shadow-[0_4px_20px_rgba(14,165,233,0.15)]">
-                <Fish className="h-4 w-4" strokeWidth={2} />
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-orange-500/35 bg-orange-500/10 text-orange-300 shadow-[0_4px_20px_rgba(255,92,0,0.18)]">
+                <GraduationCap className="h-4 w-4" strokeWidth={2} />
               </span>
-              Nsuo
+              {BRAND}
             </Link>
             <div className="flex items-center gap-2 sm:gap-3">
               {headerMode === 'default' ? (
@@ -48,9 +51,9 @@ export default function MarketingShell({
                   </Link>
                   <Link
                     href="/register"
-                    className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
+                    className="rounded-lg border border-orange-500/50 bg-orange-500/10 px-3 py-2 text-sm font-semibold text-orange-200 transition hover:border-orange-400 hover:bg-orange-500/20"
                   >
-                    Create organisation
+                    Create account
                   </Link>
                 </>
               ) : (
@@ -58,8 +61,10 @@ export default function MarketingShell({
                   href="/register"
                   className="text-sm font-medium text-slate-400 transition hover:text-white"
                 >
-                  New organisation?{' '}
-                  <span className="text-sky-400 hover:text-sky-300">Register</span>
+                  New here?{' '}
+                  <span className="text-orange-400 hover:text-orange-300">
+                    Create account
+                  </span>
                 </Link>
               )}
             </div>

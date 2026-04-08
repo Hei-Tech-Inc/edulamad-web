@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowLeft,
-  Fish,
+  GraduationCap,
   Mail,
   Lock,
   LogIn,
@@ -19,9 +19,12 @@ import { useAuth } from '../contexts/AuthContext'
 import MarketingShell from '../components/marketing/MarketingShell'
 import posthog from 'posthog-js'
 import { getSafeInternalPath } from '@/lib/safe-next-path'
+import { getMarketingBrandName } from '@/lib/landing-brand'
+
+const BRAND = getMarketingBrandName()
 
 const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050a12]'
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050a12]'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -77,20 +80,20 @@ export default function Login() {
   return (
     <>
       <Head>
-        <title>Sign in — Nsuo</title>
+        <title>Sign in — {BRAND}</title>
         <meta
           name="description"
-          content="Sign in with email and password (Nsuo API POST /auth/login)."
+          content={`Sign in to ${BRAND} with your email and password.`}
         />
       </Head>
       <MarketingShell maxWidthClass="max-w-xl sm:max-w-2xl" headerMode="auth">
         <div className="relative">
           <div
-            className="pointer-events-none absolute -left-24 top-0 h-48 w-48 rounded-full bg-sky-500/15 blur-3xl"
+            className="pointer-events-none absolute -left-24 top-0 h-48 w-48 rounded-full bg-orange-500/12 blur-3xl"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute -right-16 bottom-0 h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl"
+            className="pointer-events-none absolute -right-16 bottom-0 h-40 w-40 rounded-full bg-amber-500/10 blur-3xl"
             aria-hidden
           />
 
@@ -108,40 +111,25 @@ export default function Login() {
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="mb-8 flex flex-col items-center text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-sky-400/35 bg-gradient-to-br from-sky-500/25 to-cyan-500/15 text-sky-200 shadow-[0_12px_40px_rgba(14,165,233,0.2)]">
-                <Fish className="h-7 w-7" strokeWidth={1.75} />
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-500/35 bg-gradient-to-br from-orange-500/25 to-amber-500/15 text-orange-200 shadow-[0_12px_40px_rgba(255,92,0,0.18)]">
+                <GraduationCap className="h-7 w-7" strokeWidth={1.75} />
               </span>
               <h1 className="mt-5 font-[Outfit,system-ui,sans-serif] text-3xl font-bold tracking-tight text-white sm:text-[2rem] sm:leading-tight">
                 Welcome back
               </h1>
               <p className="mx-auto mt-2 max-w-lg text-pretty text-sm leading-relaxed text-slate-400 sm:text-base">
-                Use the same <strong className="font-semibold text-slate-300">email</strong> and{' '}
-                <strong className="font-semibold text-slate-300">password</strong> as the Nsuo API{' '}
-                <code className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[0.8em] text-sky-200/90">
-                  POST /auth/login
-                </code>{' '}
-                flow. You&apos;ll receive an access token (and refresh token) scoped to your
-                organisation for the dashboard and other protected routes.
+                Sign in with the email and password you used when you created your {BRAND}{' '}
+                account.
               </p>
               {hasReturnTo ? (
-                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-200/95">
-                  <Sparkles className="h-3.5 w-3.5 text-sky-300" />
+                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-orange-500/25 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-200/95">
+                  <Sparkles className="h-3.5 w-3.5 text-orange-300" />
                   After sign-in you&apos;ll continue where you left off
                 </p>
               ) : null}
             </div>
 
-            <div className="rounded-2xl border border-white/[0.09] bg-[#0a121e]/90 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-xl sm:p-8">
-              <p className="mb-6 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-center text-xs leading-relaxed text-slate-400 sm:text-sm">
-                Sign-in matches the API:{' '}
-                <code className="text-sky-200/90">POST /auth/login</code> with JSON{' '}
-                <code className="text-sky-200/90">email</code> and{' '}
-                <code className="text-sky-200/90">password</code>. Responses include{' '}
-                <code className="text-sky-200/90">accessToken</code>,{' '}
-                <code className="text-sky-200/90">refreshToken</code>, and{' '}
-                <code className="text-sky-200/90">user</code>. OAuth / Google is not available yet.
-              </p>
-
+            <div className="rounded-2xl border border-white/[0.09] bg-[#0a0a0a]/95 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-xl sm:p-8">
               {error ? (
                 <div
                   className="mb-5 flex gap-3 rounded-xl border border-red-500/30 bg-red-950/40 px-3.5 py-3 text-sm text-red-100"
@@ -151,7 +139,9 @@ export default function Login() {
                     className="mt-0.5 h-5 w-5 shrink-0 text-red-400"
                     aria-hidden
                   />
-                  <p className="min-w-0 flex-1 leading-snug">{error}</p>
+                  <p className="min-w-0 flex-1 whitespace-pre-wrap leading-snug">
+                    {error}
+                  </p>
                 </div>
               ) : null}
 
@@ -178,7 +168,7 @@ export default function Login() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="min-w-0 flex-1 bg-transparent text-white placeholder:text-slate-500 focus:outline-none"
-                        placeholder="you@organisation.com"
+                        placeholder="you@example.com"
                       />
                     </div>
                   </div>
@@ -228,24 +218,26 @@ export default function Login() {
                       id="remember-me"
                       name="remember-me"
                       type="checkbox"
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 text-sky-500 focus:ring-sky-500/50"
+                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 text-orange-500 focus:ring-orange-500/50"
                     />
                     Keep me signed in
                   </label>
                   <span className="text-slate-600">
                     Forgot password?{' '}
-                    <span className="text-slate-500">Contact your admin.</span>
+                    <Link href="/forgot-password" className="text-orange-400 hover:text-orange-300">
+                      Reset it
+                    </Link>
                   </span>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-cyan-500 py-3.5 text-sm font-bold text-slate-950 shadow-[0_12px_32px_rgba(14,165,233,0.35),inset_0_1px_0_0_rgba(255,255,255,0.35)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing}`}
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 py-3.5 text-sm font-bold text-white shadow-[0_12px_32px_rgba(255,92,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.2)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing}`}
                 >
                   {loading ? (
                     <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900/30 border-t-slate-900" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                       Signing in…
                     </>
                   ) : (
@@ -259,19 +251,19 @@ export default function Login() {
 
               <div className="mt-8 space-y-3 border-t border-white/[0.07] pt-6 text-center text-sm">
                 <p className="text-slate-500">
-                  New organisation?{' '}
+                  Need an account?{' '}
                   <Link
                     href="/register"
-                    className={`font-semibold text-sky-400 transition hover:text-sky-300 ${focusRing} rounded`}
+                    className={`font-semibold text-orange-400 transition hover:text-orange-300 ${focusRing} rounded`}
                   >
-                    Create organisation
+                    Create account
                   </Link>
                 </p>
                 <p className="text-slate-500">
                   Invited as a team member?{' '}
                   <Link
                     href="/signup"
-                    className={`font-semibold text-sky-400 transition hover:text-sky-300 ${focusRing} rounded`}
+                    className={`font-semibold text-orange-400 transition hover:text-orange-300 ${focusRing} rounded`}
                   >
                     Complete signup
                   </Link>

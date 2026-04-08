@@ -10,6 +10,9 @@ import {
   safePosthogCapture,
   safePosthogIdentify,
 } from '@/lib/safe-analytics'
+import { getMarketingBrandName } from '@/lib/landing-brand'
+
+const BRAND = getMarketingBrandName()
 
 const inputClass =
   'mt-1 block w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500'
@@ -54,9 +57,6 @@ export default function SignUp() {
       email,
       password,
       fullName,
-      {
-        createDefaultFarm: 'Main farm',
-      },
     )
 
     if (signUpError) {
@@ -77,10 +77,10 @@ export default function SignUp() {
   return (
     <>
       <Head>
-        <title>Sign up — Nsuo</title>
+        <title>Sign up — {BRAND}</title>
         <meta
           name="description"
-          content="Create your Nsuo account when invited to an organisation."
+          content={`Create your ${BRAND} account when you have an invite.`}
         />
       </Head>
       <MarketingShell maxWidthClass="max-w-md" headerMode="auth">
@@ -89,7 +89,7 @@ export default function SignUp() {
           className="mb-8 inline-flex items-center text-sm font-medium text-slate-400 transition hover:text-white"
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Nsuo home
+          {BRAND} home
         </Link>
 
         <div className="mb-8 text-center">
@@ -97,7 +97,7 @@ export default function SignUp() {
             Create account
           </h1>
           <p className="mt-2 text-sm text-slate-400">
-            For invited team members joining an existing organisation
+            For people joining with an invite link or code
           </p>
         </div>
 
@@ -196,12 +196,12 @@ export default function SignUp() {
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            Starting a new organisation?{' '}
+            Need your own account first?{' '}
             <Link
               href="/register"
               className="font-medium text-sky-400 hover:text-sky-300"
             >
-              Create organisation
+              Register here
             </Link>
           </p>
           <p className="mt-2 text-center text-sm text-slate-500">

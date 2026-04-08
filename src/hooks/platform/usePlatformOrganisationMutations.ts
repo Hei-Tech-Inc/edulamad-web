@@ -8,8 +8,7 @@ import type {
 } from '@/api/types/platform-organisation.dto';
 
 /**
- * Reads / soft-delete / update: `/platform/organisations*` for platform super-admins (no `organization:*` JWT scopes).
- * Create may use `POST /admin/organizations` when the API requires it.
+ * Platform tenant CRUD: `/platform/organisations*` for super-admins (avoids `organization:*` JWT on `/admin/organizations`).
  */
 
 function stripEmptyStrings<T extends Record<string, unknown>>(body: T): T {
@@ -25,7 +24,7 @@ export function useCreatePlatformOrganisation() {
   return useMutation({
     mutationFn: async (body: CreatePlatformOrganisationDto) => {
       const { data } = await apiClient.post<unknown>(
-        API.admin.organizations.list,
+        API.platform.organisations,
         stripEmptyStrings(body as unknown as Record<string, unknown>),
       );
       return data;

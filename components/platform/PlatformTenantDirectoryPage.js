@@ -57,7 +57,7 @@ export default function PlatformTenantDirectoryPage() {
           <code className="rounded bg-slate-200 px-1 font-mono text-xs dark:bg-slate-800">
             GET /platform/organisations
           </code>{' '}
-          only — no act-as header. To operate farms and units as the tenant owner,
+          only — no act-as header. To operate workspace sites and units as the tenant owner,
           open an organisation and choose &quot;Work in tenant&quot;; the app then
           sends{' '}
           <code className="rounded bg-slate-200 px-1 font-mono text-xs dark:bg-slate-800">

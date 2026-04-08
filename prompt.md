@@ -1,4 +1,4 @@
-# Nsuo Frontend — Cursor Rules
+# Edulamad Frontend — Cursor Rules (forked from Nsuo aquaculture stack)
 
 ## Stack
 - Next.js 15 Pages Router

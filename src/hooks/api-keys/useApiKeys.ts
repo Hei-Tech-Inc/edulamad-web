@@ -18,8 +18,10 @@ export function useApiKeysList(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.apiKeys.list(),
     enabled,
-    queryFn: async () => {
-      const { data: raw } = await apiClient.get<unknown>(API.apiKeys.list);
+    queryFn: async ({ signal }) => {
+      const { data: raw } = await apiClient.get<unknown>(API.apiKeys.list, {
+        signal,
+      });
       return normalizeApiKeyList(raw);
     },
   });

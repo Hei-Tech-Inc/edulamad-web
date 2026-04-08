@@ -40,14 +40,12 @@ export default function PlatformOrganisationDetailPage() {
     () => asArray(data?.users),
     [data?.users],
   )
-  const farms = useMemo(
-    () => asArray(data?.farms),
-    [data?.farms],
+  const linkedSites = useMemo(
+    () => asArray(data?.sites ?? data?.farms),
+    [data?.sites, data?.farms],
   )
   const auditLogs = useMemo(() => {
-    return asArray(
-      data?.auditLogs ?? data?.aquafarm_audit_logs ?? data?.audit_logs,
-    )
+    return asArray(data?.auditLogs ?? data?.audit_logs)
   }, [data])
 
   if (!user) {
@@ -106,8 +104,8 @@ export default function PlatformOrganisationDetailPage() {
         <code className="rounded bg-slate-200 px-1 font-mono text-xs dark:bg-slate-800">
           X-Act-As-Org-Id
         </code>{' '}
-        on subsequent farm and unit calls while you stay logged in as the
-        platform admin.
+        on subsequent tenant API calls while you stay logged in as the platform
+        admin.
       </p>
 
       {isError ? (
@@ -159,14 +157,14 @@ export default function PlatformOrganisationDetailPage() {
 
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <h2 className="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 dark:border-slate-800 dark:text-white">
-          Farms ({farms.length})
+          Linked sites ({linkedSites.length})
         </h2>
         <div className="max-h-96 overflow-auto p-4 text-sm">
-          {farms.length === 0 && !isLoading ? (
-            <p className="text-slate-500 dark:text-slate-400">No farms in payload.</p>
+          {linkedSites.length === 0 && !isLoading ? (
+            <p className="text-slate-500 dark:text-slate-400">No site list in payload.</p>
           ) : (
             <pre className="whitespace-pre-wrap break-all font-mono text-xs text-slate-700 dark:text-slate-300">
-              {JSON.stringify(farms, null, 2)}
+              {JSON.stringify(linkedSites, null, 2)}
             </pre>
           )}
         </div>

@@ -1,6 +1,7 @@
 // components/Header.js (Updated)
 import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { Bell, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -8,6 +9,7 @@ import { useAuthStore } from '@/stores/auth.store'
 
 const TopBar = ({ title }) => {
   const { user, signOut } = useAuth()
+  const router = useRouter()
   const actAsOrgId = useAuthStore((s) => s.actAsOrgId)
   const actAsOrgLabel = useAuthStore((s) => s.actAsOrgLabel)
   const isPlatformSuperAdmin = useAuthStore(
@@ -53,6 +55,7 @@ const TopBar = ({ title }) => {
   const handleLogout = async () => {
     setProfileDropdownOpen(false)
     await signOut()
+    router.push('/login')
   }
 
   const notifications = []
@@ -73,10 +76,11 @@ const TopBar = ({ title }) => {
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-[#0a0a0a]/90">
       {process.env.NODE_ENV === 'development' && (
-        <div className="px-4 py-1 text-[11px] font-mono bg-amber-50 text-amber-950 border-b border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-100 dark:border-amber-800/60">
-          Dev · Nsuo API: {apiDevNote}
+        <div className="px-4 py-1 text-[11px] font-mono bg-orange-50 text-orange-950 border-b border-orange-200/80 dark:bg-orange-950/35 dark:text-orange-100 dark:border-orange-900/50">
+          Dev · {process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'} API:{' '}
+          {apiDevNote}
         </div>
       )}
       {actAsOrgId && isPlatformSuperAdmin ? (
@@ -112,11 +116,11 @@ const TopBar = ({ title }) => {
         </h1>
 
         {/* Right Side: Notification, Theme, User Info with Dropdown */}
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-4">
           {/* Notification Bell */}
           <div className="relative" id="notif-dropdown" ref={notifDropdownRef}>
             <button
-              className="relative rounded p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="relative rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none dark:hover:bg-slate-800 dark:hover:text-slate-200"
               aria-label="Notifications"
               onClick={() => setNotifDropdownOpen(open => !open)}
             >
@@ -126,7 +130,7 @@ const TopBar = ({ title }) => {
               )}
             </button>
             {notifDropdownOpen && (
-              <div className="absolute right-0 z-50 mt-2 w-72 rounded border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-slate-200 bg-white py-1 shadow-[0_18px_45px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900">
                 <div className="border-b border-slate-100 px-4 py-2 text-sm font-semibold text-slate-800 dark:border-slate-800 dark:text-slate-200">
                   Notifications
                 </div>
@@ -139,7 +143,7 @@ const TopBar = ({ title }) => {
                     </div>
                   ))
                 )}
-                <div className="cursor-pointer border-t border-slate-100 px-4 py-2 text-xs text-sky-700 hover:underline dark:border-slate-800 dark:text-sky-400">
+                <div className="cursor-pointer border-t border-slate-100 px-4 py-2 text-xs text-orange-700 hover:underline dark:border-slate-800 dark:text-orange-400">
                   Mark all as read
                 </div>
               </div>
@@ -147,7 +151,7 @@ const TopBar = ({ title }) => {
           </div>
           {/* Theme Switcher */}
           <button
-            className="rounded p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none dark:hover:bg-slate-800 dark:hover:text-slate-200"
             aria-label="Toggle theme"
             onClick={toggleTheme}
           >
@@ -161,7 +165,7 @@ const TopBar = ({ title }) => {
               aria-haspopup="true"
               aria-expanded={profileDropdownOpen}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-gradient-to-b from-slate-100 to-slate-200 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                 {avatarLetter}
               </div>
               <div className="hidden sm:block text-right">
@@ -171,12 +175,24 @@ const TopBar = ({ title }) => {
               <svg className="w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {profileDropdownOpen && (
-              <div className="absolute right-0 z-50 mt-2 w-56 rounded border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white py-1 shadow-[0_18px_45px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900">
                 <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">{email}</div>
-                <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setProfileDropdownOpen(false)}>
+                <button
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => {
+                    setProfileDropdownOpen(false)
+                    router.push('/settings/account')
+                  }}
+                >
                   My Profile
                 </button>
-                <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setProfileDropdownOpen(false)}>
+                <button
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => {
+                    setProfileDropdownOpen(false)
+                    router.push('/settings/account')
+                  }}
+                >
                   Account Settings
                 </button>
                 <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setProfileDropdownOpen(false)}>

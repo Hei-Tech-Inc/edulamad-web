@@ -15,12 +15,15 @@ export function usePlatformOrganisationDetail(
 
   return useQuery({
     queryKey: queryKeys.platform.organisation(orgId ?? '', { includeDeleted }),
-    queryFn: async (): Promise<PlatformOrganisationDetailBody> => {
+    queryFn: async ({
+      signal,
+    }): Promise<PlatformOrganisationDetailBody> => {
       if (!orgId) throw new Error('Missing organisation id');
       const { data: raw } = await apiClient.get<unknown>(
         API.platform.organisation(orgId),
         {
           params: includeDeleted ? { includeDeleted: true } : undefined,
+          signal,
         },
       );
       return normalizePlatformOrganisationDetail(raw);

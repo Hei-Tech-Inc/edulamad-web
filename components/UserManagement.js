@@ -1,10 +1,11 @@
-// components/UserManagement.js — org members via Nsuo admin API
+// components/UserManagement.js — org members via admin API
 import { useState, useEffect, useCallback } from 'react'
 import { Edit, Trash, UserPlus, Mail, Shield } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '../contexts/AuthContext'
+import { getAppName } from '@/lib/app-brand'
 
 function mapMemberToRow(m) {
   const u = m.user || {}
@@ -159,36 +160,36 @@ const UserManagement = () => {
   )
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
+    <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] dark:border-neutral-800 dark:bg-neutral-950/80">
       {message && (
-        <div className="mb-6 bg-green-50 text-green-800 p-4 rounded-md">
+        <div className="m-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
           {message}
         </div>
       )}
 
       {error && (
-        <div className="mb-6 bg-red-50 text-red-800 p-4 rounded-md">
+        <div className="m-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
           {error}
         </div>
       )}
 
-      <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      <div className="flex items-center justify-between border-b border-slate-200/80 px-6 py-4 dark:border-neutral-800">
         <div className="flex items-center space-x-4">
-          <h2 className="font-medium text-gray-700">Organisation members</h2>
+          <h2 className="font-semibold text-slate-800 dark:text-slate-100">Organisation members</h2>
           <div className="relative">
             <input
               type="text"
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
             />
           </div>
         </div>
         <button
           type="button"
           onClick={() => setShowAddUser(!showAddUser)}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700"
+          className="inline-flex items-center rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
         >
           <UserPlus className="h-4 w-4 mr-2" />
           Add member
@@ -196,20 +197,20 @@ const UserManagement = () => {
       </div>
 
       {showAddUser && (
-        <div className="p-6 bg-gray-50 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <div className="border-b border-slate-200/80 bg-slate-50/70 p-6 dark:border-neutral-800 dark:bg-neutral-900/50">
+          <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
             Add existing user
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            The user must already exist in Nsuo (e.g. after signup). Paste their
-            user ID from admin tools or the API.
+          <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+            The user must already exist in {getAppName()} (e.g. after signup).
+            Paste their user ID from admin tools or the API.
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label
                   htmlFor="userId"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
                 >
                   User ID (UUID)
                 </label>
@@ -219,7 +220,7 @@ const UserManagement = () => {
                   name="userId"
                   value={formData.userId}
                   onChange={handleChange}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm px-3 py-2"
+                  className="block w-full rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
                   placeholder="123e4567-e89b-12d3-a456-426614174000"
                   required
                 />
@@ -227,7 +228,7 @@ const UserManagement = () => {
               <div>
                 <label
                   htmlFor="roleId"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
                 >
                   Role
                 </label>
@@ -240,7 +241,7 @@ const UserManagement = () => {
                     name="roleId"
                     value={formData.roleId}
                     onChange={handleChange}
-                    className="pl-10 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm py-2"
+                    className="block w-full rounded-xl border border-slate-200 py-2 pl-10 text-sm shadow-sm focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
                   >
                     {roles.length === 0 ? (
                       <option value="">Loading roles…</option>
@@ -260,13 +261,13 @@ const UserManagement = () => {
               <button
                 type="button"
                 onClick={() => setShowAddUser(false)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-200 dark:hover:bg-neutral-800"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700"
+                className="inline-flex items-center rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
               >
                 Add member
               </button>
@@ -277,23 +278,23 @@ const UserManagement = () => {
 
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className="bg-slate-50 dark:bg-neutral-900">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 User
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Role
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Joined
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-100 bg-white dark:divide-neutral-800 dark:bg-neutral-950/30">
             {loading ? (
               <tr>
                 <td colSpan="4" className="px-6 py-4 text-center">
@@ -305,18 +306,18 @@ const UserManagement = () => {
                 <tr key={user.memberId || user.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-sky-100 rounded-full flex items-center justify-center">
-                        <span className="text-sky-800 font-semibold text-sm">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+                        <span className="text-sm font-semibold text-orange-800 dark:text-orange-200">
                           {user.full_name?.charAt(0) ||
                             user.email?.charAt(0) ||
                             '?'}
                         </span>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                           {user.full_name}
                         </div>
-                        <div className="text-sm text-gray-500 flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
                           <Mail className="h-3 w-3" />
                           {user.email}
                         </div>
@@ -326,7 +327,7 @@ const UserManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {roles.length > 0 ? (
                       <select
-                        className="text-sm border-gray-300 rounded-md max-w-[220px]"
+                        className="max-w-[220px] rounded-xl border-slate-200 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100"
                         value={user.roleId || ''}
                         onChange={(e) => updateUserRole(user.id, e.target.value)}
                       >
@@ -341,23 +342,23 @@ const UserManagement = () => {
                         ))}
                       </select>
                     ) : (
-                      <span className="text-sm text-gray-700">{user.role}</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{user.role}</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                     {user.created_at
                       ? new Date(user.created_at).toLocaleDateString()
                       : '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-3 items-center">
+                    <div className="flex items-center justify-end space-x-3">
                       <span title="Change role">
-                        <Edit className="h-5 w-5 text-gray-400" />
+                        <Edit className="h-5 w-5 text-slate-400" />
                       </span>
                       <button
                         type="button"
                         onClick={() => deleteUser(user.id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-rose-600 transition hover:text-rose-700"
                         title="Remove from organisation"
                         disabled={user.id === currentUser?.id}
                       >

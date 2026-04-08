@@ -41,9 +41,9 @@ export function DataApiBanner({
               >
                 <AlertTriangle className="h-4 w-4" strokeWidth={2} aria-hidden />
               </div>
-              <div className="min-w-0 border-l-2 border-sky-700/80 pl-3 dark:border-sky-500/70">
+              <div className="min-w-0 border-l-2 border-orange-600/80 pl-3 dark:border-orange-500/70">
                 <p className="text-sm font-semibold tracking-tight text-[#020617] dark:text-slate-50">
-                  Unable to synchronize farm data
+                  Unable to synchronize workspace data
                 </p>
                 <p
                   className="mt-1 text-sm leading-snug text-[#334155] dark:text-slate-300"

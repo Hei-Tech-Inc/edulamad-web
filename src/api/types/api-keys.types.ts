@@ -1,42 +1,35 @@
-/** From OpenAPI `CreateApiKeyDto.scopes.items.enum` — keep in sync with `contexts/api-docs.json`. */
+/**
+ * API key scopes for the developer keys UI.
+ * Align with your backend when `/api-keys` is documented in OpenAPI.
+ */
 
 export const API_KEY_SCOPES = [
+  'user.profile.read',
+  'user.profile.update',
+  'institutions.read',
+  'institutions.write',
+  'questions.read',
+  'questions.write',
+  'questions.verify',
+  'solutions.read',
+  'solutions.write',
+  'exams.simulations.read',
+  'exams.simulations.write',
+  'ai.chat',
+  'ai.complete',
+  'bookmarks.read',
+  'bookmarks.write',
+  'flashcards.read',
+  'flashcards.write',
+  'timetables.read',
+  'timetables.write',
+  'subscriptions.read',
+  'analytics.read',
+  'notifications.read',
   'org.read',
   'org.update',
-  'org.delete',
-  'users.invite',
   'users.read',
-  'users.update_role',
-  'users.deactivate',
-  'farms.read',
-  'farms.create',
-  'farms.update',
-  'farms.delete',
-  'units.read',
-  'units.create',
-  'units.update',
-  'units.delete',
-  'stocking.read',
-  'stocking.create',
-  'stocking.approve',
-  'daily_records.read',
-  'daily_records.create',
-  'daily_records.update',
-  'daily_records.delete',
-  'biweekly.read',
-  'biweekly.create',
-  'biweekly.approve',
-  'harvests.read',
-  'harvests.create',
-  'harvests.approve',
-  'feed.read',
-  'feed.manage',
-  'finance.read',
-  'reports.read',
-  'reports.export',
   'audit_logs.read',
-  'research.read',
-  'research.export',
 ] as const;
 
 export type ApiKeyScope = (typeof API_KEY_SCOPES)[number];
@@ -78,16 +71,6 @@ export function normalizeApiKeyList(raw: unknown): ApiKeySummary[] {
   if (typeof raw === 'object' && raw !== null && 'items' in raw) {
     const items = (raw as { items: unknown }).items;
     if (Array.isArray(items)) return items as ApiKeySummary[];
-  }
-  if (
-    typeof raw === 'object' &&
-    raw !== null &&
-    'data' in raw &&
-    typeof (raw as { data: unknown }).data === 'object' &&
-    (raw as { data: { items?: unknown } }).data !== null
-  ) {
-    const d = (raw as { data: { items?: unknown } }).data;
-    if (Array.isArray(d.items)) return d.items as ApiKeySummary[];
   }
   return [];
 }

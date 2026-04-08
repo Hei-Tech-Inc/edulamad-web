@@ -14,7 +14,7 @@ function statusFallbackMessage(status: number): string {
     403:
       'This action was blocked (403). The API did not include a specific reason.\n\n' +
       'Try: sign out and sign in again. If your organisation is new, open Pending registration or wait for an admin. If it continues, ask your organisation owner whether your role is allowed.\n\n' +
-      '(Local dev: CORS / FRONTEND_URL on the API, NEXT_PUBLIC_API_URL or API_PROXY_TARGET, and Bearer token from POST /auth/login.)',
+      '(Local dev: check CORS, FRONTEND_URL on the API, and NEXT_PUBLIC_API_URL / API_PROXY_TARGET.)',
     404: 'The requested resource was not found.',
     409: 'This conflicts with existing data—for example, the email may already be registered.',
     422: 'Validation failed — check the fields below.',

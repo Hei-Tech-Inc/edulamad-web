@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient, apiClientPublic } from '@/api/client';
+import { apiClientPublic } from '@/api/client';
 import API from '@/api/endpoints';
 import { queryKeys } from '@/api/query-keys';
 import { AppApiError } from '@/lib/api-error';
@@ -11,72 +11,63 @@ import {
 } from '@/api/types/auth.types';
 import { useAuthStore } from '@/stores/auth.store';
 
-export type RegisterMutationVariables = RegisterDto & {
-  /** When set, POST /farms after tokens are stored (same as `AuthContext.signUpWithEmail`). */
-  createDefaultFarm?: string | boolean;
-};
+export type RegisterMutationVariables = RegisterDto;
 
 export function useRegister() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (vars: RegisterMutationVariables) => {
-      const { createDefaultFarm, ...dto } = vars;
+    mutationFn: async (dto: RegisterMutationVariables) => {
       const { data: regBody } = await apiClientPublic.post<RegisterResponse>(
         API.auth.register,
         dto,
       );
-      let loginBody: LoginResponse;
-      try {
-        const res = await apiClientPublic.post<LoginResponse>(
-          API.auth.login,
-          { email: dto.email, password: dto.password },
-        );
-        loginBody = res.data;
-      } catch (loginErr) {
-        const hint =
-          loginErr instanceof AppApiError
-            ? loginErr.message
-            : 'Login failed after registration.';
-        throw new AppApiError(
-          loginErr instanceof AppApiError ? loginErr.status : 0,
-          `Your organisation was created, but sign-in failed: ${hint} Try signing in with the same email and password.`,
-          loginErr instanceof AppApiError ? loginErr.code : undefined,
-          loginErr instanceof AppApiError ? loginErr.details : undefined,
-        );
-      }
-      useAuthStore.getState().setTokens(
-        loginBody.accessToken,
-        loginBody.refreshToken,
-      );
-      useAuthStore
-        .getState()
-        .setUser(
-          mapAuthUserToRequestUser(loginBody.user, loginBody.accessToken),
-        );
-      if (regBody.org && typeof regBody.org === 'object') {
-        useAuthStore.getState().setOrg(regBody.org);
-      }
+
+      let accessToken = regBody?.accessToken;
+      let refreshToken = regBody?.refreshToken;
+      let user = regBody?.user;
+
       if (
-        createDefaultFarm !== undefined &&
-        createDefaultFarm !== null &&
-        createDefaultFarm !== false
+        typeof accessToken !== 'string' ||
+        typeof refreshToken !== 'string' ||
+        !user ||
+        typeof user !== 'object'
       ) {
-        const farmName =
-          typeof createDefaultFarm === 'string' && createDefaultFarm.trim()
-            ? createDefaultFarm.trim()
-            : 'Main farm';
         try {
-          await apiClient.post(API.farms.create, { name: farmName });
-        } catch (e) {
-          const message =
-            e instanceof AppApiError
-              ? e.message
-              : 'Could not create your first farm.';
-          return { ...regBody, session: loginBody, farmCreateError: message };
+          const res = await apiClientPublic.post<LoginResponse>(
+            API.auth.login,
+            { email: dto.email, password: dto.password },
+          );
+          accessToken = res.data.accessToken;
+          refreshToken = res.data.refreshToken;
+          user = res.data.user;
+        } catch (loginErr) {
+          const hint =
+            loginErr instanceof AppApiError
+              ? loginErr.message
+              : 'Sign-in failed after registration.';
+          throw new AppApiError(
+            loginErr instanceof AppApiError ? loginErr.status : 0,
+            `Your account was created, but we could not start your session: ${hint} Try signing in with the same email and password.`,
+            loginErr instanceof AppApiError ? loginErr.code : undefined,
+            loginErr instanceof AppApiError ? loginErr.details : undefined,
+          );
         }
       }
-      return { ...regBody, session: loginBody, farmCreateError: null };
+
+      useAuthStore.getState().setOrg(null);
+      useAuthStore.getState().setTokens(accessToken, refreshToken);
+      useAuthStore
+        .getState()
+        .setUser(mapAuthUserToRequestUser(user, accessToken));
+      if (regBody?.org && typeof regBody.org === 'object') {
+        useAuthStore.getState().setOrg(regBody.org);
+      }
+      return {
+        ...regBody,
+        session: { accessToken, refreshToken, user },
+        setupError: null as string | null,
+      };
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });

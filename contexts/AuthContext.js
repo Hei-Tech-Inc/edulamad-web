@@ -1,4 +1,4 @@
-// contexts/AuthContext.js — Nsuo API + Zustand (replaces Supabase session)
+// contexts/AuthContext.js — Edulamad API + Zustand session
 import React, {
   createContext,
   useContext,
@@ -14,6 +14,7 @@ import {
 } from '@/api/types/auth.types'
 import { toCompatUser } from '@/lib/auth-compat'
 import { AppApiError } from '@/lib/api-error'
+import { formatAuthErrorMessage } from '@/lib/format-auth-error'
 import { queryClient } from '@/lib/query-client'
 import { useAuthStore } from '@/stores/auth.store'
 import { store } from '../store'
@@ -81,8 +82,7 @@ export function AuthProvider({ children }) {
         .getState()
         .setUser(mapAuthUserToRequestUser(data.user, data.accessToken))
     } catch (e) {
-      const message = e instanceof AppApiError ? e.message : 'Login failed'
-      return { data: null, error: { message } }
+      return { data: null, error: { message: formatAuthErrorMessage(e) } }
     }
     await hydrateReduxUserAfterSession()
     return { data, error: null }
@@ -93,111 +93,70 @@ export function AuthProvider({ children }) {
       data: null,
       error: {
         message:
-          'Google sign-in is not available for Nsuo yet. Use email and password.',
+          `Google sign-in is not available for ${process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'} yet. Use email and password.`,
       },
     }
   }
 
-  const signUpWithEmail = async (email, password, fullName, orgOptions = {}) => {
+  /** Body matches OpenAPI `RegisterDto`: email, password, name only. */
+  const signUpWithEmail = async (email, password, fullName) => {
     try {
-      const explicitOrg =
-        typeof orgOptions.orgName === 'string' && orgOptions.orgName.trim()
-          ? orgOptions.orgName.trim()
-          : null
-      const orgName =
-        explicitOrg || `${String(fullName || 'User').trim()}'s Organisation`
-      const body = {
+      const { data: regData } = await apiClientPublic.post(API.auth.register, {
         email,
         password,
         name: fullName,
-        orgName,
-      }
+      })
+
+      let accessToken = regData?.accessToken
+      let refreshToken = regData?.refreshToken
+      let user = regData?.user
+
       if (
-        typeof orgOptions.orgSlug === 'string' &&
-        orgOptions.orgSlug.trim()
+        typeof accessToken !== 'string' ||
+        typeof refreshToken !== 'string' ||
+        !user ||
+        typeof user !== 'object'
       ) {
-        body.orgSlug = orgOptions.orgSlug.trim()
-      }
-      // Per API (see `contexts/api-docs.json`): register creates org + user; login issues
-      // the JWT used by `/auth/me`, `/farms`, etc.
-      const { data: regData } = await apiClientPublic.post(API.auth.register, body)
-      let loginData
-      try {
-        const res = await apiClientPublic.post(API.auth.login, {
-          email,
-          password,
-        })
-        loginData = res.data
-      } catch (loginErr) {
-        const hint =
-          loginErr instanceof AppApiError
-            ? loginErr.message
-            : 'Sign-in failed after registration.'
-        return {
-          data: null,
-          error: {
-            message: `Your organisation was created, but sign-in failed: ${hint} Try signing in with the same email and password.`,
-            details:
-              loginErr instanceof AppApiError ? loginErr.details : undefined,
-            code: loginErr instanceof AppApiError ? loginErr.code : undefined,
-          },
-          farmCreateError: null,
+        try {
+          const res = await apiClientPublic.post(API.auth.login, {
+            email,
+            password,
+          })
+          accessToken = res.data.accessToken
+          refreshToken = res.data.refreshToken
+          user = res.data.user
+        } catch (loginErr) {
+          const hint =
+            loginErr instanceof AppApiError
+              ? loginErr.message
+              : 'Sign-in failed after registration.'
+          return {
+            data: null,
+            error: {
+              message: `Your account was created, but we could not start your session: ${hint} Try signing in with the same email and password.`,
+              details:
+                loginErr instanceof AppApiError ? loginErr.details : undefined,
+              code: loginErr instanceof AppApiError ? loginErr.code : undefined,
+            },
+            setupError: null,
+          }
         }
       }
-      useAuthStore.getState().setTokens(
-        loginData.accessToken,
-        loginData.refreshToken,
-      )
+
+      useAuthStore.getState().setOrg(null)
       useAuthStore
         .getState()
-        .setUser(
-          mapAuthUserToRequestUser(loginData.user, loginData.accessToken),
-        )
-      if (regData.org && typeof regData.org === 'object') {
+        .setOnboardingNotice('Complete your profile to unlock all features.')
+      useAuthStore.getState().setTokens(accessToken, refreshToken)
+      useAuthStore
+        .getState()
+        .setUser(mapAuthUserToRequestUser(user, accessToken))
+      if (regData?.org && typeof regData.org === 'object') {
         useAuthStore.getState().setOrg(regData.org)
       }
       await hydrateReduxUserAfterSession()
 
-      const farmOpt = orgOptions.createDefaultFarm
-      let farmCreateError = null
-      const orgStatusRaw =
-        regData.org && typeof regData.org === 'object'
-          ? String(regData.org.status ?? '')
-          : ''
-      const orgStatus = orgStatusRaw.toLowerCase()
-      const orgBlocksFarmCreate =
-        orgStatus === 'pending' ||
-        orgStatus === 'pending_approval' ||
-        orgStatus === 'suspended'
-
-      if (
-        farmOpt !== undefined &&
-        farmOpt !== null &&
-        farmOpt !== false &&
-        orgBlocksFarmCreate
-      ) {
-        useAuthStore.getState().setOnboardingFarmNotice(
-          `Your organisation status is “${orgStatusRaw || 'pending'}”, so the API may not allow creating a farm yet. After your organisation is active, add a farm from farm or cage settings.`,
-        )
-      } else if (farmOpt !== undefined && farmOpt !== null && farmOpt !== false) {
-        const farmName =
-          typeof farmOpt === 'string' && farmOpt.trim()
-            ? farmOpt.trim()
-            : 'Main farm'
-        try {
-          await apiClient.post(API.farms.create, { name: farmName })
-        } catch (farmErr) {
-          farmCreateError =
-            farmErr instanceof AppApiError
-              ? farmErr.message
-              : 'Could not create your first farm. You can add one from the app.'
-        }
-        if (farmCreateError) {
-          useAuthStore.getState().setOnboardingFarmNotice(farmCreateError)
-        }
-      }
-
-      return { data: { ...regData, session: loginData }, error: null, farmCreateError }
+      return { data: { ...regData, session: { accessToken, refreshToken, user } }, error: null, setupError: null }
     } catch (e) {
       if (e instanceof AppApiError) {
         return {
@@ -207,7 +166,7 @@ export function AuthProvider({ children }) {
             details: e.details,
             code: e.code,
           },
-          farmCreateError: null,
+          setupError: null,
         }
       }
       const fallback =
@@ -217,7 +176,7 @@ export function AuthProvider({ children }) {
       return {
         data: null,
         error: { message: fallback },
-        farmCreateError: null,
+        setupError: null,
       }
     }
   }

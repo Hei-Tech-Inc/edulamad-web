@@ -1,56 +1,37 @@
-// pages/index.js — marketing landing (authenticated users redirect via _app)
+// pages/index.js — marketing landing (always shown at `/`; sign-in uses other routes)
 import Head from 'next/head'
-import { useEffect } from 'react'
-import { useRouter } from 'next/router'
-import { useAuth } from '../contexts/AuthContext'
 import LandingPage from '../components/marketing/LandingPage'
+import { getMarketingBrandName } from '@/lib/landing-brand'
+
+const BRAND = getMarketingBrandName()
+
+/** Avoid stale HTML for the marketing page (CDN/browser caches). */
+export async function getServerSideProps({ res }) {
+  res.setHeader(
+    'Cache-Control',
+    'private, no-store, no-cache, must-revalidate, max-age=0',
+  )
+  return { props: {} }
+}
 
 export default function Home() {
-  const { user, loading, initialized } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (initialized && !loading && user) {
-      router.replace('/dashboard')
-    }
-  }, [initialized, loading, user, router])
-
-  if (!initialized || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div
-          className="h-10 w-10 animate-spin rounded-full border-2 border-slate-700 border-t-sky-500"
-          aria-hidden
-        />
-        <span className="sr-only">Loading</span>
-      </div>
-    )
-  }
-
-  if (user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div
-          className="h-10 w-10 animate-spin rounded-full border-2 border-slate-700 border-t-sky-500"
-          aria-hidden
-        />
-        <span className="sr-only">Redirecting</span>
-      </div>
-    )
-  }
-
   return (
     <>
       <Head>
-        <title>Nsuo — Aquaculture operations platform</title>
+        <title>{BRAND} — Past questions &amp; exam prep for Ghanaian universities</title>
+        <meta name="application-name" content={BRAND} />
         <meta
           name="description"
-          content="The operations layer for aquaculture: organisations, farms, units, daily records, harvests, and audit-ready reporting — one disciplined system."
+          content="Centralized past papers, verified solutions when available, AI explanations when they are not, exam simulations, and analytics so students revise what actually costs marks."
         />
-        <meta property="og:title" content="Nsuo — Aquaculture operations platform" />
+        <meta
+          property="og:title"
+          content={`${BRAND} — Past questions & exam prep for Ghanaian universities`}
+        />
+        <meta property="og:site_name" content={BRAND} />
         <meta
           property="og:description"
-          content="Unify every farm you run — stocking through harvest, with a command centre your team actually uses."
+          content="Study from one question bank — papers, schemes, simulations, and weak-topic insights built for Ghanaian semester exams."
         />
       </Head>
       <LandingPage />

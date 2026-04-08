@@ -3,11 +3,12 @@ description: Nsuo frontend stack, API discipline, and UI tooling (Pro Max, motio
 alwaysApply: true
 ---
 
-# Nsuo (aquaFarm-web) — frontend rules
+# Edulamad (fork of Nsuo stack) — frontend rules
 
 ## Product context
 
-- Platform: Nsuo — aquaculture farm management (`Prompt-main.md`, `prompt.md`).
+- Platform: **Edulamad** — AI-assisted past questions and exam prep for Ghanaian universities (see product brief). This repo still carries Nsuo-era farm routes in places; rebrand user-facing copy via `NEXT_PUBLIC_APP_NAME` (default **Edulamad**).
+- Legacy reference: `Prompt-main.md`, `prompt.md`, `contexts/api-docs.json` describe the **backend HTTP contract** until Edulamad’s API diverges.
 - Backend contract: `contexts/api-docs.json` (Swagger). Do not invent endpoints or fields.
 
 ## Core stack (from project rules)

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { Plus, ArrowLeft, Edit, Trash, Eye } from 'lucide-react'
 import ProtectedRoute from '../../components/ProtectedRoute'
+import Layout from '../../components/Layout'
 import DataTable from '../../components/DataTable'
 import { useAuth } from '../../contexts/AuthContext'
 import companyService from '../../lib/companyService'
@@ -12,7 +13,9 @@ import { useToast } from '../../components/Toast'
 export default function CompaniesPage() {
   return (
     <ProtectedRoute>
-      <CompaniesList />
+      <Layout title="Admin dashboard">
+        <CompaniesList />
+      </Layout>
     </ProtectedRoute>
   )
 }
@@ -125,32 +128,30 @@ function CompaniesList() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 font-montserrat">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-6">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] dark:border-neutral-800 dark:bg-neutral-950/80">
           <div className="flex items-center">
             <Link
               href="/dashboard"
-              className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
+              className="mr-4 inline-flex items-center text-sm font-medium text-orange-600 transition hover:text-orange-700"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back to Dashboard
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
               Company Management
             </h1>
           </div>
 
           <Link href="/admin/companies/create">
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700">
+            <button className="inline-flex items-center rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700">
               <Plus className="w-4 h-4 mr-2" />
               Add Company
             </button>
           </Link>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] dark:border-neutral-800 dark:bg-neutral-950/80">
           <DataTable
             data={companies}
             columns={columns}
@@ -161,7 +162,6 @@ function CompaniesList() {
             sortable={true}
             emptyMessage="No companies found."
           />
-        </div>
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -171,11 +171,11 @@ function CompaniesList() {
             className="fixed inset-0 bg-black bg-opacity-50"
             onClick={() => setShowDeleteModal(false)}
           ></div>
-          <div className="relative bg-white rounded-lg max-w-md w-full mx-4 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className="relative mx-4 w-full max-w-md rounded-xl bg-white p-6 dark:bg-neutral-900">
+            <h3 className="mb-4 text-lg font-medium text-slate-900 dark:text-slate-100">
               Confirm Deletion
             </h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
               Are you sure you want to delete {companyToDelete?.name}? This
               action cannot be undone and will remove ALL data associated with
               this company.
@@ -183,13 +183,13 @@ function CompaniesList() {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-slate-200 dark:hover:bg-neutral-700"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
               >
                 Delete
               </button>

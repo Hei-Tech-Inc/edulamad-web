@@ -13,6 +13,7 @@ export const PUBLIC_AUTH_ROUTE_PATHS = [
   '/reset-password',
   '/verify-email',
   '/developer/api-keys',
+  '/developer/api-reference',
 ]
 
 export function isPublicAuthRoute(pathname) {

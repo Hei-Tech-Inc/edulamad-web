@@ -2,10 +2,12 @@ import axios, {
   type AxiosError,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
+  isCancel,
 } from 'axios';
 import { nanoid } from 'nanoid';
 import API from '@/api/endpoints';
 import type { ApiResponse } from '@/api/types/common.types';
+import { getApiBaseURL } from '@/lib/api-base-url';
 import { AppApiError, parseApiErrorPayload } from '@/lib/api-error';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -15,44 +17,23 @@ declare module 'axios' {
   }
 }
 
-/**
- * Browser: use same-origin `/api/backend` when env points at localhost so Next
- * rewrites avoid CORS (typical dev: Next on :3001, API on :3000).
- * Server/SSR: call the API directly.
- */
-function getApiBaseURL(): string {
-  const envRaw = process.env.NEXT_PUBLIC_API_URL?.trim();
-  const env = envRaw?.replace(/\/$/, '') ?? '';
-  const devDefault = 'http://127.0.0.1:5001';
-
-  if (typeof window === 'undefined') {
-    return env || devDefault;
-  }
-
-  if (!env) {
-    return '/api/backend';
-  }
-
-  try {
-    const { hostname } = new URL(env);
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return '/api/backend';
-    }
-  } catch {
-    return '/api/backend';
-  }
-
-  return env;
-}
-
 const baseURL = getApiBaseURL();
 
-/** Never send act-as on platform-admin catalogue routes. */
-function requestPathIsPlatformAdmin(config: InternalAxiosRequestConfig): boolean {
+/** Never send act-as on global admin / platform catalogue routes (Bearer-only semantics). */
+function requestPathSkipsActAsHeader(config: InternalAxiosRequestConfig): boolean {
   const u = config.url ?? '';
   const path = u.startsWith('http') ? new URL(u).pathname : u;
   const normalized = path.replace(/^\//, '');
-  return normalized.startsWith('platform/');
+  return (
+    normalized.startsWith('platform/') || normalized.startsWith('admin/')
+  );
+}
+
+function isLegacyUnsupportedPath(config: InternalAxiosRequestConfig): boolean {
+  const u = config.url ?? '';
+  const path = u.startsWith('http') ? new URL(u).pathname : u;
+  const normalized = path.replace(/^\//, '');
+  return normalized.startsWith('organisations/');
 }
 
 function unwrapEnvelope<T>(raw: unknown): T {
@@ -72,12 +53,19 @@ function unwrapEnvelope<T>(raw: unknown): T {
 const refreshClient = axios.create({ baseURL });
 
 /**
- * Unauthenticated API calls only (`/auth/register`, `/auth/login`, etc.).
+ * Unauthenticated API calls only (e.g. sign-up and sign-in).
  * Never attaches `Authorization`, so a stale session cannot break onboarding.
  */
 export const apiClientPublic = axios.create({ baseURL });
 
 apiClientPublic.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  if (isLegacyUnsupportedPath(config)) {
+    throw new AppApiError(
+      404,
+      'This frontend route still references a legacy `/organisations/*` endpoint that is not available on this backend.',
+      'LEGACY_ENDPOINT_BLOCKED',
+    );
+  }
   const h = config.headers;
   if (h && typeof h.set === 'function') {
     h.set('X-Request-ID', nanoid());
@@ -92,12 +80,24 @@ apiClientPublic.interceptors.response.use(
     response.data = unwrapEnvelope(response.data);
     return response;
   },
-  async (error: AxiosError) => Promise.reject(toAppError(error)),
+  async (error: AxiosError) => {
+    if (isCancel(error) || error.code === 'ERR_CANCELED') {
+      return Promise.reject(error);
+    }
+    return Promise.reject(toAppError(error));
+  },
 );
 
 export const apiClient = axios.create({ baseURL });
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  if (isLegacyUnsupportedPath(config)) {
+    throw new AppApiError(
+      404,
+      'This frontend route still references a legacy `/organisations/*` endpoint that is not available on this backend.',
+      'LEGACY_ENDPOINT_BLOCKED',
+    );
+  }
   const token = useAuthStore.getState().accessToken;
   if (token) {
     const headers = config.headers;
@@ -118,7 +118,7 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const actAs = state.actAsOrgId;
   if (
     actAs &&
-    !requestPathIsPlatformAdmin(config) &&
+    !requestPathSkipsActAsHeader(config) &&
     state.user?.isPlatformSuperAdmin
   ) {
     if (h && typeof h.set === 'function') {
@@ -137,6 +137,9 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
+    if (isCancel(error) || error.code === 'ERR_CANCELED') {
+      return Promise.reject(error);
+    }
     const originalRequest = error.config;
 
     if (

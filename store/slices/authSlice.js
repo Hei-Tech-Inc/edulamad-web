@@ -13,8 +13,11 @@ import { useAuthStore } from '@/stores/auth.store'
 
 export const fetchUser = createAsyncThunk('auth/fetchUser', async () => {
   await useAuthStore.persist.rehydrate()
-  const { accessToken } = useAuthStore.getState()
+  const { accessToken, user: existingUser } = useAuthStore.getState()
   if (!accessToken) return null
+  if (existingUser) {
+    return toCompatUser(existingUser)
+  }
 
   try {
     const { data } = await apiClient.get(API.auth.me)

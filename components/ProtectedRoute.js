@@ -10,7 +10,7 @@ export default function ProtectedRoute({ children }) {
   const router = useRouter()
   const dispatch = useDispatch()
   const { user, loading } = useSelector((state) => state.auth)
-  const { error: dataError, loading: dataLoading, refreshCages } = useData()
+  const { error: dataError, loading: dataLoading, refreshStudyRows } = useData()
   const layoutShell = usesMainSidebarLayout(router.pathname)
   const standaloneDataError = !layoutShell && dataError ? dataError : ''
 
@@ -26,8 +26,8 @@ export default function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-sky-600" />
       </div>
     )
   }
@@ -42,7 +42,7 @@ export default function ProtectedRoute({ children }) {
         <DataApiBanner
           error={standaloneDataError}
           loading={dataLoading}
-          onRetry={() => void refreshCages()}
+          onRetry={() => void refreshStudyRows()}
         />
       ) : null}
       {children}

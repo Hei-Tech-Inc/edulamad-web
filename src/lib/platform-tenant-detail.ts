@@ -6,15 +6,16 @@ const KNOWN_TOP_LEVEL = new Set([
   'users',
   'members',
   'farms',
+  'sites',
   'auditLogs',
-  'aquafarm_audit_logs',
   'audit_logs',
 ]);
 
 export interface NormalizedPlatformTenantDetail {
   organisation: Record<string, unknown> | null;
   users: unknown[];
-  farms: unknown[];
+  /** Normalised from API `farms`, `sites`, or similar tenant-scoped lists. */
+  linkedSites: unknown[];
   auditLogs: unknown[];
   /** Any other top-level keys from the API (full capture). */
   extraTopLevel: Record<string, unknown>;
@@ -37,11 +38,10 @@ export function normalizePlatformTenantDetailPayload(
   const usersRaw = data.users ?? data.members;
   const users = Array.isArray(usersRaw) ? usersRaw : [];
 
-  const farmsRaw = data.farms;
-  const farms = Array.isArray(farmsRaw) ? farmsRaw : [];
+  const sitesRaw = data.sites ?? data.farms;
+  const linkedSites = Array.isArray(sitesRaw) ? sitesRaw : [];
 
-  const auditRaw =
-    data.auditLogs ?? data.aquafarm_audit_logs ?? data.audit_logs;
+  const auditRaw = data.auditLogs ?? data.audit_logs;
   const auditLogs = Array.isArray(auditRaw) ? auditRaw : [];
 
   const extraTopLevel: Record<string, unknown> = {};
@@ -50,7 +50,7 @@ export function normalizePlatformTenantDetailPayload(
     extraTopLevel[k] = v;
   }
 
-  return { organisation, users, farms, auditLogs, extraTopLevel };
+  return { organisation, users, linkedSites, auditLogs, extraTopLevel };
 }
 
 /**

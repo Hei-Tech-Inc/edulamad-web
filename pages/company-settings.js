@@ -14,14 +14,18 @@ import {
   Phone,
 } from 'lucide-react'
 import ProtectedRoute from '../components/ProtectedRoute'
+import Layout from '../components/Layout'
 import { useAuth } from '../contexts/AuthContext'
 import companyService from '../lib/companyService'
 import { useToast } from '../components/Toast'
+import { AppApiError } from '@/lib/api-error'
 
 export default function CompanySettingsPage() {
   return (
     <ProtectedRoute>
-      <CompanySettings />
+      <Layout title="Institution settings">
+        <CompanySettings />
+      </Layout>
     </ProtectedRoute>
   )
 }
@@ -37,6 +41,7 @@ function CompanySettings() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [readOnlyNotice, setReadOnlyNotice] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     abbreviation: '',
@@ -55,17 +60,20 @@ function CompanySettings() {
     try {
       const { data, error } = await companyService.getCompanyDetails()
 
-      if (error) throw error
+      if (error && !data) throw error
 
       console.log('Fetched company data:', data)
-      setCompany(data)
+      setCompany(data || { id: 'local-org', name: '', logo_url: null, settings: {} })
       setFormData({
-        name: data.name || '',
-        abbreviation: data.abbreviation || '',
-        address: data.address || '',
-        contact_email: data.contact_email || '',
-        contact_phone: data.contact_phone || '',
+        name: data?.name || '',
+        abbreviation: data?.abbreviation || '',
+        address: data?.address || '',
+        contact_email: data?.contact_email || '',
+        contact_phone: data?.contact_phone || '',
       })
+      if (error instanceof AppApiError) {
+        setReadOnlyNotice(error.message)
+      }
     } catch (error) {
       console.error('Error fetching company data:', error.message)
       setError('Failed to load company data. Please try again.')
@@ -101,10 +109,18 @@ function CompanySettings() {
         settings: company.settings, // Preserve existing settings
       })
 
-      if (error) throw error
+      if (error instanceof AppApiError) {
+        setReadOnlyNotice(error.message)
+      }
+      if (data) {
+        setCompany(data)
+      }
 
-      showToast('Company settings updated successfully', 'success')
-      setCompany(data)
+      if (!error) {
+        showToast('Company settings updated successfully', 'success')
+      } else {
+        showToast(error.message, 'error')
+      }
     } catch (error) {
       console.error('Error updating company:', error.message)
       setError(error.message)
@@ -189,21 +205,19 @@ function CompanySettings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 font-montserrat">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center mb-6">
-          <Link
-            href="/dashboard"
-            className="text-sky-600 hover:text-sky-800 flex items-center mr-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Company Settings</h1>
-        </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div className="flex items-center rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] dark:border-neutral-800 dark:bg-neutral-950/80">
+        <Link
+          href="/dashboard"
+          className="mr-4 inline-flex items-center text-sm font-medium text-orange-600 transition hover:text-orange-700"
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          Back to Dashboard
+        </Link>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Company Settings</h1>
+      </div>
 
-        {/* Main Content */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] dark:border-neutral-800 dark:bg-neutral-950/80">
           {loading ? (
             <div className="p-8 flex justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600"></div>
@@ -211,8 +225,13 @@ function CompanySettings() {
           ) : (
             <div className="p-6">
               {error && (
-                <div className="mb-6 bg-red-50 text-red-800 p-4 rounded-md">
+                <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
                   {error}
+                </div>
+              )}
+              {readOnlyNotice && (
+                <div className="mb-6 rounded-md border border-amber-300 bg-amber-50 p-4 text-amber-900">
+                  {readOnlyNotice}
                 </div>
               )}
 
@@ -224,7 +243,7 @@ function CompanySettings() {
                   </div>
 
                   <div
-                    className="w-40 h-40 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden relative"
+                    className="relative flex h-40 w-40 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-300 dark:border-neutral-700"
                     onClick={handleLogoClick}
                   >
                     {uploading ? (
@@ -265,7 +284,7 @@ function CompanySettings() {
                     <button
                       type="button"
                       onClick={handleDeleteLogo}
-                      className="mt-2 text-sm text-red-600 hover:text-red-800 inline-flex items-center"
+                      className="mt-2 inline-flex items-center text-sm text-rose-600 transition hover:text-rose-700"
                       disabled={uploading}
                     >
                       <Trash className="h-4 w-4 mr-1" />
@@ -291,7 +310,7 @@ function CompanySettings() {
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            className="focus:ring-sky-500 focus:border-sky-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                            className="block w-full rounded-xl border-slate-200 py-2 pl-10 pr-3 text-sm shadow-sm focus:border-orange-300 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
                             placeholder="Company Name"
                             required
                           />
@@ -311,7 +330,7 @@ function CompanySettings() {
                             name="abbreviation"
                             value={formData.abbreviation}
                             onChange={handleChange}
-                            className="focus:ring-sky-500 focus:border-sky-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                            className="block w-full rounded-xl border-slate-200 py-2 pl-10 pr-3 text-sm shadow-sm focus:border-orange-300 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
                             placeholder="Company Abbreviation"
                             maxLength={5}
                           />
@@ -331,7 +350,7 @@ function CompanySettings() {
                           value={formData.address}
                           onChange={handleChange}
                           rows="3"
-                          className="focus:ring-sky-500 focus:border-sky-500 block w-full py-2 px-3 sm:text-sm border-gray-300 rounded-md"
+                          className="block w-full rounded-xl border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-orange-300 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
                           placeholder="Company Address"
                         ></textarea>
                       </div>
@@ -350,7 +369,7 @@ function CompanySettings() {
                               name="contact_email"
                               value={formData.contact_email}
                               onChange={handleChange}
-                              className="focus:ring-sky-500 focus:border-sky-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                              className="block w-full rounded-xl border-slate-200 py-2 pl-10 pr-3 text-sm shadow-sm focus:border-orange-300 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
                               placeholder="Contact Email"
                             />
                           </div>
@@ -369,7 +388,7 @@ function CompanySettings() {
                               name="contact_phone"
                               value={formData.contact_phone}
                               onChange={handleChange}
-                              className="focus:ring-sky-500 focus:border-sky-500 block w-full pl-10 pr-3 py-2 sm:text-sm border-gray-300 rounded-md"
+                              className="block w-full rounded-xl border-slate-200 py-2 pl-10 pr-3 text-sm shadow-sm focus:border-orange-300 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
                               placeholder="Contact Phone"
                             />
                           </div>
@@ -381,11 +400,11 @@ function CompanySettings() {
                       <button
                         type="submit"
                         disabled={saving}
-                        className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                        className={`flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm ${
                           saving
-                            ? 'bg-sky-400'
-                            : 'bg-sky-600 hover:bg-sky-700'
-                        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
+                            ? 'bg-orange-400'
+                            : 'bg-orange-600 hover:bg-orange-700'
+                        } focus:outline-none focus:ring-2 focus:ring-orange-100 dark:focus:ring-orange-900/40`}
                       >
                         {saving ? (
                           <>
@@ -406,7 +425,6 @@ function CompanySettings() {
             </div>
           )}
         </div>
-      </div>
     </div>
   )
 }

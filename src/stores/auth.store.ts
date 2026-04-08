@@ -21,9 +21,9 @@ export interface AuthState {
   setTokens: (access: string, refresh: string) => void;
   setUser: (user: RequestUser) => void;
   setOrg: (org: AuthOrgDto | null) => void;
-  /** One-shot message after register if POST /farms failed (shown on dashboard, not persisted). */
-  onboardingFarmNotice: string | null;
-  setOnboardingFarmNotice: (msg: string | null) => void;
+  /** One-shot onboarding hint after register (not persisted). */
+  onboardingNotice: string | null;
+  setOnboardingNotice: (msg: string | null) => void;
   setActAsOrg: (orgId: string | null, label?: string | null) => void;
   clearAuth: () => void;
   hasPermission: (permission: Permission) => boolean;
@@ -35,7 +35,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       org: null,
-      onboardingFarmNotice: null,
+      onboardingNotice: null,
       actAsOrgId: null,
       actAsOrgLabel: null,
       accessToken: null,
@@ -54,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
         }),
       setOrg: (org) => set({ org }),
-      setOnboardingFarmNotice: (msg) => set({ onboardingFarmNotice: msg }),
+      setOnboardingNotice: (msg) => set({ onboardingNotice: msg }),
       setActAsOrg: (orgId, label) => {
         set({
           actAsOrgId: orgId,
@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           org: null,
-          onboardingFarmNotice: null,
+          onboardingNotice: null,
           actAsOrgId: null,
           actAsOrgLabel: null,
           accessToken: null,

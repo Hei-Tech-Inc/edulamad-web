@@ -1,16 +1,19 @@
-// pages/register.js — canonical organisation onboarding (B2B SaaS: /register)
+// pages/register.js — public account registration
 import React from 'react'
 import Head from 'next/head'
 import CompanyRegistrationPage from '../components/CompanyRegistrationsPage'
+import { getMarketingBrandName } from '@/lib/landing-brand'
+
+const BRAND = getMarketingBrandName()
 
 export default function RegisterOrganisationPage() {
   return (
     <>
       <Head>
-        <title>Create your organisation — Nsuo</title>
+        <title>Create account — {BRAND}</title>
         <meta
           name="description"
-          content="Register your aquaculture organisation on Nsuo and start onboarding."
+          content={`Create your ${BRAND} account to sign in and use the app.`}
         />
       </Head>
       <CompanyRegistrationPage />

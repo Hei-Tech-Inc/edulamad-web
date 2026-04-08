@@ -1,6 +1,6 @@
 /**
  * Mirrors OpenAPI `CreateOrganizationDto` / `UpdateOrganizationDto`
- * (`contexts/api-docs.json`). Platform console uses `PUT` `/platform/organisations/:id`; create may use `POST` `/admin/organizations`.
+ * (`contexts/api-docs.json`). Platform console uses `POST` / `PUT` `/platform/organisations` and `/platform/organisations/:id`.
  */
 
 export interface CreatePlatformOrganisationDto {

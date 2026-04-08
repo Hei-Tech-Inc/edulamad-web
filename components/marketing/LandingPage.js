@@ -1,6 +1,13 @@
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
+import Head from 'next/head'
+import { useEffect, useRef, useState } from 'react'
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from 'framer-motion'
+import { getMarketingBrandName } from '@/lib/landing-brand'
 import {
   ArrowRight,
   Building2,
@@ -8,18 +15,11 @@ import {
   LineChart,
   Shield,
   ShieldCheck,
-  Fish,
   Users,
-  Waves,
+  Library,
   Sparkles,
   ChevronRight,
   Calendar,
-  Package,
-  LayoutGrid,
-  Scale,
-  ShoppingCart,
-  TrendingUp,
-  Activity,
   Infinity,
   Menu,
   X,
@@ -28,190 +28,275 @@ import {
   ArrowUp,
   HelpCircle,
   Code2,
+  GraduationCap,
+  Check,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
+const BRAND = getMarketingBrandName()
+
 const landingFocus =
-  'rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050a12]'
+  'rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050505]'
 
 const faqItems = [
   {
-    q: 'Who is Nsuo built for?',
-    a: 'Operations and finance teams at aquaculture groups running multiple ponds, cages, or RAS sites — anyone tired of reconciling parallel spreadsheets and chat threads.',
+    q: `Who is ${BRAND} for?`,
+    a: 'Ghanaian university students who want reliable past questions, marking-style solutions, and exam practice — without hunting PDFs in chat groups or paying for scattered uploads.',
   },
   {
-    q: 'How do farms and sites fit in the model?',
-    a: 'You create an organisation, then farms, then production units (ponds, cages, tanks). Permissions follow that hierarchy so the field sees what it needs and head office keeps oversight.',
+    q: 'Where do questions and answers come from?',
+    a: 'A mix of department-supplied papers, crowdsourced uploads we verify, and AI-generated explanations when official solutions do not exist — clearly labeled so you know what you are studying.',
   },
   {
-    q: 'What about approvals and audits?',
-    a: 'Sensitive moves can require approvers before they hit live production data. The platform keeps an event trail so you can answer who changed what — especially when harvest volume spikes.',
+    q: 'How does exam simulation help?',
+    a: 'Practice mode surfaces high-probability topics and timed sets so you rehearse under pressure. Analytics highlight weak areas so revision time goes where it matters.',
   },
   {
-    q: 'Do all users see the same screens?',
-    a: 'No. Roles split operators, managers, and admins so daily entry stays lightweight while stocking, harvest, and settings stay controlled.',
+    q: 'Is this only for one school?',
+    a: 'The catalog is organized by university and course. We are building coverage across public and private institutions in Ghana so your program is easier to find over time.',
   },
   {
-    q: 'What is the path after we register?',
-    a: 'Provision the organisation, confirm access, model farms and units, then invite your team. The onboarding section above is the same checklist an ops lead can reuse for every new site.',
+    q: 'What does it cost students?',
+    a: 'We are focused on cost-effective access — fewer loose fees than buying papers per course from multiple sources. Exact pricing lives in-product as we roll out campuses.',
   },
 ]
 
 const heroTrustSignals = [
-  { icon: ShieldCheck, label: 'Audit trail' },
-  { icon: Users, label: 'Roles & approvals' },
-  { icon: LineChart, label: 'Cage analytics' },
+  { icon: ShieldCheck, label: 'Verified sources, labeled clearly' },
+  { icon: Sparkles, label: 'AI explanations when keys are missing' },
+  { icon: LineChart, label: 'Analytics on weak topics' },
 ]
 
-const heroVariants = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.085, delayChildren: 0.04 },
-  },
-}
+const CAMPUS_MARQUEE = [
+  'University of Ghana',
+  'KNUST',
+  'UCC',
+  'UDS',
+  'UEW',
+  'UHAS',
+  'UMaT',
+  'Ashesi',
+  'Academic City',
+  'Lancaster Ghana',
+  'Central University',
+  'Regent',
+  'Knutsford',
+]
 
-const heroItem = {
-  hidden: { opacity: 0, y: 18 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.58, ease: [0.22, 1, 0.36, 1] },
-  },
+const storyProblems = [
+  'Past papers are scattered across WhatsApp, Drive, and printouts — impossible to search and easy to lose.',
+  'Questions often appear without reliable solutions or marking schemes.',
+  'Students need exam-style practice, not another folder of untitled PDFs.',
+]
+
+const storySolutions = [
+  'One catalog: universities, courses, sessions — built for discovery.',
+  'Official schemes where available; transparent AI worked steps everywhere else.',
+  'Timed practice and simulations that mirror real hall pressure.',
+  'Quality improves as departments and trusted reps contribute together.',
+  'Analytics show weak topics so revision time goes where marks are lost.',
+]
+
+function LandingMarquee() {
+  const reduceMotion = useReducedMotion()
+  const doubled = [...CAMPUS_MARQUEE, ...CAMPUS_MARQUEE]
+
+  if (reduceMotion) {
+    return (
+      <div className="border-y border-white/[0.08] bg-black/20 py-4 text-center backdrop-blur-md">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+          Built for Ghanaian universities — coverage roadmap in motion
+        </p>
+        <p className="sr-only">
+          Institutions in our roadmap include: {CAMPUS_MARQUEE.join(', ')}.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative border-y border-white/[0.08] bg-black/20 py-3.5 backdrop-blur-md">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#050505] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#050505] to-transparent" />
+      <div
+        className="landing-marquee-track landing-marquee-animate"
+        aria-hidden
+      >
+        {doubled.map((label, i) => (
+          <span
+            key={`${label}-${i}`}
+            className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500"
+          >
+            <span className="h-1 w-1 rounded-full bg-orange-500/70 shadow-[0_0_10px_rgba(255,92,0,0.6)]" />
+            {label}
+          </span>
+        ))}
+      </div>
+      <p className="sr-only">
+        Universities and colleges represented in our coverage roadmap include:{' '}
+        {CAMPUS_MARQUEE.join(', ')}.
+      </p>
+    </div>
+  )
 }
 
 const moduleCards = [
   {
-    label: 'Daily production entry',
-    icon: Calendar,
+    label: 'Question bank',
+    icon: Library,
     description:
-      'Feed, mortalities, and field notes on the cadence your crew already follows — not ad-hoc chats.',
+      'Papers by school, course, and year. Searchable. No more endless chat scroll.',
   },
   {
-    label: 'Bi-weekly records & sampling',
-    icon: Scale,
-    description:
-      'Weights and samples that roll into biomass and FCR so managers see drift before close.',
-  },
-  {
-    label: 'Cage registry & analytics',
-    icon: LayoutGrid,
-    description:
-      'Every unit’s status, volume, and history from stocking through harvest in one registry.',
-  },
-  {
-    label: 'Stocking & harvest',
-    icon: Package,
-    description:
-      'Stocking events, top-ups, and harvest windows tied to the same timeline as your daily data.',
-  },
-  {
-    label: 'Feed, suppliers & purchases',
-    icon: ShoppingCart,
-    description:
-      'Trace feed from supplier to pond or cage without breaking the production model.',
-  },
-  {
-    label: 'Approvals & audit trail',
+    label: 'Solutions',
     icon: ClipboardCheck,
     description:
-      'Sensitive moves go through approvers; the log stays clean enough for auditors.',
+      'Schemes where they exist. Clearly marked AI walkthroughs where they do not.',
+  },
+  {
+    label: 'Exam mode',
+    icon: Calendar,
+    description:
+      'Timed sets and high-yield focus — rehearse the exam, not just read answers.',
+  },
+  {
+    label: 'Trusted contributions',
+    icon: Users,
+    description:
+      'Departments and reps upload; verification keeps quality high as you scale.',
+  },
+  {
+    label: 'AI tutor',
+    icon: Sparkles,
+    description:
+      'Hints and step-by-step help on the exact wording of your past papers.',
+  },
+  {
+    label: 'Progress',
+    icon: LineChart,
+    description:
+      'See weak chapters, streaks, and where to revise before it is too late.',
   },
 ]
 
 const steps = [
   {
     n: '01',
-    title: 'Create your organisation',
-    body: 'Register as the owner. Your workspace, data model, and permissions are provisioned automatically.',
+    title: 'Create your workspace',
+    body: 'Create your account and workspace. Roles, courses, and permissions map to how you already work.',
   },
   {
     n: '02',
-    title: 'Confirm & secure access',
-    body: 'Verify email, set roles, and keep a clear audit trail from day one — built for regulated, multi-site ops.',
+    title: 'Verify & invite',
+    body: 'Confirm email, then invite admins and course reps. One bank for everyone.',
   },
   {
     n: '03',
-    title: 'Model production',
-    body: 'Add farms, ponds, cages, and cycles. Daily records, weights, and harvests connect into one timeline.',
+    title: 'Add papers',
+    body: 'Upload by year and semester — from departments or vetted student batches.',
   },
   {
     n: '04',
-    title: 'Run with your team',
-    body: 'Invite operators and managers. Everyone works against the same live numbers — not scattered spreadsheets.',
+    title: 'Go live',
+    body: 'Students practice and run exam mode; you see engagement without chasing files.',
   },
 ]
 
 const highlights = [
   {
-    icon: Waves,
-    title: 'Ponds, cages & tanks',
-    copy: 'Register every production unit — earthen ponds, floating cages, RAS — with status, volumes, and a full history from stocking through harvest.',
-    span: 'sm:col-span-2',
+    icon: Library,
+    title: 'One catalog',
+    copy: 'School, programme, level, session — structured so students find papers in seconds.',
+    gridClass: 'md:col-span-2 lg:col-span-7',
   },
   {
     icon: LineChart,
-    title: 'Dashboards that match the farm',
-    copy: 'Connect daily entry and bi-weekly sampling to biomass, FCR, and cage analytics so managers spot drift before it hits the books.',
-    span: '',
+    title: 'Data-backed revision',
+    copy: 'Tie attempts to syllabus topics. Spend time on what actually loses marks.',
+    gridClass: 'lg:col-span-5',
   },
   {
     icon: ClipboardCheck,
-    title: 'Controlled changes',
-    copy: 'Route sensitive stocking and production moves through approvals — aligned with the audit events you already rely on.',
-    span: '',
+    title: 'Transparent quality',
+    copy: 'Every answer tagged: official, community, or AI — so trust is explicit.',
+    gridClass: 'lg:col-span-6',
   },
   {
     icon: Shield,
-    title: 'Built for multi-site ops',
-    copy: 'Organisations, farms, roles, and structured APIs — for groups running many sites, not one fragile spreadsheet.',
-    span: 'sm:col-span-2 lg:col-span-1',
+    title: 'Built for Ghana',
+    copy: 'Semester rhythm, local marking styles, mobile-first — designed for campus reality.',
+    gridClass: 'lg:col-span-6',
   },
 ]
 
 const statStrip = [
   {
-    label: 'Production layers',
-    value: '3',
-    hint: 'Org → farm → unit',
+    label: 'Focus',
+    value: 'GH',
+    hint: 'Universities & programmes on the roadmap',
     icon: Building2,
   },
   {
-    label: 'Field + office',
+    label: 'Platform',
     value: '1',
-    hint: 'Shared live model',
+    hint: 'Papers, practice, analytics together',
+    icon: Library,
+  },
+  {
+    label: 'People',
+    value: '∞',
+    hint: 'Students & admins, one shared bank',
     icon: Users,
   },
   {
-    label: 'Lifecycle coverage',
-    value: '∞',
-    hint: 'Stocking through harvest',
+    label: 'Depth',
+    value: '24/7',
+    hint: 'Practice when the library is closed',
     icon: Infinity,
   },
 ]
 
-const previewNav = [
-  { label: 'Dashboard', active: true },
-  { label: 'Daily entry', active: false },
-  { label: 'Cages', active: false },
-  { label: 'Harvest', active: false },
-]
-
 const previewRows = [
-  { cage: 'V-12', status: 'On feed', fcr: '1.38', tone: 'text-emerald-400/90' },
-  { cage: 'V-04', status: 'Sample due', fcr: '1.52', tone: 'text-amber-400/90' },
-  { cage: 'L-02', status: 'Harvest window', fcr: '1.41', tone: 'text-sky-400/90' },
+  {
+    courseCode: 'FIN 201',
+    status: '98% ready',
+    session: '4.5h',
+    tone: 'text-emerald-400/90',
+  },
+  {
+    courseCode: 'CS 205',
+    status: 'Review weak',
+    session: '2.1h',
+    tone: 'text-amber-400/90',
+  },
+  {
+    courseCode: 'MATH 152',
+    status: 'Sim due',
+    session: '45m',
+    tone: 'text-orange-400/90',
+  },
 ]
 
-function SectionHeading({ eyebrow, title, description, className = '' }) {
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+  className = '',
+  descriptionClassName = '',
+}) {
   return (
     <div className={className}>
-      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-400/90">
+      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-400/90">
         {eyebrow}
       </p>
-      <h2 className="mt-3 text-balance font-[Outfit,system-ui,sans-serif] text-[1.85rem] font-semibold leading-[1.15] tracking-tight text-white sm:text-4xl sm:leading-[1.1] lg:text-[2.65rem] lg:leading-[1.08]">
+      <h2 className="mt-3 text-balance font-[Outfit,system-ui,sans-serif] text-[1.75rem] font-semibold leading-[1.12] tracking-tight text-white sm:text-[2.15rem] sm:leading-[1.1] lg:text-[2.5rem] lg:leading-[1.08]">
         {title}
       </h2>
       {description ? (
-        <p className="mt-5 max-w-2xl text-pretty text-lg font-medium leading-relaxed text-slate-400 sm:text-xl">
+        <p
+          className={`mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-400 sm:text-lg ${descriptionClassName}`}
+        >
           {description}
         </p>
       ) : null}
@@ -219,129 +304,93 @@ function SectionHeading({ eyebrow, title, description, className = '' }) {
   )
 }
 
-function HeroPreviewCard({ reducedMotion }) {
+function HeroShowcase({ reducedMotion }) {
   return (
     <motion.div
-      initial={reducedMotion ? false : { opacity: 0.85, y: 16 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className="relative mx-auto w-full max-w-md lg:mx-0 lg:max-w-lg"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -inset-4 rounded-3xl bg-sky-500/20 blur-2xl"
-      />
-      <div className="landing-glass-strong relative overflow-hidden rounded-2xl shadow-2xl shadow-sky-950/30 ring-1 ring-white/[0.07]">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/[0.07] via-transparent to-cyan-500/[0.05]" aria-hidden />
-        <div className="relative flex items-center justify-between border-b border-white/[0.06] px-3 py-2.5 sm:px-4">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Fish className="h-4 w-4 shrink-0 text-sky-400" strokeWidth={2} />
+      <div className="overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0a0a0a]/95 shadow-[0_32px_80px_rgba(0,0,0,0.5)] ring-1 ring-white/[0.05]">
+        <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex shrink-0 gap-1.5" aria-hidden>
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500/65" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-500/65" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/65" />
+            </div>
             <div className="min-w-0">
-              <div className="truncate text-[11px] font-semibold text-white">
-                Nsuo · Volta Farms
-              </div>
-              <div className="flex items-center gap-1.5 truncate text-[10px] text-slate-500">
-                <span className="relative flex h-2 w-2 shrink-0">
-                  {!reducedMotion ? (
-                    <>
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                    </>
-                  ) : (
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500/90" />
-                  )}
-                </span>
-                Production workspace · live
-              </div>
+              <p className="truncate text-xs font-semibold text-white">{BRAND}</p>
+              <p className="text-[10px] text-slate-500">Exam prep · dashboard</p>
             </div>
           </div>
-          <Sparkles className="h-4 w-4 shrink-0 text-sky-400/70" />
+          <span className="shrink-0 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400/95">
+            Live
+          </span>
         </div>
-
-        <div className="relative grid grid-cols-[minmax(0,5.75rem)_1fr] gap-0 border-b border-white/[0.06]">
-          <div className="border-r border-white/[0.06] bg-white/[0.03] py-2 pl-2 pr-1 backdrop-blur-md">
-            <p className="px-1 pb-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-600">
-              Navigate
+        <div className="space-y-5 p-4 sm:p-5">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { k: 'Courses', v: '12' },
+              { k: 'Readiness', v: '78%' },
+              { k: 'This week', v: '4h' },
+            ].map((cell) => (
+              <div
+                key={cell.k}
+                className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-2 py-2.5 text-center"
+              >
+                <p className="text-lg font-semibold tabular-nums text-white">
+                  {cell.v}
+                </p>
+                <p className="text-[9px] font-medium uppercase tracking-wider text-slate-500">
+                  {cell.k}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Focus courses
             </p>
-            <div className="space-y-0.5">
-              {previewNav.map((item) => (
+            <div className="overflow-hidden rounded-xl border border-white/[0.08]">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-1 border-b border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
+                <span>Course</span>
+                <span className="text-right">Status</span>
+                <span className="text-right">Time</span>
+              </div>
+              {previewRows.map((row) => (
                 <div
-                  key={item.label}
-                  className={`rounded-md px-1.5 py-1 text-[10px] font-medium leading-tight ${
-                    item.active
-                      ? 'bg-sky-500/15 text-sky-200 ring-1 ring-sky-500/25'
-                      : 'text-slate-500'
-                  }`}
+                  key={row.courseCode}
+                  className="grid grid-cols-[1fr_auto_auto] gap-1 border-b border-white/[0.05] px-3 py-2 text-[11px] last:border-b-0"
                 >
-                  {item.label}
+                  <span className="font-medium text-slate-200">
+                    {row.courseCode}
+                  </span>
+                  <span className={`text-right ${row.tone}`}>{row.status}</span>
+                  <span className="text-right tabular-nums text-slate-400">
+                    {row.session}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="space-y-3 p-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                Cage snapshot
-              </p>
-              <p className="mt-0.5 text-xs leading-snug text-slate-400">
-                Bi-weekly weights roll up to analytics; daily entry keeps the
-                timeline honest.
-              </p>
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-[10px] text-slate-500">
+              <span>Overall readiness</span>
+              <span className="tabular-nums text-orange-400/90">82%</span>
             </div>
-            <div className="overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.04] backdrop-blur-md">
-              <div className="grid grid-cols-[1fr_auto_auto] gap-1 border-b border-white/[0.06] bg-white/[0.03] px-2 py-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
-                <span>Unit</span>
-                <span className="text-right">State</span>
-                <span className="text-right">FCR</span>
-              </div>
-              {previewRows.map((row, i) => (
-                <motion.div
-                  key={row.cage}
-                  initial={reducedMotion ? false : { opacity: 0, x: 6 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{
-                    duration: reducedMotion ? 0 : 0.4,
-                    delay: reducedMotion ? 0 : 0.2 + i * 0.08,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="grid grid-cols-[1fr_auto_auto] gap-1 border-b border-white/[0.05] px-2 py-1.5 text-[10px] last:border-b-0"
-                >
-                  <span className="font-medium text-slate-200">{row.cage}</span>
-                  <span className={`text-right ${row.tone}`}>{row.status}</span>
-                  <span className="text-right tabular-nums text-slate-300">
-                    {row.fcr}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-            <div className="space-y-1.5">
-              {[
-                { w: '82%', label: 'Biomass vs. target', c: 'from-sky-500 to-cyan-400' },
-                {
-                  w: '68%',
-                  label: 'Feed programme adherence',
-                  c: 'from-emerald-500 to-teal-400',
-                },
-              ].map((row, i) => (
-                <div key={row.label} className="space-y-1">
-                  <div className="flex justify-between text-[9px] text-slate-500">
-                    <span>{row.label}</span>
-                    <span className="text-sky-500/80">●</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <motion.div
-                      initial={reducedMotion ? false : { width: 0 }}
-                      animate={{ width: row.w }}
-                      transition={{
-                        duration: reducedMotion ? 0 : 0.95,
-                        delay: reducedMotion ? 0 : 0.45 + i * 0.1,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
-                      className={`h-full rounded-full bg-gradient-to-r ${row.c}`}
-                    />
-                  </div>
-                </div>
-              ))}
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+              <motion.div
+                initial={reducedMotion ? false : { width: 0 }}
+                animate={{ width: '82%' }}
+                transition={{
+                  duration: reducedMotion ? 0 : 0.85,
+                  delay: reducedMotion ? 0 : 0.3,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
+              />
             </div>
           </div>
         </div>
@@ -350,11 +399,168 @@ function HeroPreviewCard({ reducedMotion }) {
   )
 }
 
+function CursorGlowButton({ href, children, className = '' }) {
+  const [glow, setGlow] = useState({ x: 50, y: 50, active: false })
+
+  return (
+    <Link
+      href={href}
+      onMouseEnter={() => setGlow((g) => ({ ...g, active: true }))}
+      onMouseLeave={() => setGlow((g) => ({ ...g, active: false }))}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect()
+        const x = ((e.clientX - rect.left) / rect.width) * 100
+        const y = ((e.clientY - rect.top) / rect.height) * 100
+        setGlow({ x, y, active: true })
+      }}
+      className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-slate-950 shadow-[0_14px_40px_rgba(255,92,0,0.3)] transition duration-200 hover:brightness-110 ${className}`}
+      style={{
+        backgroundImage: glow.active
+          ? `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(255,255,255,0.98) 0%, rgba(255,231,196,0.95) 28%, rgba(255,177,95,0.9) 52%, rgba(255,122,38,0.88) 78%, rgba(255,108,28,0.82) 100%)`
+          : 'linear-gradient(95deg, rgba(255,255,255,0.96) 0%, rgba(255,228,184,0.93) 30%, rgba(255,173,90,0.92) 64%, rgba(255,122,38,0.9) 100%)',
+      }}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-full"
+        style={{
+          background:
+            glow.active
+              ? `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(255,255,255,0.7), transparent 42%)`
+              : 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3), transparent 45%)',
+        }}
+      />
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/45 to-transparent"
+        animate={glow.active ? { x: ['-140%', '280%'] } : { x: '-140%' }}
+        transition={glow.active ? { duration: 1.1, ease: 'easeOut' } : { duration: 0 }}
+      />
+      <span className="relative z-[1]">{children}</span>
+    </Link>
+  )
+}
+
+function ClockShowcase({ reducedMotion }) {
+  return (
+    <section className="relative border-t border-white/[0.06] bg-[#040507] py-20 sm:py-24">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_50%,rgba(255,92,0,0.12),transparent_45%),radial-gradient(ellipse_at_70%_80%,rgba(99,102,241,0.12),transparent_55%)]"
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl border border-white/[0.1] bg-[#05070d]/90 px-6 py-8 shadow-[0_40px_100px_rgba(0,0,0,0.55)] sm:px-10 sm:py-10">
+          <div
+            className="pointer-events-none absolute left-0 top-[45%] h-[220px] w-[220px] -translate-x-1/3 -translate-y-1/2 rounded-full bg-orange-500/15 blur-3xl"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute right-0 top-[60%] h-[260px] w-[260px] translate-x-1/4 -translate-y-1/2 rounded-full bg-indigo-500/15 blur-3xl"
+            aria-hidden
+          />
+          <div className="relative grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="relative mx-auto h-[290px] w-[290px] sm:h-[380px] sm:w-[380px]">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-700/20 to-black/80 shadow-[0_30px_80px_rgba(0,0,0,0.6)]" />
+          <div className="absolute inset-[8%] rounded-full border border-white/10 bg-black/75 backdrop-blur-md" />
+          <div className="absolute inset-[15%] rounded-full border border-orange-400/30 bg-[conic-gradient(from_120deg,rgba(255,110,43,0.95),rgba(255,110,43,0.1),rgba(85,120,255,0.88),rgba(255,110,43,0.95))] opacity-95" />
+          <div className="absolute inset-[23%] rounded-full border border-white/10 bg-[#0b0f18]/90" />
+          <motion.div
+            aria-hidden
+            className="absolute inset-[15%] rounded-full border border-orange-300/20"
+            animate={
+              reducedMotion
+                ? undefined
+                : { boxShadow: ['0 0 24px rgba(255,120,40,0.15)', '0 0 34px rgba(80,104,255,0.2)', '0 0 24px rgba(255,120,40,0.15)'] }
+            }
+            transition={
+              reducedMotion ? undefined : { duration: 4.5, ease: 'easeInOut', repeat: Infinity }
+            }
+          />
+          {Array.from({ length: 12 }).map((_, i) => {
+            const deg = i * 30
+            return (
+              <span
+                key={`tick-${deg}`}
+                className="absolute left-1/2 top-1/2 h-[2px] w-[8px] origin-left bg-white/35"
+                style={{
+                  transform: `translate(-50%, -50%) rotate(${deg}deg) translateX(130px)`,
+                  opacity: i % 3 === 0 ? 0.75 : 0.4,
+                }}
+              />
+            )
+          })}
+          <motion.div
+            className="absolute left-1/2 top-1/2 h-[34%] w-[2px] origin-bottom -translate-x-1/2 -translate-y-full rounded-full bg-gradient-to-t from-orange-400 to-white shadow-[0_0_20px_rgba(255,129,66,0.75)]"
+            animate={reducedMotion ? undefined : { rotate: 360 }}
+            transition={
+              reducedMotion
+                ? undefined
+                : { duration: 14, ease: 'linear', repeat: Infinity }
+            }
+          />
+          <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.8)]" />
+          <motion.div
+            className="absolute left-1/2 top-1/2 h-[26%] w-[1px] origin-bottom -translate-x-1/2 -translate-y-full rounded-full bg-gradient-to-t from-indigo-300/80 to-indigo-100/90 shadow-[0_0_12px_rgba(99,102,241,0.7)]"
+            animate={reducedMotion ? undefined : { rotate: -360 }}
+            transition={
+              reducedMotion
+                ? undefined
+                : { duration: 40, ease: 'linear', repeat: Infinity }
+            }
+          />
+          <motion.div
+            className="absolute left-1/2 top-1/2 h-[18%] w-[1px] origin-bottom -translate-x-1/2 -translate-y-full rounded-full bg-gradient-to-t from-white/70 to-white"
+            animate={reducedMotion ? undefined : { rotate: 360 }}
+            transition={
+              reducedMotion ? undefined : { duration: 2, ease: 'linear', repeat: Infinity }
+            }
+          />
+          <motion.div
+            aria-hidden
+            className="absolute inset-[25%] rounded-full border border-white/10"
+            animate={reducedMotion ? undefined : { scale: [1, 1.015, 1] }}
+            transition={reducedMotion ? undefined : { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-300/90">
+            Design spotlight
+          </p>
+          <h2 className="mt-3 font-[Outfit,system-ui,sans-serif] text-4xl font-semibold leading-[1.02] tracking-tight text-white sm:text-5xl">
+            Join the
+            <br />
+            Movement
+          </h2>
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-400 sm:text-base">
+            A cinematic interaction block inspired by the style you shared,
+            refined with deeper glass layers, dual-hand motion, and a CTA that
+            tracks your cursor with a live light sweep.
+          </p>
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <CursorGlowButton href="/register">See it in action</CursorGlowButton>
+            <Link
+              href="/signup"
+              className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-white/25 hover:bg-white/[0.08]"
+            >
+              Join our community
+            </Link>
+          </div>
+        </div>
+      </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function LandingPage() {
   const reduceMotion = useReducedMotion()
   const [mounted, setMounted] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [headerScrolled, setHeaderScrolled] = useState(false)
+  /** FAQ items can be expanded independently (Pasqo-style Q&A). */
+  const [openFaq, setOpenFaq] = useState(() => ({}))
 
   useEffect(() => setMounted(true), [])
 
@@ -391,9 +597,6 @@ export default function LandingPage() {
     }
   }, [])
 
-  const cardHoverLift =
-    'motion-safe:transition motion-safe:duration-300 motion-safe:ease-out motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-[0_24px_64px_rgba(0,0,0,0.35)]'
-
   const sectionMotion = (delay = 0) =>
     reduceMotion
       ? {}
@@ -408,35 +611,54 @@ export default function LandingPage() {
           },
         }
 
+  const faqMotionDuration = reduceMotion ? 'duration-0' : 'duration-300'
+  const faqMotionEase = reduceMotion ? '' : 'ease-[cubic-bezier(0.22,1,0.36,1)]'
+
+  const heroSectionRef = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: heroSectionRef,
+    offset: ['start start', 'end start'],
+  })
+  const heroOrbY = useTransform(scrollYProgress, [0, 1], [0, 100])
+
   return (
     <div
       id="top"
-      className="min-h-screen overflow-x-hidden bg-[#050a12] font-sans text-slate-100 antialiased"
+      className="relative min-h-screen overflow-x-hidden font-sans text-neutral-100 antialiased"
     >
+        <Head>
+          <title>
+            {BRAND} — Past questions &amp; exam prep for Ghanaian universities
+          </title>
+          <meta name="application-name" content={BRAND} />
+          <meta
+            name="description"
+            content="Past papers, verified solutions when available, AI explanations when they are not, exam simulations, and revision analytics for Ghanaian university students."
+          />
+          <meta
+            property="og:title"
+            content={`${BRAND} — Past questions & exam prep for Ghanaian universities`}
+          />
+          <meta property="og:site_name" content={BRAND} />
+          <meta
+            property="og:description"
+            content="One workspace for papers, schemes, practice, and weak-topic insights — built for semester exams in Ghana."
+          />
+        </Head>
+        <div
+          className="pointer-events-none fixed inset-0 -z-10 edulamad-mesh"
+          aria-hidden
+        />
         <a
           href="#main-content"
-          className="fixed left-4 top-0 z-[100] -translate-y-[120%] rounded-b-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(0,0,0,0.45)] transition duration-200 focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050a12]"
+          className="fixed left-4 top-0 z-[100] -translate-y-[120%] rounded-b-xl bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-[0_12px_40px_rgba(0,0,0,0.45)] transition duration-200 focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050505]"
         >
           Skip to main content
         </a>
-        {/* Atmospheric background */}
         <div
-          className="pointer-events-none fixed inset-0 -z-10"
+          className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-px bg-gradient-to-r from-transparent via-orange-500/35 to-transparent"
           aria-hidden
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(14,165,233,0.15),transparent_55%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_100%_50%,rgba(34,211,238,0.08),transparent_45%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,#050a12_85%)]" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sky-500/40 to-transparent" />
-          <div
-            className="landing-glass-strong absolute -left-24 top-[18%] h-56 w-56 rounded-[2.5rem] opacity-[0.35]"
-            aria-hidden
-          />
-          <div
-            className="landing-glass absolute right-[-10%] top-[45%] h-72 w-72 rounded-full opacity-30"
-            aria-hidden
-          />
-        </div>
+        />
 
         <header
           className={`landing-glass sticky top-0 z-50 rounded-none border border-x-0 border-t-0 border-b-white/10 transition-[box-shadow,backdrop-filter] duration-300 ${
@@ -451,11 +673,11 @@ export default function LandingPage() {
               className={`group flex min-w-0 items-center gap-2.5 text-base font-semibold tracking-tight text-white sm:gap-3 ${landingFocus}`}
               onClick={() => setMobileNavOpen(false)}
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sky-400/35 bg-gradient-to-br from-sky-500/25 to-cyan-500/10 text-sky-200 shadow-[0_8px_24px_rgba(14,165,233,0.18),inset_0_1px_0_0_rgba(255,255,255,0.12)] backdrop-blur-sm transition group-hover:border-sky-300/50">
-                <Fish className="h-5 w-5" strokeWidth={2} />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-400/35 bg-gradient-to-br from-orange-500/25 to-amber-500/10 text-orange-200 shadow-[0_8px_24px_rgba(14,165,233,0.18),inset_0_1px_0_0_rgba(255,255,255,0.12)] backdrop-blur-sm transition group-hover:border-orange-300/50">
+                <GraduationCap className="h-5 w-5" strokeWidth={2} />
               </span>
               <span className="font-[Outfit,system-ui,sans-serif] text-xl font-bold tracking-tight">
-                Nsuo
+                {BRAND}
               </span>
             </Link>
             <nav
@@ -463,6 +685,7 @@ export default function LandingPage() {
               aria-label="Primary"
             >
               {[
+                ['#story', 'Why'],
                 ['#modules', 'Modules'],
                 ['#product', 'Product'],
                 ['#onboarding', 'Onboarding'],
@@ -473,7 +696,7 @@ export default function LandingPage() {
                 <a
                   key={href}
                   href={href}
-                  className={`transition hover:text-white hover:underline hover:decoration-sky-500/80 hover:underline-offset-4 ${landingFocus}`}
+                  className={`transition hover:text-white hover:underline hover:decoration-orange-500/80 hover:underline-offset-4 ${landingFocus}`}
                 >
                   {label}
                 </a>
@@ -488,7 +711,7 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/register"
-                className={`inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-gradient-to-r from-sky-400 to-cyan-400 px-3 py-2 text-sm font-semibold text-slate-950 shadow-[0_8px_28px_rgba(34,211,238,0.28),inset_0_1px_0_0_rgba(255,255,255,0.35)] transition hover:brightness-110 sm:px-4 ${landingFocus}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-gradient-to-r from-orange-400 to-amber-400 px-3 py-2 text-sm font-semibold text-slate-950 shadow-[0_8px_28px_rgba(34,211,238,0.28),inset_0_1px_0_0_rgba(255,255,255,0.35)] transition hover:brightness-110 sm:px-4 ${landingFocus}`}
               >
                 Get started
                 <ArrowRight className="h-4 w-4" aria-hidden />
@@ -496,7 +719,7 @@ export default function LandingPage() {
             </div>
             <button
               type="button"
-              className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/[0.06] text-white transition hover:border-sky-400/35 hover:bg-white/[0.1] md:hidden ${landingFocus}`}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/[0.06] text-white transition hover:border-orange-400/35 hover:bg-white/[0.1] md:hidden ${landingFocus}`}
               aria-expanded={mobileNavOpen}
               aria-controls="landing-mobile-nav"
               aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
@@ -522,6 +745,7 @@ export default function LandingPage() {
               aria-label="Mobile primary"
             >
               {[
+                ['#story', 'Why'],
                 ['#modules', 'Modules'],
                 ['#product', 'Product'],
                 ['#onboarding', 'Onboarding'],
@@ -548,7 +772,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/register"
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-500 py-3 text-sm font-semibold text-white shadow-[0_12px_32px_rgba(14,165,233,0.3)] ${landingFocus}`}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 py-3 text-sm font-semibold text-white shadow-[0_12px_32px_rgba(14,165,233,0.3)] ${landingFocus}`}
                   onClick={() => setMobileNavOpen(false)}
                 >
                   Get started
@@ -566,364 +790,280 @@ export default function LandingPage() {
         >
           {/* Hero */}
           <section
-            className="relative mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-6 sm:pb-28 sm:pt-14 lg:px-8 lg:pt-20"
+            ref={heroSectionRef}
+            className="relative overflow-hidden pb-4 pt-8 sm:pt-12 sm:pb-6 lg:pt-16 lg:pb-8"
             aria-labelledby="hero-heading"
           >
-            <div
-              className="pointer-events-none absolute left-1/2 top-0 h-[min(520px,70vh)] w-[min(900px,120%)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(14,165,233,0.14),transparent_68%)] sm:-top-8"
+            <motion.div
+              className="pointer-events-none absolute left-1/2 top-[-8%] h-[min(520px,70vh)] w-[min(880px,120%)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,92,0,0.11),transparent_72%)]"
               aria-hidden
+              style={reduceMotion ? undefined : { y: heroOrbY }}
             />
             <div
-              className="pointer-events-none absolute inset-x-4 top-24 mx-auto max-w-6xl opacity-[0.4] [mask-image:linear-gradient(180deg,white_20%,transparent_85%)] sm:top-28"
-              style={{
-                backgroundImage: `
-                  linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-                  linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)
-                `,
-                backgroundSize: '48px 48px',
-              }}
+              className="pointer-events-none absolute -right-[18%] top-[10%] h-[min(380px,50vh)] w-[min(480px,65vw)] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.07),transparent_70%)]"
               aria-hidden
             />
 
-            <div className="relative grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:pt-2">
-              <motion.div
-                className="lg:pr-2"
-                {...(mounted && !reduceMotion
-                  ? {
-                      variants: heroVariants,
-                      initial: 'hidden',
-                      animate: 'show',
-                    }
-                  : {})}
-              >
-                <div className="landing-glass relative overflow-hidden rounded-3xl p-5 ring-1 ring-white/[0.06] sm:p-7 lg:p-10">
-                  <div
-                    className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-sky-500/12 blur-3xl"
-                    aria-hidden
-                  />
-                  <div
-                    className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl"
-                    aria-hidden
-                  />
-                  <div
-                    className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-sky-400/[0.08] via-transparent to-cyan-400/[0.05]"
-                    aria-hidden
-                  />
-                  <div className="relative">
-                    <motion.div
-                      {...(mounted && !reduceMotion
-                        ? { variants: heroItem }
-                        : {})}
-                      className="mb-6 flex flex-wrap items-center gap-2"
-                    >
-                      <p className="landing-glass-chip inline-flex cursor-default items-center gap-2 rounded-full border-sky-400/25 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-200/95">
-                        <span
-                          className="h-1.5 w-1.5 rounded-full bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.85)]"
-                          aria-hidden
-                        />
-                        Aquaculture operations
-                      </p>
-                      <span className="hidden text-[11px] font-medium text-slate-600 sm:inline">
-                        ·
-                      </span>
-                      <p className="landing-glass-chip inline-flex cursor-default items-center gap-1.5 rounded-full border-white/[0.08] px-3 py-1 text-[11px] font-medium text-slate-400">
-                        <Building2
-                          className="h-3.5 w-3.5 text-sky-400/80"
+            <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+              <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 xl:gap-16">
+                <div className="lg:pr-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-400/90">
+                    Ghana · university exam prep
+                  </p>
+                  <h1
+                    id="hero-heading"
+                    className="mt-5 font-[Outfit,system-ui,sans-serif] text-[2.25rem] font-semibold leading-[1.06] tracking-[-0.03em] text-white sm:text-5xl sm:leading-[1.05] lg:text-[3.25rem] lg:leading-[1.02]"
+                  >
+                    Past papers and practice,{' '}
+                    <span className="bg-gradient-to-r from-white via-orange-100 to-orange-400 bg-clip-text text-transparent">
+                      finally in one place.
+                    </span>
+                  </h1>
+                  <p className="mt-6 max-w-lg text-pretty text-base leading-relaxed text-slate-400 sm:text-lg">
+                    Official schemes when they exist. Clear AI when they do not.
+                    Timed sets and weak-topic analytics — built for semester exams,
+                    not another folder of PDFs.
+                  </p>
+                  <ul
+                    className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-8 sm:gap-y-2"
+                    role="list"
+                    aria-label="Platform highlights"
+                  >
+                    {heroTrustSignals.map(({ icon: Icon, label }) => (
+                      <li
+                        key={label}
+                        className="flex items-center gap-2 text-sm text-slate-400"
+                      >
+                        <Icon
+                          className="h-4 w-4 shrink-0 text-orange-400"
                           strokeWidth={2}
                           aria-hidden
                         />
-                        Multi-site ready
-                      </p>
-                    </motion.div>
-
-                    <motion.h1
-                      id="hero-heading"
-                      {...(mounted && !reduceMotion
-                        ? { variants: heroItem }
-                        : {})}
-                      className="text-balance font-[Outfit,system-ui,sans-serif] text-[2.35rem] font-semibold leading-[1.07] tracking-[-0.03em] text-white sm:text-5xl sm:leading-[1.05] lg:text-[3.35rem] lg:leading-[1.02]"
+                        <span>{label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    <Link
+                      href="/register"
+                      className={`group inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white px-6 py-3.5 text-sm font-semibold text-black shadow-[0_20px_50px_rgba(255,92,0,0.2),inset_0_1px_0_0_rgba(255,255,255,0.9)] transition duration-200 hover:bg-neutral-200 sm:px-7 sm:text-base ${landingFocus}`}
                     >
-                      One workspace for{' '}
-                      <span className="bg-gradient-to-r from-sky-100 via-cyan-200 to-teal-200 bg-clip-text text-transparent">
-                        every site you run
-                      </span>
-                      <span className="text-slate-600">.</span>
-                    </motion.h1>
-
-                    <motion.p
-                      {...(mounted && !reduceMotion
-                        ? { variants: heroItem }
-                        : {})}
-                      className="mt-5 max-w-xl text-pretty text-base font-medium leading-relaxed text-slate-400 sm:text-lg sm:leading-snug"
+                      Get started free
+                      <ArrowRight className="h-4 w-4 transition duration-200 group-hover:translate-x-0.5 sm:h-5 sm:w-5" />
+                    </Link>
+                    <Link
+                      href="/login"
+                      className={`inline-flex cursor-pointer items-center justify-center rounded-xl border border-orange-500/55 bg-transparent px-6 py-3.5 text-sm font-semibold text-orange-300 transition duration-200 hover:border-orange-400 hover:bg-orange-500/10 sm:px-7 sm:text-base ${landingFocus}`}
                     >
-                      Ponds, cages, and tanks in one model — from daily entry to
-                      harvest, with approvals your auditors can follow.
-                    </motion.p>
-
-                    <motion.div
-                      {...(mounted && !reduceMotion
-                        ? { variants: heroItem }
-                        : {})}
-                      className="mt-7 overflow-hidden rounded-xl border border-white/[0.1] bg-white/[0.04] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
+                      Sign in
+                    </Link>
+                    <a
+                      href="#story"
+                      className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-semibold text-orange-300/95 underline-offset-4 transition duration-200 hover:text-white hover:underline sm:px-3 ${landingFocus}`}
                     >
-                      <ul
-                        className="grid divide-y divide-white/[0.08] sm:grid-cols-3 sm:divide-x sm:divide-y-0"
-                        role="list"
-                        aria-label="Platform highlights"
-                      >
-                        {heroTrustSignals.map(({ icon: Icon, label }) => (
-                          <li
-                            key={label}
-                            className="flex items-center gap-3 px-4 py-3 sm:flex-col sm:justify-center sm:gap-2 sm:px-3 sm:py-3.5"
-                          >
-                            <Icon
-                              className="h-4 w-4 shrink-0 text-sky-400 sm:h-[1.1rem] sm:w-[1.1rem]"
-                              strokeWidth={2}
-                              aria-hidden
-                            />
-                            <span className="text-xs font-semibold leading-tight text-slate-200 sm:text-center sm:text-[0.8125rem]">
-                              {label}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </motion.div>
-
-                    <motion.div
-                      {...(mounted && !reduceMotion
-                        ? { variants: heroItem }
-                        : {})}
-                      className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
-                    >
-                      <Link
-                        href="/register"
-                        className={`group inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_20px_50px_rgba(14,165,233,0.35),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition duration-200 hover:brightness-110 hover:shadow-[0_22px_56px_rgba(249,115,22,0.22)] sm:px-7 sm:text-base ${landingFocus}`}
-                      >
-                        Get started free
-                        <ArrowRight className="h-4 w-4 transition duration-200 group-hover:translate-x-0.5 sm:h-5 sm:w-5" />
-                      </Link>
-                      <Link
-                        href="/login"
-                        className={`landing-glass inline-flex cursor-pointer items-center justify-center rounded-xl px-6 py-3.5 text-sm font-medium text-white transition duration-200 hover:border-sky-400/30 hover:bg-white/[0.06] sm:px-7 sm:text-base ${landingFocus}`}
-                      >
-                        Sign in
-                      </Link>
-                      <a
-                        href="#modules"
-                        className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-semibold text-sky-300/95 underline-offset-4 transition duration-200 hover:text-white hover:underline sm:px-3 ${landingFocus}`}
-                      >
-                        Explore the product
-                        <ChevronRight className="h-4 w-4" aria-hidden />
-                      </a>
-                    </motion.div>
-
-                    <motion.p
-                      {...(mounted && !reduceMotion
-                        ? { variants: heroItem }
-                        : {})}
-                      className="mt-6 text-sm text-slate-500"
-                    >
-                      Invited to a team?{' '}
-                      <Link
-                        href="/signup"
-                        className={`font-semibold text-sky-400 transition hover:text-sky-300 hover:underline hover:underline-offset-4 ${landingFocus}`}
-                      >
-                        Join here
-                      </Link>
-                    </motion.p>
+                      Why {BRAND}
+                      <ChevronRight className="h-4 w-4" aria-hidden />
+                    </a>
                   </div>
+                  <p className="mt-6 text-sm text-slate-500">
+                    Invited to a team?{' '}
+                    <Link
+                      href="/signup"
+                      className={`font-semibold text-orange-400 transition hover:text-orange-300 hover:underline hover:underline-offset-4 ${landingFocus}`}
+                    >
+                      Join here
+                    </Link>
+                  </p>
                 </div>
-              </motion.div>
 
-              <div className="relative flex min-h-[320px] justify-center lg:min-h-[380px] lg:justify-end">
-                {mounted && !reduceMotion ? (
-                  <>
-                    <motion.div
+                <div className="flex min-h-[280px] justify-center lg:min-h-[320px] lg:justify-end">
+                  {mounted ? (
+                    <HeroShowcase reducedMotion={reduceMotion} />
+                  ) : (
+                    <div
+                      className="landing-glass h-[320px] w-full max-w-md animate-pulse rounded-2xl lg:max-w-lg"
                       aria-hidden
-                      className="pointer-events-none absolute left-0 top-[6%] z-10 hidden max-w-[11.5rem] rounded-xl border border-white/[0.1] bg-[#0a1624]/90 px-3 py-2.5 shadow-xl shadow-black/40 backdrop-blur-md sm:block lg:left-2 lg:top-[10%]"
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{
-                        opacity: 1,
-                        x: 0,
-                        y: [0, -6, 0],
-                      }}
-                      transition={{
-                        opacity: { duration: 0.5, delay: 0.35 },
-                        x: { duration: 0.5, delay: 0.35 },
-                        y: {
-                          duration: 5.5,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                          delay: 1,
-                        },
-                      }}
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
-                          <TrendingUp className="h-3.5 w-3.5" strokeWidth={2} />
-                        </span>
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                            Biomass vs target
-                          </p>
-                          <p className="text-sm font-semibold text-white">
-                            On track this cycle
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                    <motion.div
-                      aria-hidden
-                      className="pointer-events-none absolute bottom-[12%] right-0 z-10 hidden max-w-[11rem] rounded-xl border border-amber-500/20 bg-[#0a1624]/92 px-3 py-2.5 shadow-xl shadow-black/40 backdrop-blur-md sm:block lg:-right-2 lg:bottom-[18%]"
-                      initial={{ opacity: 0, x: 14 }}
-                      animate={{
-                        opacity: 1,
-                        x: 0,
-                        y: [0, 5, 0],
-                      }}
-                      transition={{
-                        opacity: { duration: 0.5, delay: 0.45 },
-                        x: { duration: 0.5, delay: 0.45 },
-                        y: {
-                          duration: 6.2,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                          delay: 1.2,
-                        },
-                      }}
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400">
-                          <Activity className="h-3.5 w-3.5" strokeWidth={2} />
-                        </span>
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                            Field signal
-                          </p>
-                          <p className="text-sm font-semibold text-white">
-                            Sampling due · 2 units
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </>
-                ) : null}
-
-                <motion.div
-                  className="landing-glass relative w-full max-w-md rounded-[1.75rem] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:max-w-lg sm:p-4 lg:max-w-lg lg:rounded-[2rem]"
-                  initial={false}
-                  animate={
-                    mounted && !reduceMotion ? { y: [0, -5, 0] } : {}
-                  }
-                  transition={
-                    mounted && !reduceMotion
-                      ? {
-                          duration: 7,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }
-                      : {}
-                  }
-                >
-                  <div
-                    className="pointer-events-none absolute inset-0 rounded-[1.75rem] bg-gradient-to-tr from-cyan-400/10 via-transparent to-sky-500/12 lg:rounded-[2rem]"
-                    aria-hidden
-                  />
-                  <div className="relative">
-                    {mounted ? (
-                      <HeroPreviewCard reducedMotion={reduceMotion} />
-                    ) : (
-                      <div
-                        className="landing-glass h-[340px] w-full max-w-md animate-pulse rounded-2xl lg:max-w-lg"
-                        aria-hidden
-                      />
-                    )}
-                  </div>
-                </motion.div>
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Stat strip */}
-            <div className="mt-20 grid gap-4 sm:grid-cols-3">
-              {statStrip.map((s, i) => {
-                const Icon = s.icon
-                return (
-                  <motion.div
-                    key={s.label}
-                    {...sectionMotion(i * 0.08)}
-                    className={`group landing-glass relative overflow-hidden rounded-2xl p-6 transition duration-200 hover:border-sky-400/28 hover:shadow-[0_16px_48px_rgba(14,165,233,0.14)] ${cardHoverLift}`}
-                  >
-                    <div
-                      className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/[0.06] via-transparent to-transparent opacity-0 transition duration-200 group-hover:opacity-100"
-                      aria-hidden
-                    />
-                    <div className="relative flex items-start justify-between gap-4">
-                      <div>
-                        <div className="font-[Outfit,system-ui,sans-serif] text-4xl font-bold tabular-nums tracking-tight text-white sm:text-5xl">
-                          {s.value}
-                        </div>
-                        <div className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                          {s.label}
-                        </div>
-                        <p className="mt-2 text-sm font-medium leading-snug text-slate-500 sm:text-[1.05rem]">
-                          {s.hint}
-                        </p>
-                      </div>
-                      <span className="landing-glass-chip flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sky-300">
-                        <Icon className="h-5 w-5" strokeWidth={1.75} />
-                      </span>
-                    </div>
-                    <ChevronRight
-                      className="absolute bottom-4 right-4 h-5 w-5 text-slate-700 transition duration-200 group-hover:translate-x-0.5 group-hover:text-sky-400"
-                      aria-hidden
-                    />
-                  </motion.div>
-                )
-              })}
+            <div className="relative z-10 mt-12 sm:mt-14">
+              <LandingMarquee />
             </div>
           </section>
 
-          {/* What the app covers — module grid */}
+          {/* Stat strip — single band, no card chrome */}
           <section
-            id="modules"
-            className="landing-glass-band scroll-mt-24 border-t border-white/[0.06] py-20 sm:py-28"
+            className="border-y border-white/[0.06] bg-white/[0.02]"
+            aria-label="Platform at a glance"
+          >
+            <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+              <div className="grid grid-cols-2 gap-8 lg:grid-cols-4 lg:gap-6 lg:divide-x lg:divide-white/[0.08]">
+                {statStrip.map((s, i) => {
+                  const Icon = s.icon
+                  return (
+                    <motion.div
+                      key={s.label}
+                      {...sectionMotion(i * 0.06)}
+                      className="flex flex-col items-center text-center lg:px-6 lg:first:pl-0 lg:last:pr-0"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-orange-400/90">
+                        <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      </span>
+                      <p className="mt-4 font-[Outfit,system-ui,sans-serif] text-3xl font-semibold tabular-nums tracking-tight text-white sm:text-4xl">
+                        {s.value}
+                      </p>
+                      <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        {s.label}
+                      </p>
+                      <p className="mt-2 max-w-[14rem] text-sm leading-snug text-slate-500">
+                        {s.hint}
+                      </p>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* Problem → solution — single panel */}
+          <section
+            id="story"
+            className="scroll-mt-24 bg-[#050505] py-20 sm:py-24 lg:py-28"
           >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-              <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+              <motion.div {...sectionMotion(0)} className="mx-auto max-w-2xl text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-400/90">
+                  Why we exist
+                </p>
+                <h2 className="mt-3 font-[Outfit,system-ui,sans-serif] text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl">
+                  Exam prep should be one system — not a pile of PDFs.
+                </h2>
+                <p className="mx-auto mt-4 text-pretty text-base leading-relaxed text-slate-400 sm:text-lg">
+                  {BRAND} brings past questions, solutions, timed practice, and
+                  analytics into one workspace — so revision is confident and reps
+                  see where courses need support.
+                </p>
+              </motion.div>
+
+              <motion.div
+                {...sectionMotion(0.08)}
+                className="mt-14 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/80 sm:rounded-3xl"
+              >
+                <div className="grid divide-y divide-white/[0.08] lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+                  <div className="p-8 sm:p-10 lg:p-12">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/[0.08] text-red-400/90">
+                        <X className="h-5 w-5" strokeWidth={2} aria-hidden />
+                      </span>
+                      <div>
+                        <h3 className="font-[Outfit,system-ui,sans-serif] text-lg font-semibold text-white">
+                          The gap today
+                        </h3>
+                        <p className="text-sm text-slate-500">
+                          What breaks before the exam
+                        </p>
+                      </div>
+                    </div>
+                    <ul className="mt-8 space-y-5">
+                      {storyProblems.map((line) => (
+                        <li key={line} className="flex gap-3 text-sm leading-relaxed text-slate-400 sm:text-base">
+                          <span
+                            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-600"
+                            aria-hidden
+                          />
+                          <span>{line}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-8 sm:p-10 lg:p-12">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400/95">
+                        <Check className="h-5 w-5" strokeWidth={2} aria-hidden />
+                      </span>
+                      <div>
+                        <h3 className="font-[Outfit,system-ui,sans-serif] text-lg font-semibold text-white">
+                          What {BRAND} changes
+                        </h3>
+                        <p className="text-sm text-slate-500">
+                          How we close the loop
+                        </p>
+                      </div>
+                    </div>
+                    <ul className="mt-8 space-y-5">
+                      {storySolutions.map((line) => (
+                        <li key={line} className="flex gap-3 text-sm leading-relaxed text-slate-300 sm:text-base">
+                          <Check
+                            className="mt-0.5 h-5 w-5 shrink-0 text-orange-400/80"
+                            strokeWidth={2}
+                            aria-hidden
+                          />
+                          <span>{line}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <div className="border-t border-white/[0.08] bg-orange-500/[0.04] px-8 py-6 sm:px-10 sm:py-7 lg:px-12">
+                  <p className="text-sm font-medium leading-relaxed text-slate-300 sm:text-[0.9375rem]">
+                    <span className="font-semibold text-white">
+                      Reliable answers, honest labels, exam-shaped practice.
+                    </span>{' '}
+                    That is the bar — not another folder of scans.
+                  </p>
+                  <a
+                    href="#modules"
+                    className={`mt-3 inline-flex items-center gap-1 text-sm font-semibold text-orange-300 transition hover:text-white ${landingFocus}`}
+                  >
+                    Explore the workspace
+                    <ChevronRight className="h-4 w-4" aria-hidden />
+                  </a>
+                </div>
+              </motion.div>
+            </div>
+          </section>
+
+          {/* Capabilities */}
+          <section
+            id="modules"
+            className="scroll-mt-24 border-t border-white/[0.06] bg-[#060606] py-20 sm:py-24 lg:py-28"
+          >
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
                 <SectionHeading
-                  eyebrow="Inside Nsuo"
-                  title="Every module your ops team already names in meetings"
-                  description="Dashboard, daily data, cages, stocking, harvest, feed, and governance — the same verbs your crew uses on the water, connected instead of scattered across folders."
+                  eyebrow={`Inside ${BRAND}`}
+                  title="Everything in one workspace"
+                  description="Bank, solutions, exam mode, contributions, AI help, and analytics — the stack you were juggling across chats and drives, unified."
+                  className="max-w-2xl"
                 />
                 <a
                   href="#product"
-                  className={`landing-glass-chip inline-flex shrink-0 cursor-pointer items-center gap-2 self-start rounded-xl px-4 py-2.5 text-sm font-semibold text-sky-200 transition duration-200 hover:border-sky-400/35 hover:text-white lg:self-auto ${landingFocus}`}
+                  className={`inline-flex shrink-0 items-center gap-1.5 self-start text-sm font-semibold text-orange-400 transition hover:text-orange-300 lg:mb-1 ${landingFocus}`}
                 >
-                  Why this shape
+                  Product principles
                   <ChevronRight className="h-4 w-4" aria-hidden />
                 </a>
               </div>
 
-              <ul className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
                 {moduleCards.map(({ label, icon: Icon, description }, i) => (
                   <motion.li
                     key={label}
-                    {...sectionMotion(0.04 + i * 0.05)}
-                    className={`landing-glass group relative h-full overflow-hidden rounded-2xl p-6 transition duration-200 hover:border-sky-400/25 ${cardHoverLift}`}
+                    {...sectionMotion(0.04 + i * 0.04)}
+                    className="group flex h-full flex-col rounded-xl border border-white/[0.08] bg-transparent p-5 transition duration-200 hover:border-orange-500/25 hover:bg-white/[0.02] sm:p-6"
                   >
-                    <div
-                      className="pointer-events-none absolute -right-10 top-0 h-28 w-28 rounded-full bg-cyan-400/10 blur-2xl transition duration-200 group-hover:bg-sky-400/15"
-                      aria-hidden
-                    />
-                    <div className="relative flex flex-col gap-4">
-                      <span className="landing-glass-chip inline-flex h-10 w-10 items-center justify-center rounded-xl text-sky-300">
+                    <div className="flex items-start gap-4">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-orange-400/90 transition group-hover:border-orange-500/20 group-hover:bg-orange-500/[0.06]">
                         <Icon className="h-5 w-5" strokeWidth={1.75} />
                       </span>
-                      <div>
-                        <h3 className="font-[Outfit,system-ui,sans-serif] text-lg font-semibold leading-snug text-white">
+                      <div className="min-w-0">
+                        <h3 className="font-[Outfit,system-ui,sans-serif] text-base font-semibold text-white sm:text-lg">
                           {label}
                         </h3>
-                        <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                        <p className="mt-2 text-sm leading-relaxed text-slate-500">
                           {description}
                         </p>
                       </div>
@@ -934,35 +1074,38 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Product bento */}
+          {/* Product — bento */}
           <section
             id="product"
-            className="landing-glass-band scroll-mt-24 border-t border-white/[0.05] py-24 sm:py-28"
+            className="scroll-mt-24 border-t border-white/[0.06] bg-[#050505] py-20 sm:py-24 lg:py-28"
           >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
               <SectionHeading
                 eyebrow="Product"
-                title="Built for ponds, cages, and the people who work them"
-                description="Field discipline upstream. Reporting and accountability downstream. The map follows production — not a slide deck."
-                className="max-w-3xl"
+                title="Discipline before the invigilator walks in"
+                description="Know what you have revised — not what you meant to open the night before. Built for courses, year groups, and the keys that never arrived."
+                className="max-w-2xl"
               />
 
-              <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {highlights.map(({ icon: Icon, title, copy, span }, i) => (
+              <div className="mt-12 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-12 lg:gap-4">
+                {highlights.map(({ icon: Icon, title, copy, gridClass }, i) => (
                   <motion.div
                     key={title}
-                    {...sectionMotion(0.05 + i * 0.06)}
-                    className={`group landing-glass relative overflow-hidden border border-white/[0.04] p-8 transition duration-200 hover:border-sky-400/35 hover:shadow-[0_20px_56px_rgba(14,165,233,0.16)] ${cardHoverLift} ${span}`}
+                    {...sectionMotion(0.05 + i * 0.05)}
+                    className={`group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0c0c0c]/90 p-6 transition duration-200 hover:border-orange-500/25 sm:p-8 ${gridClass}`}
                   >
-                    <div className="pointer-events-none absolute -right-8 -top-8 h-36 w-36 rounded-full bg-sky-400/12 blur-2xl transition duration-200 group-hover:bg-sky-400/22" />
-                    <div className="relative">
-                      <div className="landing-glass-chip mb-5 inline-flex rounded-xl p-3 text-sky-200">
-                        <Icon className="h-6 w-6" strokeWidth={1.6} />
-                      </div>
-                      <h3 className="font-[Outfit,system-ui,sans-serif] text-xl font-semibold leading-snug text-white">
+                    <div
+                      className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-orange-500/[0.06] blur-3xl transition duration-300 group-hover:bg-orange-500/[0.1]"
+                      aria-hidden
+                    />
+                    <div className="relative flex h-full flex-col">
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-orange-400/90">
+                        <Icon className="h-5 w-5" strokeWidth={1.75} />
+                      </span>
+                      <h3 className="mt-5 font-[Outfit,system-ui,sans-serif] text-lg font-semibold leading-snug text-white sm:text-xl">
                         {title}
                       </h3>
-                      <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                      <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500 sm:text-[0.9375rem]">
                         {copy}
                       </p>
                     </div>
@@ -974,172 +1117,232 @@ export default function LandingPage() {
 
           {/* Pull quote */}
           <section
-            className="relative border-y border-white/[0.06] py-20 sm:py-24"
-            aria-label="Why teams choose a single system"
+            className="border-y border-white/[0.06] bg-[#080808] py-16 sm:py-20"
+            aria-label="Why a single exam-prep system matters"
           >
-            <div
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_50%,rgba(14,165,233,0.06),transparent_65%)]"
-              aria-hidden
-            />
-            <motion.div
-              {...sectionMotion(0)}
-              className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8"
-            >
-              <Quote
-                className="mx-auto h-9 w-9 text-sky-400/50 sm:h-10 sm:w-10"
-                strokeWidth={1.25}
-                aria-hidden
-              />
-              <blockquote className="mt-8 text-pretty font-[Outfit,system-ui,sans-serif] text-[1.45rem] font-medium leading-snug tracking-tight text-white sm:text-2xl sm:leading-snug lg:text-[1.75rem]">
-                <p>
-                  One timeline from stocking through harvest — so finance and
-                  field stop reconciling which notebook was “the truth” at
-                  month-end.
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+              <motion.div
+                {...sectionMotion(0)}
+                className="relative mx-auto max-w-3xl rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/90 p-8 sm:p-10 lg:p-12"
+              >
+                <Quote
+                  className="h-8 w-8 text-orange-500/35 sm:h-9 sm:w-9"
+                  strokeWidth={1.25}
+                  aria-hidden
+                />
+                <blockquote className="mt-6 text-pretty font-[Outfit,system-ui,sans-serif] text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl sm:leading-snug">
+                  <p>
+                    One home for papers, solutions, and practice means students stop
+                    betting on whichever file hit the group chat last — and reps see
+                    which courses need help before results day.
+                  </p>
+                </blockquote>
+                <p className="mt-6 border-t border-white/[0.06] pt-6 text-sm text-slate-500">
+                  For course reps, departments, and students at Ghanaian universities
                 </p>
-              </blockquote>
-              <p className="mt-6 text-sm font-medium text-slate-500">
-                Built for ops and finance teams running multiple production sites
-              </p>
-            </motion.div>
+              </motion.div>
+            </div>
           </section>
 
           {/* Onboarding */}
           <section
             id="onboarding"
-            className="landing-glass-band scroll-mt-24 border-t border-white/[0.05] py-24 sm:py-28"
+            className="scroll-mt-24 border-t border-white/[0.06] bg-[#050505] py-20 sm:py-24 lg:py-28"
           >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                 <SectionHeading
                   eyebrow="Onboarding"
-                  title="From signup to first harvest entry"
-                  description="A repeatable path your ops lead can run for every new site — clear, disciplined, and easy to hand off."
+                  title="From signup to your first live set"
+                  description="A path faculty or society leads can repeat every intake — clear to delegate, tight enough to scale."
                   className="max-w-xl"
                 />
                 <Link
                   href="/register"
-                  className={`group inline-flex shrink-0 cursor-pointer items-center gap-2 self-start rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_44px_rgba(14,165,233,0.3)] transition duration-200 hover:brightness-110 lg:self-auto ${landingFocus}`}
+                  className={`group inline-flex shrink-0 cursor-pointer items-center gap-2 self-start rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_44px_rgba(255,92,0,0.2)] transition duration-200 hover:brightness-110 lg:mb-0.5 ${landingFocus}`}
                 >
                   <Users className="h-4 w-4" strokeWidth={2} />
-                  Begin registration
+                  Get started
                   <ArrowRight className="h-4 w-4 transition duration-200 group-hover:translate-x-0.5" />
                 </Link>
               </div>
 
-              <div className="relative mt-16">
-                <div
-                  className="pointer-events-none absolute left-0 right-0 top-[2.25rem] hidden h-px bg-gradient-to-r from-sky-500/35 via-slate-600/40 to-transparent md:block"
-                  aria-hidden
-                />
-                <ol className="relative grid gap-5 md:grid-cols-2 md:gap-x-6 md:gap-y-6">
-                  {steps.map((s, i) => (
-                    <motion.li
-                      key={s.n}
-                      {...sectionMotion(0.06 + i * 0.05)}
-                      className={`landing-glass relative rounded-2xl border-l-2 border-l-sky-500/35 p-7 pl-6 sm:p-8 sm:pl-7 ${cardHoverLift}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-sky-500/35 bg-sky-500/12 font-[Outfit,system-ui,sans-serif] text-sm font-bold text-sky-300">
-                          {s.n}
-                        </span>
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-                          Step {i + 1}
-                        </span>
-                      </div>
-                      <h3 className="mt-4 font-[Outfit,system-ui,sans-serif] text-[1.2rem] font-semibold leading-snug text-white sm:text-[1.35rem]">
+              <ol className="relative mx-auto mt-14 max-w-2xl lg:mx-0 lg:max-w-none">
+                {steps.map((s, i) => (
+                  <motion.li
+                    key={s.n}
+                    {...sectionMotion(0.05 + i * 0.05)}
+                    className="relative flex gap-5 pb-12 last:pb-0 sm:gap-8"
+                  >
+                    {i < steps.length - 1 ? (
+                      <div
+                        className="absolute left-[1.15rem] top-11 hidden h-[calc(100%-0.5rem)] w-px bg-gradient-to-b from-orange-500/35 via-white/10 to-transparent sm:block"
+                        aria-hidden
+                      />
+                    ) : null}
+                    <div className="relative z-[1] flex shrink-0 flex-col items-center">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full border border-orange-500/40 bg-[#0a0a0a] font-[Outfit,system-ui,sans-serif] text-xs font-bold text-orange-300 sm:h-10 sm:w-10 sm:text-sm">
+                        {s.n}
+                      </span>
+                    </div>
+                    <div className="min-w-0 pt-0.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                        Step {i + 1}
+                      </p>
+                      <h3 className="mt-1 font-[Outfit,system-ui,sans-serif] text-lg font-semibold text-white sm:text-xl">
                         {s.title}
                       </h3>
-                      <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                      <p className="mt-2 text-sm leading-relaxed text-slate-500 sm:text-[0.9375rem]">
                         {s.body}
                       </p>
-                    </motion.li>
-                  ))}
-                </ol>
-              </div>
+                    </div>
+                  </motion.li>
+                ))}
+              </ol>
             </div>
           </section>
 
-          {/* FAQ */}
+          {/* FAQ — light Q&A layout (exam-prep style reference) */}
           <section
             id="faq"
-            className="scroll-mt-24 border-t border-white/[0.08] bg-[linear-gradient(180deg,rgba(8,16,28,0.5)_0%,#050a12_50%,#050a12_100%)] py-20 sm:py-28"
+            className="scroll-mt-24 border-t border-gray-200/80 bg-[#f3f4f6] py-16 sm:py-20 lg:py-24"
             aria-labelledby="faq-heading"
           >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-              <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
-                <div className="lg:col-span-4">
-                  <div className="landing-glass-chip mb-6 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-300/95">
+              <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
+                <div className="lg:col-span-4 lg:pt-1">
+                  <div className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">
                     <HelpCircle
-                      className="h-3.5 w-3.5 text-sky-400"
+                      className="h-4 w-4 text-teal-700"
                       strokeWidth={2}
                       aria-hidden
                     />
-                    FAQ
+                    Help
                   </div>
                   <h2
                     id="faq-heading"
-                    className="text-balance font-[Outfit,system-ui,sans-serif] text-3xl font-semibold leading-[1.12] tracking-tight text-white sm:text-4xl"
+                    className="text-balance font-[Outfit,system-ui,sans-serif] text-2xl font-bold leading-tight tracking-tight text-gray-900 sm:text-3xl"
                   >
-                    Answers before you commit
+                    Questions &amp; answers
                   </h2>
-                  <p className="mt-4 max-w-sm text-pretty text-base font-medium leading-relaxed text-slate-400">
-                    Plain-language responses to what cage-and-pond groups ask when
-                    they are ready to leave spreadsheet chaos behind.
+                  <p className="mt-3 max-w-sm text-pretty text-sm leading-relaxed text-gray-600 sm:text-[0.9375rem]">
+                    Straight answers to what students and course reps ask before
+                    they rely on a new prep tool.
                   </p>
-                  <div className="landing-glass mt-8 rounded-2xl border border-white/[0.08] p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                      What is next
+                  <div className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                      More on {BRAND}
                     </p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                      Read how Nsuo treats{' '}
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600">
                       <a
                         href="#platform"
-                        className={`font-semibold text-sky-400 transition hover:text-sky-300 hover:underline hover:underline-offset-4 ${landingFocus}`}
+                        className="font-medium text-teal-800 underline decoration-teal-800/30 underline-offset-2 transition hover:text-teal-900"
                       >
-                        platform, governance, and audit
+                        Platform &amp; governance
                       </a>
-                      , or scroll to{' '}
+                      {' · '}
                       <a
                         href="#onboarding"
-                        className={`font-semibold text-sky-400 transition hover:text-sky-300 hover:underline hover:underline-offset-4 ${landingFocus}`}
+                        className="font-medium text-teal-800 underline decoration-teal-800/30 underline-offset-2 transition hover:text-teal-900"
                       >
-                        onboarding
+                        Onboarding
                       </a>
-                      .
                     </p>
                   </div>
                 </div>
 
                 <div className="lg:col-span-8">
-                  <div className="landing-glass-strong overflow-hidden rounded-2xl border border-white/[0.1] shadow-[0_24px_80px_rgba(0,0,0,0.35)] sm:rounded-3xl">
-                    <ul className="divide-y divide-white/[0.08]" role="list">
-                      {faqItems.map(({ q, a }, i) => (
-                        <li key={q}>
-                          <details className="group/faq">
-                            <summary className="flex cursor-pointer list-none items-start gap-4 px-4 py-4 text-left transition-colors hover:bg-white/[0.04] sm:gap-5 sm:px-6 sm:py-5 [&::-webkit-details-marker]:hidden">
+                  <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.04)] sm:rounded-2xl">
+                    <div className="border-b border-gray-100 px-5 py-4 sm:px-6 sm:py-5">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-[Outfit,system-ui,sans-serif] text-lg font-bold text-gray-900 sm:text-xl">
+                            Common questions
+                          </p>
+                          <p className="mt-0.5 text-sm text-gray-500">
+                            {BRAND} · help · {faqItems.length}{' '}
+                            {faqItems.length === 1 ? 'topic' : 'topics'}
+                          </p>
+                        </div>
+                        <span className="inline-flex w-fit items-center rounded-full bg-teal-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm">
+                          Help center
+                        </span>
+                      </div>
+                    </div>
+
+                    <ul className="divide-y divide-gray-100" role="list">
+                      {faqItems.map(({ q, a }, i) => {
+                        const isOpen = Boolean(openFaq[i])
+                        const panelId = `faq-panel-${i}`
+                        const triggerId = `faq-trigger-${i}`
+                        const toggle = () =>
+                          setOpenFaq((prev) => ({
+                            ...prev,
+                            [i]: !prev[i],
+                          }))
+                        return (
+                          <li key={q} className="px-5 py-5 sm:px-6 sm:py-6">
+                            <div className="flex gap-3 sm:gap-4">
                               <span
-                                className="mt-0.5 w-8 shrink-0 pt-0.5 font-[Outfit,system-ui,sans-serif] text-xs font-bold tabular-nums text-sky-500/80"
+                                className="shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-gray-400"
                                 aria-hidden
                               >
-                                {String(i + 1).padStart(2, '0')}
+                                {i + 1}.
                               </span>
-                              <span className="min-w-0 flex-1 font-[Outfit,system-ui,sans-serif] text-sm font-semibold leading-snug text-white sm:text-base">
-                                {q}
-                              </span>
-                              <ChevronDown
-                                className="mt-0.5 h-5 w-5 shrink-0 text-sky-400/80 transition duration-200 group-open/faq:rotate-180"
-                                strokeWidth={2}
-                                aria-hidden
-                              />
-                            </summary>
-                            <div className="border-t border-white/[0.06] bg-white/[0.02] px-4 pb-4 pl-[4.25rem] pr-4 sm:px-6 sm:pb-5 sm:pl-[4.75rem]">
-                              <p className="pt-4 text-sm leading-relaxed text-slate-400 sm:text-[0.9375rem]">
-                                {a}
-                              </p>
+                              <div className="min-w-0 flex-1">
+                                <p
+                                  id={`faq-q-${i}`}
+                                  className="text-[0.9375rem] font-medium leading-snug text-gray-900 sm:text-base"
+                                >
+                                  {q}
+                                </p>
+                                <button
+                                  type="button"
+                                  id={triggerId}
+                                  aria-expanded={isOpen}
+                                  aria-controls={panelId}
+                                  onClick={toggle}
+                                  className={`mt-3 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 ${reduceMotion ? '' : 'active:scale-[0.99]'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/45 focus-visible:ring-offset-2 focus-visible:ring-offset-white`}
+                                >
+                                  {isOpen ? (
+                                    <EyeOff
+                                      className="h-4 w-4 text-gray-500"
+                                      strokeWidth={2}
+                                      aria-hidden
+                                    />
+                                  ) : (
+                                    <Eye
+                                      className="h-4 w-4 text-gray-500"
+                                      strokeWidth={2}
+                                      aria-hidden
+                                    />
+                                  )}
+                                  {isOpen ? 'Hide answer' : 'Show answer'}
+                                </button>
+                                <div
+                                  id={panelId}
+                                  role="region"
+                                  aria-labelledby={`faq-q-${i} ${triggerId}`}
+                                  className={`grid overflow-hidden transition-[grid-template-rows] ${faqMotionDuration} ${faqMotionEase} ${
+                                    isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                                  }`}
+                                >
+                                  <div className="min-h-0">
+                                    <div className="mt-4 rounded-xl border border-gray-200 bg-[#fafafa] px-4 py-3.5 sm:px-5 sm:py-4">
+                                      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                        Answer
+                                      </p>
+                                      <p className="mt-2 text-sm leading-relaxed text-gray-700 sm:text-[0.9375rem]">
+                                        {a}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </details>
-                        </li>
-                      ))}
+                          </li>
+                        )
+                      })}
                     </ul>
                   </div>
                 </div>
@@ -1147,79 +1350,71 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Platform CTA — full-width band, split layout on large screens */}
+          {/* Platform CTA */}
           <section
             id="platform"
-            className="scroll-mt-24 border-t border-white/[0.08] bg-[linear-gradient(180deg,#050a12_0%,rgba(6,14,26,0.96)_38%,#050a12_100%)] pt-16 sm:pt-20 lg:pt-24 pb-16 sm:pb-24 lg:pb-28"
+            className="scroll-mt-24 border-t border-white/[0.06] bg-[#050505] py-20 sm:py-24 lg:py-28"
             aria-labelledby="platform-heading"
           >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
               <motion.div
                 {...sectionMotion(0)}
-                className="landing-glass-strong relative overflow-hidden rounded-[1.65rem] shadow-[0_28px_96px_rgba(0,0,0,0.55)] ring-1 ring-sky-500/25 sm:rounded-3xl lg:rounded-[2rem]"
+                className="relative overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0a0a0a] shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:rounded-3xl"
               >
-                <Fish
-                  className="pointer-events-none absolute -bottom-8 -right-4 h-44 w-44 text-sky-400/[0.09] sm:h-56 sm:w-56 lg:-bottom-10 lg:right-[8%]"
+                <div
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-orange-500/[0.08] via-transparent to-amber-500/[0.05]"
+                  aria-hidden
+                />
+                <GraduationCap
+                  className="pointer-events-none absolute -bottom-6 -right-2 h-40 w-40 text-orange-400/[0.06] sm:h-52 sm:w-52 lg:right-[6%]"
                   strokeWidth={1}
                   aria-hidden
                 />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/[0.14] via-slate-950/30 to-cyan-500/[0.09]"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_75%_55%_at_20%_0%,rgba(56,189,248,0.14),transparent_58%)]"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_95%_85%,rgba(14,165,233,0.08),transparent_50%)]"
-                  aria-hidden
-                />
 
-                <div className="relative grid gap-12 p-8 sm:gap-14 sm:p-11 lg:grid-cols-12 lg:items-center lg:gap-0 lg:p-14 xl:p-16">
-                  <div className="lg:col-span-7 lg:max-w-xl lg:pr-8 xl:max-w-none xl:pr-12">
+                <div className="relative grid gap-10 p-8 sm:gap-12 sm:p-10 lg:grid-cols-12 lg:items-stretch lg:gap-0 lg:p-12 xl:p-14">
+                  <div className="lg:col-span-7 lg:border-r lg:border-white/[0.08] lg:pr-10 xl:pr-14">
                     <div className="inline-flex items-center gap-3">
-                      <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.07] text-sky-200 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-md">
-                        <Building2 className="h-6 w-6" strokeWidth={1.5} />
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.04] text-orange-300">
+                        <Building2 className="h-5 w-5" strokeWidth={1.75} />
                       </span>
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400/90">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-400/90">
                         Platform &amp; governance
                       </p>
                     </div>
                     <h2
                       id="platform-heading"
-                      className="mt-6 font-[Outfit,system-ui,sans-serif] text-[1.85rem] font-semibold leading-[1.12] tracking-tight text-white sm:text-4xl sm:leading-[1.1] lg:text-[2.45rem] lg:leading-[1.08]"
+                      className="mt-5 font-[Outfit,system-ui,sans-serif] text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl"
                     >
-                      A system of record your{' '}
-                      <span className="bg-gradient-to-r from-sky-100 via-cyan-200 to-teal-200 bg-clip-text text-transparent">
-                        auditors respect
+                      Governance{' '}
+                      <span className="bg-gradient-to-r from-white via-orange-200 to-orange-400 bg-clip-text text-transparent">
+                        reps and departments trust
                       </span>
                     </h2>
-                    <p className="mt-5 max-w-xl text-base font-medium leading-relaxed text-slate-400 sm:text-lg">
-                      Stable when volumes spike at harvest. Every meaningful
-                      change stays attributable — so reviews stay short and
-                      operators stay fast.
+                    <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-500 sm:text-base">
+                      When whole year groups hit the same exam window, the system
+                      stays stable. Content and permission changes stay attributable
+                      — short disputes, confident students.
                     </p>
-                    <ul className="mt-8 grid gap-3 sm:grid-cols-1 sm:gap-3.5 lg:max-w-md">
+                    <ul className="mt-8 space-y-4 lg:max-w-lg">
                       {[
                         {
                           icon: ShieldCheck,
-                          text: 'Attributable events across the production model',
+                          text: 'Attributable events across courses and question banks',
                         },
                         {
                           icon: ClipboardCheck,
-                          text: 'Approvals aligned with how you already govern',
+                          text: 'Moderation aligned with how departments already review',
                         },
                         {
                           icon: Building2,
-                          text: 'Org → farm → unit hierarchy out of the box',
+                          text: 'Clear hierarchy for teams, programmes, and courses',
                         },
                       ].map(({ icon: Icon, text }) => (
                         <li
                           key={text}
-                          className="flex items-start gap-3 text-sm font-medium leading-snug text-slate-300"
+                          className="flex items-start gap-3 text-sm leading-snug text-slate-400"
                         >
-                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sky-500/25 bg-sky-500/10 text-sky-300">
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-orange-400/90">
                             <Icon className="h-4 w-4" strokeWidth={2} />
                           </span>
                           <span>{text}</span>
@@ -1228,31 +1423,29 @@ export default function LandingPage() {
                     </ul>
                   </div>
 
-                  <div className="relative lg:col-span-5 lg:border-l lg:border-white/[0.09] lg:pl-10 xl:pl-14">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/20 to-transparent lg:hidden" aria-hidden />
-                    <div className="landing-glass relative rounded-2xl border border-white/[0.1] p-6 shadow-[0_20px_64px_rgba(0,0,0,0.35)] sm:p-8">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  <div className="flex lg:col-span-5 lg:pl-10 xl:pl-14">
+                    <div className="flex w-full flex-col justify-center rounded-2xl border border-white/[0.08] bg-[#080808]/80 p-6 sm:p-8">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
                         Next step
                       </p>
                       <p className="mt-2 font-[Outfit,system-ui,sans-serif] text-lg font-semibold text-white">
-                        Start with your organisation
+                        Get started
                       </p>
                       <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                        Register to provision your workspace, then invite
-                        operators and managers when your production units are
-                        ready.
+                        Create an account, then invite reps and admins when your
+                        catalog is ready.
                       </p>
-                      <div className="mt-7 flex flex-col gap-3">
+                      <div className="mt-6 flex flex-col gap-3">
                         <Link
                           href="/register"
-                          className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-sky-400 to-amber-500 px-6 py-3.5 text-base font-semibold text-white shadow-[0_16px_48px_rgba(14,165,233,0.35)] transition duration-200 hover:brightness-110 ${landingFocus}`}
+                          className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(255,92,0,0.2)] transition duration-200 hover:brightness-110 sm:text-base ${landingFocus}`}
                         >
-                          Create your organisation
+                          Create account
                           <ArrowRight className="h-4 w-4" aria-hidden />
                         </Link>
                         <Link
                           href="/login"
-                          className={`landing-glass-chip inline-flex w-full cursor-pointer items-center justify-center rounded-xl px-6 py-3.5 text-base font-medium text-white transition duration-200 hover:border-white/25 hover:bg-white/[0.08] ${landingFocus}`}
+                          className={`inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-white/[0.12] bg-transparent px-6 py-3.5 text-sm font-medium text-slate-300 transition duration-200 hover:border-white/20 hover:bg-white/[0.05] sm:text-base ${landingFocus}`}
                         >
                           Already onboard? Sign in
                         </Link>
@@ -1266,14 +1459,14 @@ export default function LandingPage() {
 
           <section
             id="developers"
-            className="relative scroll-mt-24 border-t border-white/[0.07] py-20 sm:py-24"
+            className="scroll-mt-24 border-t border-white/[0.06] bg-[#060606] py-20 sm:py-24"
             aria-labelledby="developers-heading"
           >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-              <div className="landing-glass rounded-2xl border border-white/[0.1] p-8 sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-12">
-                <div className="max-w-xl">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-300">
-                    <Code2 className="h-3.5 w-3.5" aria-hidden />
+              <div className="grid gap-10 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0a0a] lg:grid-cols-12 lg:gap-0">
+                <div className="border-b border-white/[0.08] p-8 sm:p-10 lg:col-span-7 lg:border-b-0 lg:border-r">
+                  <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-400/90">
+                    <Code2 className="h-4 w-4" aria-hidden />
                     Developers
                   </div>
                   <h2
@@ -1282,31 +1475,35 @@ export default function LandingPage() {
                   >
                     API access for integrations
                   </h2>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-400 sm:text-base">
-                    Scoped API keys, the{' '}
-                    <code className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-sky-200 sm:text-sm">
+                  <p className="mt-3 text-sm leading-relaxed text-slate-500 sm:text-base">
+                    Scoped keys, the{' '}
+                    <code className="rounded-md border border-white/[0.1] bg-white/[0.05] px-1.5 py-0.5 text-xs text-orange-200/95 sm:text-sm">
                       X-Api-Key
                     </code>{' '}
-                    header, and OpenAPI tooling. Organisation owners and admins
-                    create and rotate keys inside the app.
+                    header, and OpenAPI-aligned docs. Owners and admins create and
+                    rotate keys in the app.
                   </p>
-                  <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                    Live interactive docs (Swagger UI) are served by your API
-                    deployment — often at{' '}
-                    <code className="rounded bg-white/5 px-1 py-0.5">/api</code>{' '}
-                    on the backend host.
+                  <p className="mt-4 text-xs leading-relaxed text-slate-600">
+                    Open the in-app{' '}
+                    <Link
+                      href="/developer/api-reference"
+                      className={`font-medium text-orange-400 transition hover:text-orange-300 ${landingFocus}`}
+                    >
+                      API reference
+                    </Link>{' '}
+                    after you sign in.
                   </p>
                 </div>
-                <div className="mt-8 flex w-full shrink-0 flex-col gap-3 sm:max-w-md lg:mt-0 lg:w-auto">
+                <div className="flex flex-col justify-center p-8 sm:p-10 lg:col-span-5">
                   <Link
                     href="/login?next=%2Fdeveloper%2Fapi-keys"
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(14,165,233,0.3)] transition hover:brightness-110 ${landingFocus}`}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(255,92,0,0.18)] transition hover:brightness-110 ${landingFocus}`}
                   >
                     Sign in for API keys
                     <ArrowRight className="h-4 w-4" aria-hidden />
                   </Link>
-                  <p className="text-center text-xs text-slate-500 lg:text-left">
-                    In the app:{' '}
+                  <p className="mt-4 text-center text-xs text-slate-600 lg:text-left">
+                    <span className="text-slate-500">In the app:</span>{' '}
                     <span className="font-medium text-slate-400">
                       Sidebar → Developer → API keys
                     </span>
@@ -1316,21 +1513,23 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <footer className="landing-glass-band border-t border-white/[0.07] py-16">
+          <ClockShowcase reducedMotion={reduceMotion} />
+
+          <footer className="border-t border-white/[0.06] bg-[#050505] py-14 sm:py-16">
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
               <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-12">
                 <div className="sm:col-span-2 lg:col-span-5">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-sky-400/35 bg-gradient-to-br from-sky-500/25 to-cyan-500/10 text-sky-200 shadow-[0_8px_24px_rgba(14,165,233,0.18)]">
-                      <Fish className="h-5 w-5" strokeWidth={2} />
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-orange-400/35 bg-gradient-to-br from-orange-500/25 to-amber-500/10 text-orange-200 shadow-[0_8px_24px_rgba(14,165,233,0.18)]">
+                      <GraduationCap className="h-5 w-5" strokeWidth={2} />
                     </span>
                     <span className="font-[Outfit,system-ui,sans-serif] text-2xl font-bold tracking-tight text-white">
-                      Nsuo
+                      {BRAND}
                     </span>
                   </div>
-                  <p className="mt-4 max-w-sm text-sm font-medium leading-relaxed text-slate-500">
-                    Production software for cage, pond, and tank aquaculture
-                    teams — one workspace from stocking through harvest.
+                  <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600">
+                    Past questions and exam prep for Ghanaian universities — one
+                    workspace from papers to practice.
                   </p>
                 </div>
                 <div className="lg:col-span-3">
@@ -1338,6 +1537,14 @@ export default function LandingPage() {
                     Product
                   </p>
                   <ul className="mt-4 flex flex-col gap-2.5 text-sm text-slate-400">
+                    <li>
+                      <a
+                        href="#story"
+                        className={`cursor-pointer transition hover:text-white ${landingFocus}`}
+                      >
+                        Why we exist
+                      </a>
+                    </li>
                     <li>
                       <a
                         href="#modules"
@@ -1351,7 +1558,7 @@ export default function LandingPage() {
                         href="#product"
                         className={`cursor-pointer transition hover:text-white ${landingFocus}`}
                       >
-                        How we think about product
+                        Product principles
                       </a>
                     </li>
                     <li>
@@ -1406,7 +1613,7 @@ export default function LandingPage() {
                         href="/register"
                         className={`cursor-pointer transition hover:text-white ${landingFocus}`}
                       >
-                        Register company
+                        Create account
                       </Link>
                     </li>
                     <li>
@@ -1422,15 +1629,15 @@ export default function LandingPage() {
               </div>
               <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-slate-600">
-                  © {new Date().getFullYear()} Nsuo. All rights reserved.
+                  © {new Date().getFullYear()} {BRAND}. All rights reserved.
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                   <p className="text-xs text-slate-600">
-                    Built for multi-site aquaculture operators.
+                    Built for Ghanaian university exam prep.
                   </p>
                   <a
                     href="#top"
-                    className={`inline-flex items-center gap-1.5 text-xs font-semibold text-sky-500/90 transition hover:text-sky-400 ${landingFocus}`}
+                    className={`inline-flex items-center gap-1.5 text-xs font-semibold text-orange-500/90 transition hover:text-orange-400 ${landingFocus}`}
                   >
                     <ArrowUp className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
                     Back to top

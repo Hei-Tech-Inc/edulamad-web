@@ -70,11 +70,13 @@ function AuthWrapper({ children }) {
       router.push('/login')
     }
 
-    // If logged in on marketing/auth entry pages, redirect (not Developer preview — that works signed in too)
+    // If logged in on auth entry pages, redirect to app (home `/` stays marketing for everyone)
     if (
       user &&
       isPublicAuthRoute(currentPath) &&
-      currentPath !== '/developer/api-keys'
+      currentPath !== '/' &&
+      currentPath !== '/developer/api-keys' &&
+      currentPath !== '/developer/api-reference'
     ) {
       const dest =
         currentPath === '/login'

@@ -13,6 +13,7 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  Crown,
   ExternalLink,
   LayoutDashboard,
   Pencil,
@@ -37,6 +38,56 @@ import {
 } from '@/lib/platform-tenant-detail';
 import { useToast } from '../Toast';
 import { isApiError } from '@/lib/api-error';
+import { TenantAccessPanel } from './TenantAccessPanel';
+
+const PLAN_KEYS = [
+  'plan',
+  'planName',
+  'subscriptionPlan',
+  'planTier',
+  'tier',
+  'billingPlan',
+] as const;
+
+/** Resolve commercial / billing plan label from organisation-shaped objects. */
+function resolveTenantPlan(
+  o: Record<string, unknown> | null | undefined,
+): string {
+  if (!o) return '—';
+  for (const k of PLAN_KEYS) {
+    const v = o[k];
+    if (v != null && String(v).trim() !== '') return String(v).trim();
+  }
+  return '—';
+}
+
+function PlanBadge({
+  plan,
+  size = 'md',
+}: {
+  plan: string;
+  size?: 'sm' | 'md' | 'lg';
+}) {
+  const unset = plan === '—';
+  const sizes = {
+    sm: 'gap-1.5 px-2.5 py-1 text-[11px]',
+    md: 'gap-2 px-3 py-1.5 text-xs',
+    lg: 'gap-2.5 px-4 py-2.5 text-sm',
+  } as const;
+  const iconSizes = { sm: 'h-3.5 w-3.5', md: 'h-4 w-4', lg: 'h-5 w-5' } as const;
+  return (
+    <span
+      className={`inline-flex max-w-full items-center rounded-xl border font-bold tracking-tight ${sizes[size]} ${
+        unset
+          ? 'border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
+          : 'border-amber-300/90 bg-gradient-to-r from-amber-50 to-orange-50 text-amber-950 shadow-sm dark:border-amber-700/80 dark:from-amber-950/50 dark:to-orange-950/40 dark:text-amber-100'
+      }`}
+    >
+      <Crown className={`shrink-0 text-amber-600 dark:text-amber-400 ${iconSizes[size]}`} />
+      <span className="truncate">{unset ? 'No plan on record' : plan}</span>
+    </span>
+  );
+}
 
 function formatCell(v: unknown): string {
   if (v == null) return '—';
@@ -127,6 +178,16 @@ function renderTenantTableCell(
         {formatCell(r[k])}
       </code>
     );
+  }
+  if (
+    k === 'plan' ||
+    k === 'planName' ||
+    k === 'subscriptionPlan' ||
+    k === 'planTier'
+  ) {
+    const p = resolveTenantPlan({ ...r, [k]: r[k] });
+    if (p === '—') return <span className="text-slate-400">—</span>;
+    return <PlanBadge plan={p} size="sm" />;
   }
   return formatCell(r[k]);
 }
@@ -221,7 +282,14 @@ function ObjectArrayTable({
   );
 }
 
-type TabId = 'overview' | 'users' | 'farms' | 'audit' | 'extra' | 'raw';
+type TabId =
+  | 'overview'
+  | 'access'
+  | 'users'
+  | 'linkedSites'
+  | 'audit'
+  | 'extra'
+  | 'raw';
 
 export default function PlatformTenantsPage() {
   const router = useRouter();
@@ -319,6 +387,17 @@ export default function PlatformTenantsPage() {
   const pag = listQ.data?.pagination;
   const totalDirectory = pag?.total ?? items.length;
 
+  const planSummaryLabel = useMemo(() => {
+    const labels = new Set<string>();
+    items.forEach((row) => {
+      const p = resolveTenantPlan(row as unknown as Record<string, unknown>);
+      if (p !== '—') labels.add(p);
+    });
+    if (!labels.size) return '—';
+    if (labels.size <= 2) return Array.from(labels).join(' · ');
+    return `${labels.size} distinct plans`;
+  }, [items]);
+
   const statCards = useMemo(
     () => [
       {
@@ -326,6 +405,12 @@ export default function PlatformTenantsPage() {
         label: 'Directory total',
         value: totalDirectory,
         sub: pag ? `Page ${pag.page} of ${pag.pages}` : `Page ${page}`,
+      },
+      {
+        icon: Crown,
+        label: 'Plans (this page)',
+        value: planSummaryLabel,
+        sub: 'From org plan fields',
       },
       {
         icon: Users,
@@ -340,7 +425,15 @@ export default function PlatformTenantsPage() {
         sub: selectedOrgId ? 'Live API detail' : 'Select a row',
       },
     ],
-    [totalDirectory, pag, page, items.length, listQ.isFetching, selectedOrgId],
+    [
+      totalDirectory,
+      pag,
+      page,
+      items.length,
+      listQ.isFetching,
+      selectedOrgId,
+      planSummaryLabel,
+    ],
   );
 
   const mergedOrg = useMemo(
@@ -435,8 +528,12 @@ export default function PlatformTenantsPage() {
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'overview', label: 'Overview' },
+    { id: 'access', label: 'Roles & members' },
     { id: 'users', label: `Users (${detailPayload.users.length})` },
-    { id: 'farms', label: `Farms (${detailPayload.farms.length})` },
+    {
+      id: 'linkedSites',
+      label: `Linked sites (${detailPayload.linkedSites.length})`,
+    },
     { id: 'audit', label: `Audit (${detailPayload.auditLogs.length})` },
     {
       id: 'extra',
@@ -476,10 +573,10 @@ export default function PlatformTenantsPage() {
                 Tenant console
               </h1>
               <p className="mt-3 text-sm leading-relaxed text-slate-300/95">
-                Dedicated control room for every organisation on Nsuo — search and
+                Dedicated control room for every organisation — search and
                 inspect tenants, open the live API payload, and run create / update /
                 delete using the same DTOs as in{' '}
-                <span className="font-mono text-sky-200/90">api-docs.json</span>.
+                <span className="font-mono text-orange-200/90">api-docs.json</span>.
                 Switch into a tenant with{' '}
                 <strong className="text-white">Work in tenant</strong> (
                 <span className="font-mono text-[11px] text-sky-200/80">
@@ -488,7 +585,7 @@ export default function PlatformTenantsPage() {
                 ); keep platform routes unscoped.
               </p>
             </div>
-            <dl className="grid gap-3 sm:grid-cols-3">
+            <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {statCards.map((s) => (
                 <div
                   key={s.label}
@@ -498,7 +595,7 @@ export default function PlatformTenantsPage() {
                     <s.icon className="h-3.5 w-3.5 text-sky-300/90" />
                     {s.label}
                   </dt>
-                  <dd className="mt-1 text-2xl font-bold tabular-nums tracking-tight">
+                  <dd className="mt-1 truncate text-2xl font-bold tabular-nums tracking-tight">
                     {s.value}
                   </dd>
                   <p className="mt-0.5 text-[11px] text-slate-500">{s.sub}</p>
@@ -788,6 +885,15 @@ export default function PlatformTenantsPage() {
                     <p className="mt-2 truncate font-mono text-[11px] text-slate-500 dark:text-slate-400">
                       {selectedOrgId}
                     </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        Plan
+                      </span>
+                      <PlanBadge
+                        plan={resolveTenantPlan(mergedOrg)}
+                        size="lg"
+                      />
+                    </div>
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <button
@@ -848,6 +954,22 @@ export default function PlatformTenantsPage() {
 
                 {drawerTab === 'overview' ? (
                   <div className="space-y-4">
+                    <div className="rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50/90 to-orange-50/50 p-4 dark:border-amber-900/50 dark:from-amber-950/40 dark:to-orange-950/20">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200/90">
+                        Organisation plan
+                      </p>
+                      <div className="mt-2">
+                        <PlanBadge
+                          plan={resolveTenantPlan(mergedOrg)}
+                          size="lg"
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-amber-900/80 dark:text-amber-200/70">
+                        Pulled from tenant payload (
+                        <span className="font-mono">plan</span>,{' '}
+                        <span className="font-mono">subscriptionPlan</span>, etc.).
+                      </p>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -895,16 +1017,22 @@ export default function PlatformTenantsPage() {
                   </div>
                 ) : null}
 
+                {drawerTab === 'access' && selectedOrgId ? (
+                  <TenantAccessPanel
+                    organizationId={selectedOrgId}
+                    disabled={tenantIsRemoved}
+                  />
+                ) : null}
                 {drawerTab === 'users' ? (
                   <ObjectArrayTable
                     rows={detailPayload.users}
                     emptyLabel="No users in API response."
                   />
                 ) : null}
-                {drawerTab === 'farms' ? (
+                {drawerTab === 'linkedSites' ? (
                   <ObjectArrayTable
-                    rows={detailPayload.farms}
-                    emptyLabel="No farms in API response."
+                    rows={detailPayload.linkedSites}
+                    emptyLabel="No site list in API response."
                   />
                 ) : null}
                 {drawerTab === 'audit' ? (
@@ -943,7 +1071,9 @@ export default function PlatformTenantsPage() {
                   <span className="font-mono">DELETE /platform/organisations/:id</span>{' '}
                   (soft-delete, <span className="font-mono">{'{ id, deletedAt }'}</span>) ·{' '}
                   <span className="font-mono">PUT /platform/organisations/:id</span> (update) ·{' '}
-                  <span className="font-mono">POST /admin/organizations</span> (create).
+                  <span className="font-mono">POST /platform/organisations</span> (create) · roles /
+                  members <span className="font-mono">/admin/roles</span>,{' '}
+                  <span className="font-mono">/admin/organizations/:id/members</span>.
                 </p>
               </footer>
             </motion.aside>

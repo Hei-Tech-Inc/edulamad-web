@@ -11,12 +11,11 @@ export interface LoginDto {
   password: string;
 }
 
+/** Matches `RegisterDto` in `contexts/api-docs.json` */
 export interface RegisterDto {
   email: string;
   password: string;
   name: string;
-  orgName: string;
-  orgSlug?: string;
 }
 
 export interface RefreshTokenDto {
@@ -30,7 +29,8 @@ export interface AuthUserDto {
   name: string;
   /** Platform super-admins may omit org until act-as. */
   orgId?: string | null;
-  role: string;
+  /** May be omitted on register/login payloads; client defaults to `viewer`. */
+  role?: string;
   emailVerified: boolean;
   isActive: boolean;
   createdAt: string;
@@ -44,7 +44,7 @@ export interface LoginResponse {
   refreshToken: string;
 }
 
-/** Organisation snapshot returned by POST /auth/register (login may omit org). */
+/** Optional tenant snapshot if the API adds it; not part of the published register example. */
 export interface AuthOrgDto {
   id: string;
   name: string;
@@ -54,11 +54,12 @@ export interface AuthOrgDto {
   createdAt: string;
 }
 
+/** Matches successful register response example in `contexts/api-docs.json` */
 export interface RegisterResponse {
   user: AuthUserDto;
-  org: AuthOrgDto;
   accessToken: string;
   refreshToken: string;
+  org?: AuthOrgDto;
 }
 
 export interface RefreshResponse {
@@ -77,12 +78,14 @@ export function mapAuthUserToRequestUser(
   const permissions = Array.from(new Set([...fromApi, ...fromJwt]));
   const fromToken =
     accessToken != null && isPlatformSuperAdminFromAccessToken(accessToken);
+  const roleRaw =
+    typeof user.role === 'string' && user.role.trim() ? user.role : 'viewer';
   return {
     id: user.id,
     email: user.email,
     name: user.name,
     orgId: user.orgId ?? null,
-    role: user.role as OrgRole,
+    role: roleRaw as OrgRole,
     permissions,
     isPlatformSuperAdmin:
       user.isPlatformSuperAdmin === true || fromToken,

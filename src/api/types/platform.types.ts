@@ -64,14 +64,16 @@ export function normalizePlatformOrganisationList(
   return { items: [], pagination: emptyPag() };
 }
 
-/** GET /platform/organisations/:orgId — backend returns org + users + farms + auditLogs (names may vary). */
+/** GET /platform/organisations/:orgId — backend may return org + users + site list + audit logs (field names vary). */
 export interface PlatformOrganisationDetailBody {
   organisation?: Record<string, unknown>;
   organization?: Record<string, unknown>;
   users?: unknown[];
+  sites?: unknown[];
+  /** Legacy key from older APIs; normalised as `linkedSites` in the tenant UI. */
   farms?: unknown[];
   auditLogs?: unknown[];
-  aquafarm_audit_logs?: unknown[];
+  audit_logs?: unknown[];
   [key: string]: unknown;
 }
 
