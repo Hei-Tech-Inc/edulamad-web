@@ -18,9 +18,17 @@ export function useRegister() {
 
   return useMutation({
     mutationFn: async (dto: RegisterMutationVariables) => {
+      const body: RegisterMutationVariables = {
+        email: dto.email,
+        password: dto.password,
+        name: dto.name,
+        ...(dto.referralCode?.trim()
+          ? { referralCode: dto.referralCode.trim() }
+          : {}),
+      };
       const { data: regBody } = await apiClientPublic.post<RegisterResponse>(
         API.auth.register,
-        dto,
+        body,
       );
 
       let accessToken = regBody?.accessToken;

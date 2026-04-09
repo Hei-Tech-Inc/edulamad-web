@@ -76,7 +76,7 @@ const TopBar = ({ title }) => {
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-[#0a0a0a]/90">
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0f172a]/90 backdrop-blur">
       {process.env.NODE_ENV === 'development' && (
         <div className="px-4 py-1 text-[11px] font-mono bg-orange-50 text-orange-950 border-b border-orange-200/80 dark:bg-orange-950/35 dark:text-orange-100 dark:border-orange-900/50">
           Dev · {process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'} API:{' '}
@@ -111,7 +111,7 @@ const TopBar = ({ title }) => {
       ) : null}
       <div className="flex items-center justify-between px-6 py-3.5">
         {/* Page Title */}
-        <h1 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        <h1 className="text-lg font-semibold tracking-tight text-slate-100">
           {title}
         </h1>
 
@@ -120,7 +120,7 @@ const TopBar = ({ title }) => {
           {/* Notification Bell */}
           <div className="relative" id="notif-dropdown" ref={notifDropdownRef}>
             <button
-              className="relative rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="relative rounded-xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none"
               aria-label="Notifications"
               onClick={() => setNotifDropdownOpen(open => !open)}
             >
@@ -130,12 +130,12 @@ const TopBar = ({ title }) => {
               )}
             </button>
             {notifDropdownOpen && (
-              <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-slate-200 bg-white py-1 shadow-[0_18px_45px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900">
-                <div className="border-b border-slate-100 px-4 py-2 text-sm font-semibold text-slate-800 dark:border-slate-800 dark:text-slate-200">
+              <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-white/10 bg-[#111827] py-1 shadow-[0_18px_45px_rgba(2,6,23,0.45)]">
+                <div className="border-b border-white/10 px-4 py-2 text-sm font-semibold text-slate-100">
                   Notifications
                 </div>
                 {notifications.length === 0 ? (
-                  <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No notifications yet</div>
+                  <div className="px-4 py-2 text-sm text-slate-400">No notifications yet</div>
                 ) : (
                   notifications.map(n => (
                     <div key={n.id} className={`px-4 py-2 text-sm ${n.read ? 'text-gray-400' : 'text-gray-800 dark:text-gray-100 font-medium'} hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer`}>
@@ -143,7 +143,7 @@ const TopBar = ({ title }) => {
                     </div>
                   ))
                 )}
-                <div className="cursor-pointer border-t border-slate-100 px-4 py-2 text-xs text-orange-700 hover:underline dark:border-slate-800 dark:text-orange-400">
+                <div className="cursor-pointer border-t border-white/10 px-4 py-2 text-xs text-orange-300 hover:underline">
                   Mark all as read
                 </div>
               </div>
@@ -151,7 +151,7 @@ const TopBar = ({ title }) => {
           </div>
           {/* Theme Switcher */}
           <button
-            className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus:outline-none dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded-xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none"
             aria-label="Toggle theme"
             onClick={toggleTheme}
           >
@@ -165,20 +165,20 @@ const TopBar = ({ title }) => {
               aria-haspopup="true"
               aria-expanded={profileDropdownOpen}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-gradient-to-b from-slate-100 to-slate-200 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-sm font-semibold text-slate-100">
                 {avatarLetter}
               </div>
               <div className="hidden sm:block text-right">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[120px]">{fullName}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{role}</div>
+                <div className="max-w-[120px] truncate text-sm font-medium text-slate-100">{fullName}</div>
+                <div className="text-xs text-slate-400">{role}</div>
               </div>
               <svg className="w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {profileDropdownOpen && (
-              <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white py-1 shadow-[0_18px_45px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900">
-                <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">{email}</div>
+              <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-white/10 bg-[#111827] py-1 shadow-[0_18px_45px_rgba(2,6,23,0.45)]">
+                <div className="border-b border-white/10 px-4 py-2 text-xs text-slate-400">{email}</div>
                 <button
-                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-slate-200 hover:bg-white/10"
                   onClick={() => {
                     setProfileDropdownOpen(false)
                     router.push('/settings/account')
@@ -187,7 +187,7 @@ const TopBar = ({ title }) => {
                   My Profile
                 </button>
                 <button
-                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-slate-200 hover:bg-white/10"
                   onClick={() => {
                     setProfileDropdownOpen(false)
                     router.push('/settings/account')
@@ -195,11 +195,11 @@ const TopBar = ({ title }) => {
                 >
                   Account Settings
                 </button>
-                <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setProfileDropdownOpen(false)}>
+                <button className="block w-full px-4 py-2 text-left text-sm text-slate-200 hover:bg-white/10" onClick={() => setProfileDropdownOpen(false)}>
                   Help
                 </button>
-                <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={handleLogout}>
+                <div className="my-1 border-t border-white/10"></div>
+                <button className="block w-full px-4 py-2 text-left text-sm text-red-300 hover:bg-white/10" onClick={handleLogout}>
                   Logout
                 </button>
               </div>

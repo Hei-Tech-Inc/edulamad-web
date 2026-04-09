@@ -3,6 +3,8 @@ import { useRouter } from 'next/router'
 import ProtectedRoute from '../components/ProtectedRoute'
 import Layout from '../components/Layout'
 import EntityCombobox from '../components/forms/EntityCombobox'
+import SectionTitle from '@/components/atoms/SectionTitle'
+import SectionCard from '@/components/atoms/SectionCard'
 import {
   useCollegeSearch,
   useCourseSearch,
@@ -11,6 +13,7 @@ import {
 } from '@/hooks/institutions/useInstitutionsCatalog'
 import { useStudentProfile, useUpsertStudentProfile } from '@/hooks/students/useStudentProfile'
 import { useAuthStore } from '@/stores/auth.store'
+import { AppApiError } from '@/lib/api-error'
 
 export default function OnboardingPage() {
   return (
@@ -37,6 +40,7 @@ function OnboardingInner() {
   const [university, setUniversity] = useState(null)
   const [college, setCollege] = useState(null)
   const [department, setDepartment] = useState(null)
+  const [submitError, setSubmitError] = useState('')
   const setOnboardingNotice = useAuthStore((s) => s.setOnboardingNotice)
 
   const universitiesQ = useUniversitySearch(universitySearch, true)
@@ -68,18 +72,29 @@ function OnboardingInner() {
   const onSubmit = async (evt) => {
     evt.preventDefault()
     if (!university || !department) return
-    await upsertM.mutateAsync({
-      indexNumber: indexNumber.trim(),
-      studentCategory: 'other',
-      otherStudentCategory: program.trim(),
-      universityId: university.id,
-      deptId: department.id,
-      levelData,
-      semesterData,
-      avatarKey: undefined,
-    })
-    setOnboardingNotice(null)
-    await router.replace('/dashboard')
+    setSubmitError('')
+    try {
+      await upsertM.mutateAsync({
+        indexNumber: indexNumber.trim(),
+        // Keep category valid and stable until dedicated category UI is added.
+        studentCategory: 'regular',
+        universityId: university.id,
+        deptId: department.id,
+        levelData,
+        semesterData,
+        avatarKey: undefined,
+      })
+      setOnboardingNotice(null)
+      await router.replace('/dashboard')
+    } catch (err) {
+      const message =
+        err instanceof AppApiError
+          ? err.message
+          : err instanceof Error && err.message
+            ? err.message
+            : 'Could not save onboarding profile. Please try again.'
+      setSubmitError(message)
+    }
   }
 
   if (isComplete) {
@@ -102,11 +117,11 @@ function OnboardingInner() {
 
   return (
     <form onSubmit={onSubmit} className="mx-auto max-w-4xl space-y-6">
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-7 shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-neutral-800 dark:bg-neutral-950/80">
-        <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">Complete your profile</h2>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          This is optional for now. You can skip and finish later.
-        </p>
+      <SectionCard className="rounded-3xl shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+        <SectionTitle
+          title="Complete your profile"
+          description="This is optional for now. You can skip and finish later."
+        />
         <div className="mt-5 flex items-center gap-3">
           <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200">
             Step {step} of 3
@@ -119,10 +134,10 @@ function OnboardingInner() {
             Skip for now
           </button>
         </div>
-      </div>
+      </SectionCard>
 
       {step === 1 ? (
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-7 shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-neutral-800 dark:bg-neutral-950/80">
+        <SectionCard className="rounded-3xl shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
           <EntityCombobox
             id="onb-university"
             label="Institution"
@@ -150,11 +165,12 @@ function OnboardingInner() {
               Continue
             </button>
           </div>
-        </div>
+        </SectionCard>
       ) : null}
 
       {step === 2 ? (
-        <div className="grid gap-4 rounded-3xl border border-slate-200/80 bg-white p-7 shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-neutral-800 dark:bg-neutral-950/80 md:grid-cols-2">
+        <SectionCard className="rounded-3xl shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+          <div className="grid gap-4 md:grid-cols-2">
           <EntityCombobox
             id="onb-college"
             label="College / Faculty"
@@ -200,11 +216,13 @@ function OnboardingInner() {
               Continue
             </button>
           </div>
-        </div>
+          </div>
+        </SectionCard>
       ) : null}
 
       {step === 3 ? (
-        <div className="space-y-4 rounded-3xl border border-slate-200/80 bg-white p-7 shadow-[0_18px_45px_rgba(15,23,42,0.08)] dark:border-neutral-800 dark:bg-neutral-950/80">
+        <SectionCard className="rounded-3xl shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+          <div className="space-y-4">
           <EntityCombobox
             id="onb-program"
             label="Program of study / course"
@@ -229,21 +247,27 @@ function OnboardingInner() {
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Level</span>
-              <input
-                type="number"
-                value={levelData}
-                onChange={(e) => setLevelData(Number(e.target.value) || 0)}
+              <select
+                value={String(levelData)}
+                onChange={(e) => setLevelData(Number(e.target.value))}
                 className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
-              />
+              >
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="300">300</option>
+                <option value="400">400</option>
+              </select>
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Semester</span>
-              <input
-                type="number"
-                value={semesterData}
-                onChange={(e) => setSemesterData(Number(e.target.value) || 0)}
+              <select
+                value={String(semesterData)}
+                onChange={(e) => setSemesterData(Number(e.target.value))}
                 className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
-              />
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
             </label>
           </div>
           <div className="flex items-center gap-3">
@@ -262,7 +286,13 @@ function OnboardingInner() {
               {upsertM.isPending ? 'Saving…' : 'Finish onboarding'}
             </button>
           </div>
-        </div>
+          {submitError ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+              {submitError}
+            </div>
+          ) : null}
+          </div>
+        </SectionCard>
       ) : null}
     </form>
   )

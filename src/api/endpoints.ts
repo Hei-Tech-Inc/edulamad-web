@@ -2,8 +2,7 @@
  * Typed path helpers — align with `paths` in `contexts/api-docs.json`.
  * `NEXT_PUBLIC_API_URL` is the axios base URL (include a global prefix in env if the API uses one).
  *
- * Some keys (`admin` org/role routes, `organisations`, `platform`, `apiKeys`, `auditLogs`) are for
- * admin or tenant tooling; confirm against your deployed API if those routes differ.
+ * `deploymentExtensions` documents non-OpenAPI paths still referenced by some pages (not the main sidebar).
  */
 const API = {
   app: {
@@ -20,11 +19,10 @@ const API = {
   admin: {
     stats: '/admin/stats',
     notifications: '/admin/notifications',
-    roles: {
-      list: '/admin/roles',
-      detail: (id: string) => `/admin/roles/${id}`,
-      permissions: (id: string) => `/admin/roles/${id}/permissions`,
-      permissionsList: '/admin/roles/permissions',
+    promo: {
+      codes: '/admin/promo/codes',
+      code: (id: string) => `/admin/promo/codes/${id}`,
+      deactivate: (id: string) => `/admin/promo/codes/${id}/deactivate`,
     },
     organizations: {
       list: '/admin/organizations',
@@ -35,6 +33,10 @@ const API = {
       member: (orgId: string, userId: string) =>
         `/admin/organizations/${orgId}/members/${userId}`,
     },
+  },
+  promo: {
+    redeem: '/promo/redeem',
+    myActive: '/promo/my-active',
   },
   auth: {
     register: '/auth/register',
@@ -62,6 +64,7 @@ const API = {
     list: '/audit-logs',
     detail: (id: string) => `/audit-logs/${id}`,
   },
+  /** Not in bundled OpenAPI; only use if your deployed API exposes platform routes. */
   platform: {
     organisations: '/platform/organisations',
     organisation: (orgId: string) => `/platform/organisations/${orgId}`,
@@ -107,10 +110,16 @@ const API = {
     meProfile: '/students/me/profile',
     meStreak: '/students/me/streak',
     meXp: '/students/me/xp',
+    meReferral: '/students/me/referral',
+    meQuestionCredits: '/students/me/question-credits',
   },
   questions: {
     list: '/questions',
+    create: '/questions',
     uploadQueue: '/questions/upload-queue',
+    upload: '/questions/upload',
+    /** PDF + extracted JSON multipart (backend bundle pipeline). */
+    uploadBundle: '/questions/upload-bundle',
     byCourse: (courseId: string) => `/questions/courses/${courseId}`,
     detail: (id: string) => `/questions/${id}`,
     verify: (id: string) => `/questions/${id}/verify`,
@@ -171,6 +180,15 @@ const API = {
     list: '/timetables',
     detail: (id: string) => `/timetables/${id}`,
   },
+} as const;
+
+/** Routes referenced by some legacy pages but absent from bundled `contexts/api-docs.json`. */
+export const deploymentExtensions = {
+  authInviteAccept: API.auth.inviteAccept,
+  organisations: API.organisations,
+  apiKeys: API.apiKeys,
+  auditLogs: API.auditLogs,
+  adminOrganizations: API.admin.organizations,
 } as const;
 
 export default API;

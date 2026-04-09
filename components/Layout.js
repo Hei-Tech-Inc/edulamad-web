@@ -7,6 +7,7 @@ import Sidebar from './Sidebar'
 const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
   const router = useRouter()
   const [title, setTitle] = useState(initialTitle)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const isPlatformShell = router.pathname.startsWith('/platform')
   const isInstitutionConsole = router.pathname === '/platform/tenants'
@@ -18,19 +19,46 @@ const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
       newTitle = path === '/platform/tenants' ? 'Institutions console' : 'Platform'
     } else if (path === '/dashboard') {
       newTitle = 'Dashboard'
+    } else if (path === '/practice') {
+      newTitle = 'Quiz mode'
     }
     setTitle(newTitle)
   }, [router.pathname])
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('app.sidebar.collapsed')
+      if (saved === '1') setSidebarCollapsed(true)
+    } catch {
+      /* ignore localStorage issues */
+    }
+  }, [])
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev
+      try {
+        window.localStorage.setItem('app.sidebar.collapsed', next ? '1' : '0')
+      } catch {
+        /* ignore localStorage issues */
+      }
+      return next
+    })
+  }
+
   return (
-    <div className="bg-slate-50 dark:bg-[#050505]">
-      {!isInstitutionConsole ? <Sidebar /> : null}
+    <div className="bg-[#05070d]">
+      {!isInstitutionConsole ? (
+        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={toggleSidebar} />
+      ) : null}
       <div
-        className={`min-h-screen bg-gradient-to-b from-slate-50 via-slate-100 to-slate-100 dark:from-[#050505] dark:via-[#050505] dark:to-[#050505] ${isInstitutionConsole ? 'ml-0' : 'ml-64'}`}
+        className={`min-h-screen bg-gradient-to-b from-[#0a1020] via-[#0b1222] to-[#0a1020] transition-[margin] duration-200 ${
+          isInstitutionConsole ? 'ml-0' : sidebarCollapsed ? 'ml-20' : 'ml-64'
+        }`}
       >
         <Header title={title} />
         <main
-          className={`mx-auto min-h-[calc(100vh-4rem)] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 ${isInstitutionConsole ? 'max-w-none' : 'max-w-[1520px]'}`}
+          className={`settings-light mx-auto min-h-[calc(100vh-4rem)] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 ${isInstitutionConsole ? 'max-w-none' : 'max-w-[1520px]'}`}
         >
           {children}
         </main>

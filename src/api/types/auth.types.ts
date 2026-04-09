@@ -16,6 +16,8 @@ export interface RegisterDto {
   email: string;
   password: string;
   name: string;
+  /** Optional invite code (e.g. EDU-XXXXX) — grants referrer credit when supported by the API. */
+  referralCode?: string;
 }
 
 export interface RefreshTokenDto {

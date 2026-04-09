@@ -4,6 +4,8 @@ import { useRouter } from 'next/router'
 import { ArrowLeft, Building2, ExternalLink } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePlatformOrganisationDetail } from '@/hooks/platform/usePlatformOrganisationDetail'
+import { SkeletonNotificationRow } from '@/components/ui/skeleton'
+import ErrorState from '@/components/ui/ErrorState'
 
 function pickOrg(detail) {
   return detail?.organisation ?? detail?.organization ?? null
@@ -50,8 +52,10 @@ export default function PlatformOrganisationDetailPage() {
 
   if (!user) {
     return (
-      <div className="flex justify-center py-20">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-sky-600 border-t-transparent" />
+      <div className="space-y-3 py-8">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <SkeletonNotificationRow key={`org-detail-auth-skeleton-${i}`} />
+        ))}
       </div>
     )
   }
@@ -109,9 +113,7 @@ export default function PlatformOrganisationDetailPage() {
       </p>
 
       {isError ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
-          {error?.message ?? 'Could not load organisation.'}
-        </div>
+        <ErrorState error={error?.message ?? 'Could not load organisation.'} onRetry={() => void router.replace(router.asPath)} />
       ) : null}
 
       {!isLoading && org && typeof org === 'object' ? (

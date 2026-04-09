@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
-import MarketingShell from '@/components/marketing/MarketingShell';
+import MarketingShell from '../components/marketing/MarketingShell';
 import { useForgotPassword } from '@/hooks/auth/useAuthRecovery';
 import { AppApiError } from '@/lib/api-error';
 

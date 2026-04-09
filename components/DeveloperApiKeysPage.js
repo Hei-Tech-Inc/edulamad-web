@@ -8,7 +8,6 @@ import {
   Trash2,
   Shield,
   Pencil,
-  AlertTriangle,
   Check,
   ExternalLink,
   GraduationCap,
@@ -26,6 +25,9 @@ import {
   useUpdateApiKeyScopes,
 } from '@/hooks/api-keys/useApiKeys'
 import { AppApiError } from '@/lib/api-error'
+import { SkeletonNotificationRow } from '@/components/ui/skeleton'
+import ErrorState from '@/components/ui/ErrorState'
+import EmptyState from '@/components/ui/EmptyState'
 
 function groupScopes() {
   const m = new Map()
@@ -181,11 +183,11 @@ export default function DeveloperApiKeysPage({ previewMode = false }) {
   }
 
   const card =
-    'rounded-xl border border-slate-200 bg-white text-slate-800 shadow-sm dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-200'
+    'rounded-xl border border-white/10 bg-[#111827]/95 text-slate-100 shadow-[0_16px_38px_rgba(0,0,0,0.32)]'
   const btnPrimary =
     'inline-flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-50'
   const btnGhost =
-    'inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-800 hover:bg-slate-100 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800'
+    'inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 hover:bg-white/10 disabled:opacity-50'
 
   return (
     <>
@@ -195,8 +197,8 @@ export default function DeveloperApiKeysPage({ previewMode = false }) {
       <div
         className={
           previewMode
-            ? 'min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100'
-            : 'text-slate-100 dark:text-slate-100'
+            ? 'min-h-screen bg-[#0a1020] text-slate-100'
+            : 'text-slate-100'
         }
       >
         {previewMode ? (
@@ -225,18 +227,18 @@ export default function DeveloperApiKeysPage({ previewMode = false }) {
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-orange-600 dark:border-slate-700 dark:bg-slate-900 dark:text-orange-400">
+                <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10 text-orange-300">
                   <Code2 className="h-6 w-6" strokeWidth={1.75} />
                 </span>
                 <div>
-                  <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                  <h1 className="text-2xl font-semibold tracking-tight text-white">
                     Developer
                   </h1>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-sm text-slate-300">
                     API keys for integrations and automation (organisation-scoped).{' '}
                     <Link
                       href="/developer/api-reference"
-                      className="font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                      className="font-medium text-orange-300 hover:text-orange-200"
                     >
                       OpenAPI reference
                     </Link>
@@ -279,9 +281,9 @@ export default function DeveloperApiKeysPage({ previewMode = false }) {
 
           {!previewMode && !canManage ? (
             <div
-              className={`mb-6 flex gap-3 border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/25 dark:text-amber-100 ${card}`}
+              className={`mb-6 flex gap-3 border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 ${card}`}
             >
-              <Shield className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <Shield className="h-5 w-5 shrink-0 text-amber-300" />
               <p>
                 Only organisation owners and admins can create or revoke API keys.
                 Contact your administrator if you need access.
@@ -290,14 +292,14 @@ export default function DeveloperApiKeysPage({ previewMode = false }) {
           ) : null}
 
           <div className={`mb-6 space-y-3 p-5 ${card}`}>
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-              <ExternalLink className="h-4 w-4 text-slate-400" />
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+              <ExternalLink className="h-4 w-4 text-slate-300" />
               Using keys (industry practice)
             </h2>
-            <ul className="list-inside list-disc space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
+            <ul className="list-inside list-disc space-y-1.5 text-sm text-slate-300">
               <li>
                 Send the key in the{' '}
-                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-orange-700 dark:bg-slate-950 dark:text-orange-300">
+                <code className="rounded bg-white/[0.05] px-1.5 py-0.5 text-orange-300">
                   X-Api-Key
                 </code>{' '}
                 header on HTTP requests (see OpenAPI security schemes).
@@ -314,68 +316,61 @@ export default function DeveloperApiKeysPage({ previewMode = false }) {
           </div>
 
           {!previewMode && errMessage ? (
-            <div
-              className={`mb-6 flex gap-3 border border-red-500/30 bg-red-950/20 px-4 py-3 text-sm text-red-200 ${card}`}
-            >
-              <AlertTriangle className="h-5 w-5 shrink-0" />
-              <div className="flex flex-1 flex-wrap items-center justify-between gap-2">
-                <span>{errMessage}</span>
-                <button type="button" onClick={() => refetch()} className={btnGhost}>
-                  Retry
-                </button>
-              </div>
+            <div className={`mb-6 ${card}`}>
+              <ErrorState error={errMessage} onRetry={() => void refetch()} />
             </div>
           ) : null}
 
           <div className={`overflow-hidden ${card}`}>
-            <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-              <h2 className="font-medium text-slate-900 dark:text-white">API keys</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
+            <div className="border-b border-white/10 px-5 py-4">
+              <h2 className="font-medium text-white">API keys</h2>
+              <p className="mt-0.5 text-xs text-slate-400">
                 Keys belong to your current organisation. Listing never includes the
                 full secret.
               </p>
             </div>
 
             {isLoading ? (
-              <div className="flex justify-center py-16">
-                <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-600 border-t-orange-500" />
+              <div className="space-y-2 px-5 py-5">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <SkeletonNotificationRow key={`api-key-skeleton-${i}`} />
+                ))}
               </div>
             ) : keys.length === 0 ? (
-              <div className="px-5 py-14 text-center text-sm text-slate-500">
-                {previewMode ? (
-                  <>
-                    Sign in to load your organisation&apos;s keys from the API.
-                    Until then, this list stays empty.
-                  </>
-                ) : (
-                  <>
-                    No API keys yet.
-                    {canManage
-                      ? ` Create one to integrate external tools with ${APP_NAME}.`
-                      : ''}
-                  </>
-                )}
+              <div className="px-5 py-8">
+                <EmptyState
+                  title={previewMode ? 'No keys in preview mode' : 'No API keys yet'}
+                  subtitle={
+                    previewMode
+                      ? "Sign in to load your organisation's keys from the API."
+                      : canManage
+                        ? `Create one to integrate external tools with ${APP_NAME}.`
+                        : 'Your administrator can create keys for this organisation.'
+                  }
+                  actionLabel={canManage ? 'Create API key' : undefined}
+                  onAction={canManage ? () => setCreateOpen(true) : undefined}
+                />
               </div>
             ) : (
-              <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+              <ul className="divide-y divide-white/10">
                 {keys.map((row) => (
                   <li
                     key={row.id}
                     className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start sm:justify-between"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-slate-900 dark:text-white">
+                      <p className="font-medium text-white">
                         {row.name}
                       </p>
-                      <p className="mt-1 font-mono text-xs text-slate-500">
+                      <p className="mt-1 font-mono text-xs text-slate-400">
                         {row.keyPrefix || row.prefix || row.id}
                       </p>
                       {row.scopes?.length ? (
-                        <p className="mt-2 line-clamp-2 text-xs text-slate-400">
+                        <p className="mt-2 line-clamp-2 text-xs text-slate-300">
                           {row.scopes.join(', ')}
                         </p>
                       ) : null}
-                      <p className="mt-2 text-xs text-slate-500">
+                      <p className="mt-2 text-xs text-slate-400">
                         {row.createdAt
                           ? `Created ${new Date(row.createdAt).toLocaleString()}`
                           : null}
@@ -413,7 +408,7 @@ export default function DeveloperApiKeysPage({ previewMode = false }) {
               </ul>
             )}
             {isFetching && !isLoading ? (
-              <p className="border-t border-slate-200 px-5 py-2 text-center text-xs text-slate-500 dark:border-slate-800">
+              <p className="border-t border-white/10 px-5 py-2 text-center text-xs text-slate-400">
                 Refreshing…
               </p>
             ) : null}

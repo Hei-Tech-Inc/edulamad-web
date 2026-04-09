@@ -3,28 +3,33 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { motion, useReducedMotion } from 'framer-motion'
 import {
-  ArrowLeft,
-  GraduationCap,
   Mail,
   Lock,
   LogIn,
   AlertCircle,
-  Sparkles,
   Eye,
   EyeOff,
+  Quote,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import MarketingShell from '../components/marketing/MarketingShell'
+import AuthSplitLayout from '../components/marketing/AuthSplitLayout'
 import posthog from 'posthog-js'
 import { getSafeInternalPath } from '@/lib/safe-next-path'
 import { getMarketingBrandName } from '@/lib/landing-brand'
 
 const BRAND = getMarketingBrandName()
+const LEARNING_QUOTES = [
+  'Once you stop learning, you start dying.',
+  'Learning never exhausts the mind.',
+  'Small steps daily. Big results over time.',
+  'The expert in anything was once a beginner.',
+  'Your future is created by what you do today, not tomorrow.',
+  'Do not stop when you are tired. Stop when you are done.',
+]
 
 const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050a12]'
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#070a12]'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -32,13 +37,19 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [mounted, setMounted] = useState(false)
+  const [quoteIndex, setQuoteIndex] = useState(0)
   const { signInWithEmail, user } = useAuth()
   const router = useRouter()
-  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
-    setMounted(true)
+    setQuoteIndex(Math.floor(Math.random() * LEARNING_QUOTES.length))
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setQuoteIndex((prev) => (prev + 1) % LEARNING_QUOTES.length)
+    }, 7000)
+    return () => window.clearInterval(timer)
   }, [])
 
   useEffect(() => {
@@ -72,10 +83,8 @@ export default function Login() {
   }
 
   const inputShell =
-    'flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition placeholder:text-slate-500 hover:border-white/[0.14] ' +
+    'flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[15px] text-white transition hover:border-white/[0.14] ' +
     focusRing
-
-  const motionCard = mounted && !reduceMotion
 
   return (
     <>
@@ -86,57 +95,47 @@ export default function Login() {
           content={`Sign in to ${BRAND} with your email and password.`}
         />
       </Head>
-      <MarketingShell maxWidthClass="max-w-xl sm:max-w-2xl" headerMode="auth">
-        <div className="relative">
-          <div
-            className="pointer-events-none absolute -left-24 top-0 h-48 w-48 rounded-full bg-orange-500/12 blur-3xl"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute -right-16 bottom-0 h-40 w-40 rounded-full bg-amber-500/10 blur-3xl"
-            aria-hidden
-          />
+      <AuthSplitLayout
+        title={`Master your exams with ${BRAND}`}
+        subtitle="Learn with confidence using structured practice, smarter filtering, and daily progress."
+        points={[
+          'Course-aligned past question library',
+          'Fast filters for year, level, and type',
+          'Bookmarking and quiz practice',
+          'Daily streaks to stay consistent',
+        ]}
+      >
+        <div className="mb-7 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            Welcome back
+          </h1>
+          <p className="mt-2 text-sm text-slate-400 sm:text-base">
+            Sign in with the email and password for your {BRAND} account.
+          </p>
+          {hasReturnTo ? (
+            <p className="mt-3 inline-flex rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-200">
+              After sign-in you&apos;ll continue where you left off
+            </p>
+          ) : null}
+        </div>
 
-          <Link
-            href="/"
-            className={`mb-8 inline-flex items-center gap-2 text-sm font-medium text-slate-400 transition hover:text-white ${focusRing} rounded-lg`}
-          >
-            <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} />
-            Back to home
-          </Link>
+        <div className="mb-5 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4">
+          <div className="flex items-start gap-2">
+            <Quote className="mt-0.5 h-4 w-4 text-orange-300" />
+            <p className="text-sm font-medium text-orange-100">
+              {LEARNING_QUOTES[quoteIndex] || LEARNING_QUOTES[0]}
+            </p>
+          </div>
+        </div>
 
-          <motion.div
-            initial={motionCard ? { opacity: 0, y: 16 } : false}
-            animate={motionCard ? { opacity: 1, y: 0 } : undefined}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="mb-8 flex flex-col items-center text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-500/35 bg-gradient-to-br from-orange-500/25 to-amber-500/15 text-orange-200 shadow-[0_12px_40px_rgba(255,92,0,0.18)]">
-                <GraduationCap className="h-7 w-7" strokeWidth={1.75} />
-              </span>
-              <h1 className="mt-5 font-[Outfit,system-ui,sans-serif] text-3xl font-bold tracking-tight text-white sm:text-[2rem] sm:leading-tight">
-                Welcome back
-              </h1>
-              <p className="mx-auto mt-2 max-w-lg text-pretty text-sm leading-relaxed text-slate-400 sm:text-base">
-                Sign in with the email and password you used when you created your {BRAND}{' '}
-                account.
-              </p>
-              {hasReturnTo ? (
-                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-orange-500/25 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-200/95">
-                  <Sparkles className="h-3.5 w-3.5 text-orange-300" />
-                  After sign-in you&apos;ll continue where you left off
-                </p>
-              ) : null}
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.09] bg-[#0a0a0a]/95 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-xl sm:p-8">
+        <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-8">
               {error ? (
                 <div
-                  className="mb-5 flex gap-3 rounded-xl border border-red-500/30 bg-red-950/40 px-3.5 py-3 text-sm text-red-100"
+                  className="mb-5 flex gap-3 rounded-xl border border-red-500/35 bg-red-950/35 px-3.5 py-3 text-sm text-red-100"
                   role="alert"
                 >
                   <AlertCircle
-                    className="mt-0.5 h-5 w-5 shrink-0 text-red-400"
+                    className="mt-0.5 h-5 w-5 shrink-0 text-red-500"
                     aria-hidden
                   />
                   <p className="min-w-0 flex-1 whitespace-pre-wrap leading-snug">
@@ -146,7 +145,7 @@ export default function Login() {
               ) : null}
 
               <form className="space-y-5" onSubmit={handleEmailLogin}>
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-1">
                   <div>
                     <label
                       htmlFor="email"
@@ -218,13 +217,13 @@ export default function Login() {
                       id="remember-me"
                       name="remember-me"
                       type="checkbox"
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 text-orange-500 focus:ring-orange-500/50"
+                      className="h-3.5 w-3.5 rounded border-slate-300 bg-white text-orange-600 focus:ring-orange-500/50"
                     />
                     Keep me signed in
                   </label>
-                  <span className="text-slate-600">
+                    <span className="text-slate-500">
                     Forgot password?{' '}
-                    <Link href="/forgot-password" className="text-orange-400 hover:text-orange-300">
+                    <Link href="/forgot-password" className="text-orange-700 hover:text-orange-800">
                       Reset it
                     </Link>
                   </span>
@@ -233,7 +232,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 py-3.5 text-sm font-bold text-white shadow-[0_12px_32px_rgba(255,92,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.2)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing}`}
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 py-3.5 text-sm font-bold text-white shadow-[0_12px_32px_rgba(234,88,12,0.25)] transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing}`}
                 >
                   {loading ? (
                     <>
@@ -249,30 +248,28 @@ export default function Login() {
                 </button>
               </form>
 
-              <div className="mt-8 space-y-3 border-t border-white/[0.07] pt-6 text-center text-sm">
-                <p className="text-slate-500">
+              <div className="mt-8 space-y-3 border-t border-white/10 pt-6 text-center text-sm">
+                <p className="text-slate-400">
                   Need an account?{' '}
                   <Link
                     href="/register"
-                    className={`font-semibold text-orange-400 transition hover:text-orange-300 ${focusRing} rounded`}
+                    className={`font-semibold text-orange-700 transition hover:text-orange-800 ${focusRing} rounded`}
                   >
                     Create account
                   </Link>
                 </p>
-                <p className="text-slate-500">
+                <p className="text-slate-400">
                   Invited as a team member?{' '}
                   <Link
                     href="/signup"
-                    className={`font-semibold text-orange-400 transition hover:text-orange-300 ${focusRing} rounded`}
+                    className={`font-semibold text-orange-700 transition hover:text-orange-800 ${focusRing} rounded`}
                   >
                     Complete signup
                   </Link>
                 </p>
               </div>
             </div>
-          </motion.div>
-        </div>
-      </MarketingShell>
+      </AuthSplitLayout>
     </>
   )
 }

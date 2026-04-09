@@ -1,11 +1,12 @@
 // components/UserManagement.js — org members via admin API
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Edit, Trash, UserPlus, Mail, Shield } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '../contexts/AuthContext'
 import { getAppName } from '@/lib/app-brand'
+import { SkeletonNotificationRow } from '@/components/ui/skeleton'
 
 function mapMemberToRow(m) {
   const u = m.user || {}
@@ -26,7 +27,6 @@ const UserManagement = () => {
   const { user: currentUser } = useAuth()
   const orgId = useAuthStore((s) => s.user?.orgId)
   const [users, setUsers] = useState([])
-  const [roles, setRoles] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddUser, setShowAddUser] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -66,24 +66,22 @@ const UserManagement = () => {
   }, [orgId])
 
   useEffect(() => {
-    ;(async () => {
-      try {
-        const { data } = await apiClient.get(API.admin.roles.list)
-        const list = Array.isArray(data) ? data : []
-        setRoles(list)
-        setFormData((prev) => ({
-          ...prev,
-          roleId: prev.roleId || list[0]?.id || '',
-        }))
-      } catch (e) {
-        console.error('Error loading roles', e)
-      }
-    })()
-  }, [])
-
-  useEffect(() => {
     void fetchUsers()
   }, [fetchUsers])
+
+  const roles = useMemo(() => {
+    const byId = new Map()
+    users.forEach((u) => {
+      const id = String(u.roleId || '').trim()
+      const name = String(u.role || '').trim()
+      if (!id) return
+      byId.set(id, {
+        id,
+        name: name || 'Role',
+      })
+    })
+    return Array.from(byId.values())
+  }, [users])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -244,7 +242,7 @@ const UserManagement = () => {
                     className="block w-full rounded-xl border border-slate-200 py-2 pl-10 text-sm shadow-sm focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
                   >
                     {roles.length === 0 ? (
-                      <option value="">Loading roles…</option>
+                      <option value="">Use server default role</option>
                     ) : (
                       roles.map((r) => (
                         <option key={r.id} value={r.id}>
@@ -255,6 +253,9 @@ const UserManagement = () => {
                     )}
                   </select>
                 </div>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Role options come from existing organisation members. Leave empty to use server default role.
+                </p>
               </div>
             </div>
             <div className="flex justify-end space-x-3">
@@ -298,7 +299,11 @@ const UserManagement = () => {
             {loading ? (
               <tr>
                 <td colSpan="4" className="px-6 py-4 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600 mx-auto" />
+                  <div className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <SkeletonNotificationRow key={`user-management-skeleton-${i}`} />
+                    ))}
+                  </div>
                 </td>
               </tr>
             ) : filteredUsers.length > 0 ? (

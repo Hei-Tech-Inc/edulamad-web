@@ -74,6 +74,13 @@ export default function EntityCombobox({
     }
   }
 
+  const fullSelectionTitle =
+    value?.name != null
+      ? `${value.name}${value.code ? ` (${value.code})` : ''}`
+      : search?.trim()
+        ? search
+        : undefined
+
   return (
     <label className="flex flex-col gap-1" ref={rootRef}>
       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</span>
@@ -86,6 +93,7 @@ export default function EntityCombobox({
           aria-expanded={open}
           aria-controls={`${id}-listbox`}
           aria-autocomplete="list"
+          title={fullSelectionTitle}
           value={search}
           disabled={disabled}
           placeholder={placeholder}
@@ -96,7 +104,7 @@ export default function EntityCombobox({
             setActiveIndex(0)
           }}
           onKeyDown={onKeyDown}
-          className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-10 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-50 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
+          className="h-11 w-full truncate rounded-xl border border-slate-200 bg-white pl-9 pr-10 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 focus:overflow-visible disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-50 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
         />
         {loading ? (
           <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />

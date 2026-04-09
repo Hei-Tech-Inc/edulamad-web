@@ -7,6 +7,8 @@ export const queryKeys = {
   },
   students: {
     profile: ['students', 'profile'] as const,
+    referral: ['students', 'referral'] as const,
+    questionCredits: ['students', 'question-credits'] as const,
   },
   apiKeys: {
     all: ['api-keys'] as const,
@@ -54,5 +56,10 @@ export const queryKeys = {
       level: string;
       type: string;
     }) => ['questions', 'byCourse', filters] as const,
+    detail: (questionId: string) => ['questions', 'detail', questionId] as const,
+    solutions: (questionId: string) => ['questions', 'solutions', questionId] as const,
+  },
+  promo: {
+    redeem: ['promo', 'redeem'] as const,
   },
 } as const;

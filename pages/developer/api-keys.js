@@ -1,14 +1,17 @@
 import { useAuth } from '../../contexts/AuthContext'
 import Layout from '../../components/Layout'
 import DeveloperApiKeysPage from '../../components/DeveloperApiKeysPage'
+import { SkeletonProfileHeader } from '@/components/ui/skeleton'
 
 export default function DeveloperApiKeysRoute() {
   const { user, initialized, loading } = useAuth()
 
   if (!initialized || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-sky-600 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-[#0a1020]">
+        <div className="w-full max-w-xl px-4">
+          <SkeletonProfileHeader />
+        </div>
       </div>
     )
   }

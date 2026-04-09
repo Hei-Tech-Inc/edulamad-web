@@ -1,4 +1,3 @@
-import Head from 'next/head'
 import Link from 'next/link'
 import { GraduationCap } from 'lucide-react'
 import { getMarketingBrandName } from '@/lib/landing-brand'
@@ -16,18 +15,6 @@ export default function MarketingShell({
 }) {
   return (
     <>
-      <Head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
-          rel="stylesheet"
-        />
-      </Head>
       <div className="min-h-screen bg-[#050505] text-neutral-100 antialiased">
         <header className="border-b border-white/[0.08] bg-[#0a0a0a]/95 backdrop-blur-sm">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">

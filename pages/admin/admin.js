@@ -58,7 +58,7 @@ function CompaniesList() {
     }
 
     fetchCompanies()
-  }, [])
+  }, [showToast])
 
   const handleDeleteCompany = (company) => {
     setCompanyToDelete(company)

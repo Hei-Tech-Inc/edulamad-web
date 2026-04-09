@@ -30,9 +30,16 @@ function pickArray(v: unknown): unknown[] {
 function toEntity(input: unknown): CatalogEntity | null {
   const rec = asRecord(input);
   if (!rec) return null;
-  const id = rec.id ?? rec._id ?? rec.uuid;
-  const name = rec.name ?? rec.title ?? rec.label;
-  if (typeof id !== 'string' || typeof name !== 'string') return null;
+  const idRaw = rec.id ?? rec._id ?? rec.uuid;
+  const nameRaw = rec.name ?? rec.title ?? rec.label;
+  const id =
+    typeof idRaw === 'string'
+      ? idRaw
+      : typeof idRaw === 'number' && Number.isFinite(idRaw)
+        ? String(idRaw)
+        : null;
+  const name = typeof nameRaw === 'string' ? nameRaw : null;
+  if (!id || !name) return null;
   return {
     id,
     name,

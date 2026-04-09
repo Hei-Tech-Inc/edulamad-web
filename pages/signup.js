@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import MarketingShell from '../components/marketing/MarketingShell'
+import AuthSplitLayout from '../components/marketing/AuthSplitLayout'
 import {
   safePosthogCapture,
   safePosthogIdentify,
@@ -15,13 +14,14 @@ import { getMarketingBrandName } from '@/lib/landing-brand'
 const BRAND = getMarketingBrandName()
 
 const inputClass =
-  'mt-1 block w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500'
+  'mt-1 block w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-slate-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20'
 
 export default function SignUp() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [referralCode, setReferralCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { signUpWithEmail, user } = useAuth()
@@ -31,6 +31,16 @@ export default function SignUp() {
     if (!user) return
     router.replace('/dashboard')
   }, [user, router])
+
+  useEffect(() => {
+    if (!router.isReady) return
+    const q = router.query
+    const raw = q.ref ?? q.referralCode ?? q.referral
+    const s = Array.isArray(raw) ? raw[0] : raw
+    if (typeof s === 'string' && s.trim()) {
+      setReferralCode((prev) => (prev ? prev : s.trim().toUpperCase()))
+    }
+  }, [router.isReady, router.query])
 
   if (user) {
     return null
@@ -57,6 +67,7 @@ export default function SignUp() {
       email,
       password,
       fullName,
+      referralCode.trim() || undefined,
     )
 
     if (signUpError) {
@@ -83,27 +94,20 @@ export default function SignUp() {
           content={`Create your ${BRAND} account when you have an invite.`}
         />
       </Head>
-      <MarketingShell maxWidthClass="max-w-md" headerMode="auth">
-        <Link
-          href="/"
-          className="mb-8 inline-flex items-center text-sm font-medium text-slate-400 transition hover:text-white"
-        >
-          <ArrowLeft className="mr-1.5 h-4 w-4" />
-          {BRAND} home
-        </Link>
-
+      <AuthSplitLayout
+        title={`Build momentum with ${BRAND}`}
+        subtitle="Create your account and start focused exam prep with structured learning tools."
+      >
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            Create account
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            Create an account
           </h1>
-          <p className="mt-2 text-sm text-slate-400">
-            For people joining with an invite link or code
-          </p>
+          <p className="mt-2 text-sm text-slate-400">Enter your details below to create your account</p>
         </div>
 
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-6 sm:p-8">
+        <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-8">
           {error ? (
-            <div className="mb-4 rounded border border-red-800 bg-red-950/50 px-3 py-2 text-sm text-red-200">
+            <div className="mb-4 rounded-lg border border-red-500/35 bg-red-950/35 px-3 py-2 text-sm text-red-100">
               {error}
             </div>
           ) : null}
@@ -148,6 +152,25 @@ export default function SignUp() {
 
             <div>
               <label
+                htmlFor="referralCode"
+                className="block text-sm font-medium text-slate-300"
+              >
+                Referral code <span className="font-normal text-slate-500">(optional)</span>
+              </label>
+              <input
+                id="referralCode"
+                name="referralCode"
+                type="text"
+                autoComplete="off"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                className={`${inputClass} font-mono`}
+                placeholder="e.g. EDU-XXXXX"
+              />
+            </div>
+
+            <div>
+              <label
                 htmlFor="password"
                 className="block text-sm font-medium text-slate-300"
               >
@@ -187,34 +210,34 @@ export default function SignUp() {
               disabled={loading}
               className={`flex w-full justify-center rounded py-3 text-sm font-semibold text-white transition ${
                 loading
-                  ? 'cursor-not-allowed bg-sky-900/50'
-                  : 'bg-sky-700 hover:bg-sky-800'
+                  ? 'cursor-not-allowed bg-orange-300'
+                  : 'bg-orange-600 hover:bg-orange-700'
               }`}
             >
               {loading ? 'Creating account…' : 'Sign up'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
+          <p className="mt-6 text-center text-sm text-slate-400">
             Need your own account first?{' '}
             <Link
               href="/register"
-              className="font-medium text-sky-400 hover:text-sky-300"
+              className="font-medium text-orange-700 hover:text-orange-800"
             >
               Register here
             </Link>
           </p>
-          <p className="mt-2 text-center text-sm text-slate-500">
+          <p className="mt-2 text-center text-sm text-slate-400">
             Already have an account?{' '}
             <Link
               href="/login"
-              className="font-medium text-sky-400 hover:text-sky-300"
+              className="font-medium text-orange-700 hover:text-orange-800"
             >
               Sign in
             </Link>
           </p>
         </div>
-      </MarketingShell>
+      </AuthSplitLayout>
     </>
   )
 }

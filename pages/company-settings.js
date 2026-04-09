@@ -1,5 +1,5 @@
 // pages/company-settings.js
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -50,12 +50,7 @@ function CompanySettings() {
     contact_phone: '',
   })
 
-  // Fetch company data on mount
-  useEffect(() => {
-    fetchCompanyData()
-  }, [])
-
-  const fetchCompanyData = async () => {
+  const fetchCompanyData = useCallback(async () => {
     setLoading(true)
     try {
       const { data, error } = await companyService.getCompanyDetails()
@@ -81,7 +76,12 @@ function CompanySettings() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [showToast])
+
+  // Fetch company data on mount
+  useEffect(() => {
+    void fetchCompanyData()
+  }, [fetchCompanyData])
 
   const handleChange = (e) => {
     const { name, value } = e.target

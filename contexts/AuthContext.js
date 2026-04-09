@@ -98,13 +98,16 @@ export function AuthProvider({ children }) {
     }
   }
 
-  /** Body matches OpenAPI `RegisterDto`: email, password, name only. */
-  const signUpWithEmail = async (email, password, fullName) => {
+  /** Body matches OpenAPI `RegisterDto`: email, password, name; optional referralCode. */
+  const signUpWithEmail = async (email, password, fullName, referralCode) => {
     try {
+      const trimmedRef =
+        typeof referralCode === 'string' && referralCode.trim() ? referralCode.trim() : undefined
       const { data: regData } = await apiClientPublic.post(API.auth.register, {
         email,
         password,
         name: fullName,
+        ...(trimmedRef ? { referralCode: trimmedRef } : {}),
       })
 
       let accessToken = regData?.accessToken

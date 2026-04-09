@@ -1,6 +1,22 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Search } from 'lucide-react'
+import { useRouter } from 'next/router'
+import {
+  Bell,
+  BookOpen,
+  Building2,
+  LayoutGrid,
+  LineChart,
+  ListOrdered,
+  Search,
+  Shield,
+  Sparkles,
+  Table2,
+} from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
 import {
   useCollegeSearch,
   useCourseSearch,
@@ -18,21 +34,37 @@ import {
   useStudentXp,
 } from '@/hooks/dashboard/useDashboardOverview'
 import EntityCombobox from './forms/EntityCombobox'
+import DataTable from './DataTable'
+import CourseQuestionCard from './questions/CourseQuestionCard'
 import { useAuthStore } from '@/stores/auth.store'
+import { sessionHasAdminTools } from '@/lib/session-admin-access'
+import SectionCard from '@/components/atoms/SectionCard'
+import StatCard from '@/components/molecules/StatCard'
+import OnboardingNotice from '@/components/organisms/OnboardingNotice'
+import CopyableId from './admin/CopyableId'
+import { SkeletonNotificationRow, SkeletonQuestionCard, SkeletonStatCard } from '@/components/ui/skeleton'
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'
-const panelClass =
-  'rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] dark:border-neutral-800 dark:bg-neutral-950/80'
+
+/** Past-question API `type` query; `all` omits param so mixed imports (e.g. essay + theory) all load. */
+const QUESTION_TYPE_FILTER_OPTIONS = [
+  { value: 'all', label: 'All types' },
+  { value: 'theory', label: 'Theory' },
+  { value: 'objective', label: 'Objective' },
+  { value: 'practical', label: 'Practical' },
+  { value: 'essay', label: 'Essay' },
+  { value: 'mcq', label: 'MCQ' },
+]
 
 function SelectField({ label, value, onChange, options, disabled = false }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</span>
+      <span className="text-xs font-medium text-slate-400">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-50"
+        className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -48,12 +80,132 @@ function byName(a, b) {
   return a.name.localeCompare(b.name)
 }
 
+function SectionTitle({ icon: Icon, title }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10 text-orange-200">
+        <Icon className="h-4 w-4" />
+      </span>
+      <h3 className="text-sm font-semibold text-slate-100">{title}</h3>
+    </div>
+  )
+}
+
+/** Admin catalog: shows entity name + copyable ID for the current picker chain. */
+function CatalogSelectionChip({ label, name, id }) {
+  if (!id) return null
+  return (
+    <div className="flex min-w-0 max-w-full flex-1 flex-col gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 sm:min-w-[200px] sm:max-w-[280px]">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</span>
+      {name ? (
+        <span className="truncate text-sm font-medium text-slate-200" title={name}>
+          {name}
+        </span>
+      ) : null}
+      <CopyableId value={String(id)} />
+    </div>
+  )
+}
+
+function asRecord(v) {
+  return v && typeof v === 'object' ? v : null
+}
+
+function pickArray(v) {
+  if (Array.isArray(v)) return v
+  const rec = asRecord(v)
+  if (!rec) return []
+  const candidates = ['items', 'data', 'results', 'rows']
+  for (const key of candidates) {
+    if (Array.isArray(rec[key])) return rec[key]
+  }
+  return []
+}
+
+function TinySparkline({ values }) {
+  const max = Math.max(...values, 1)
+  return (
+    <div className="mt-2 flex h-8 items-end gap-1">
+      {values.map((v, idx) => (
+        <span
+          key={`${v}-${idx}`}
+          className="w-1.5 rounded-sm bg-gradient-to-t from-orange-500/80 to-amber-300/90"
+          style={{ height: `${Math.max(14, (v / max) * 100)}%` }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function TimeframeTabs({ value, onChange }) {
+  const tabs = ['Today', 'This Week', 'This Semester']
+  return (
+    <div className="inline-flex rounded-xl border border-white/20 bg-white/10 p-1">
+      {tabs.map((tab) => (
+        <button
+          key={tab}
+          type="button"
+          onClick={() => onChange(tab)}
+          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+            value === tab
+              ? 'bg-orange-500 text-white'
+              : 'text-slate-100 hover:bg-white/15'
+          }`}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function CommandBar({ search, onSearch, onResetFilters, timeframe, setTimeframe }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#111827]/95 p-3 shadow-[0_12px_36px_rgba(0,0,0,0.35)]">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[240px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" />
+          <input
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder="Quick find courses, codes, or focus topics..."
+            className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.04] pl-9 pr-3 text-sm text-slate-100 focus:border-orange-500/60 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+          />
+        </div>
+        <Link
+          href="/onboarding"
+          className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+        >
+          Profile setup
+        </Link>
+        <button
+          type="button"
+          onClick={onResetFilters}
+          className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
+        >
+          Reset filters
+        </button>
+        <div className="ml-auto">
+          <TimeframeTabs value={timeframe} onChange={setTimeframe} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
+  const router = useRouter()
+  const reduceMotion = useReducedMotion()
+  const queryClient = useQueryClient()
+  const sessionEmail = useAuthStore((s) => s.user?.email)
+  const sessionUser = useAuthStore((s) => s.user)
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const [timeframe, setTimeframe] = useState('This Week')
   const [activeOnly, setActiveOnly] = useState(true)
   const [search, setSearch] = useState('')
   const [year, setYear] = useState('2024')
   const [level, setLevel] = useState('300')
-  const [type, setType] = useState('theory')
+  const [type, setType] = useState('all')
   const [institutionSearch, setInstitutionSearch] = useState('')
   const [collegeSearch, setCollegeSearch] = useState('')
   const [departmentSearch, setDepartmentSearch] = useState('')
@@ -66,6 +218,79 @@ export default function Dashboard() {
   const [collegeValue, setCollegeValue] = useState(null)
   const [departmentValue, setDepartmentValue] = useState(null)
   const [courseValue, setCourseValue] = useState(null)
+  const [questionForm, setQuestionForm] = useState({
+    courseId: '',
+    year: '2024',
+    levelData: '300',
+    questionText: '',
+    type: 'theory',
+    source: 'manual',
+  })
+  const [flashcardForm, setFlashcardForm] = useState({
+    courseId: '',
+    front: '',
+    back: '',
+    source: 'manual',
+  })
+  const [promoForm, setPromoForm] = useState({
+    code: '',
+    unlocksPlan: 'basic',
+    maxRedemptions: '100',
+    expiresAt: '',
+    questionCredits: '',
+    creditExpiresAt: '',
+  })
+  const [adminActionStatus, setAdminActionStatus] = useState({
+    question: '',
+    flashcard: '',
+    promo: '',
+  })
+  const [adminActionLoading, setAdminActionLoading] = useState({
+    question: false,
+    flashcard: false,
+    promo: false,
+    bundle: false,
+  })
+  const [bundleUpload, setBundleUpload] = useState({
+    courseId: '',
+    pdf: null,
+    json: null,
+  })
+  const [bundleStatus, setBundleStatus] = useState('')
+  const [catalogStatus, setCatalogStatus] = useState('')
+  const [adminPanel, setAdminPanel] = useState('manage')
+  /** `browse` = filters + directory tables; `create` = add/edit entity forms only. */
+  const [catalogManageView, setCatalogManageView] = useState('browse')
+  const [universityStatusFilter, setUniversityStatusFilter] = useState('all')
+  const [universityForm, setUniversityForm] = useState({
+    id: '',
+    name: '',
+    acronym: '',
+    location: '',
+    type: 'public',
+    isActive: true,
+  })
+  const [collegeForm, setCollegeForm] = useState({
+    id: '',
+    name: '',
+    code: '',
+    universityId: '',
+    isActive: true,
+  })
+  const [departmentForm, setDepartmentForm] = useState({
+    id: '',
+    name: '',
+    code: '',
+    collegeId: '',
+    isActive: true,
+  })
+  const [courseFormState, setCourseFormState] = useState({
+    id: '',
+    name: '',
+    code: '',
+    deptId: '',
+    isActive: true,
+  })
   const onboardingNotice = useAuthStore((s) => s.onboardingNotice)
   const setOnboardingNotice = useAuthStore((s) => s.setOnboardingNotice)
 
@@ -79,6 +304,18 @@ export default function Dashboard() {
     level,
     type,
   })
+  const questionTypeMix = useMemo(() => {
+    const rows = questionsQ.data
+    if (!rows?.length) return []
+    const counts = new Map()
+    for (const q of rows) {
+      const t = String(q.type || 'unknown').toLowerCase()
+      counts.set(t, (counts.get(t) || 0) + 1)
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([t, n]) => ({ type: t, count: n }))
+  }, [questionsQ.data])
   const authMeQ = useAuthMe()
   const profileQ = useStudentProfile()
   const streakQ = useStudentStreak()
@@ -86,6 +323,56 @@ export default function Dashboard() {
   const analyticsQ = useAnalyticsMe()
   const adminStatsQ = useAdminStats()
   const notificationsQ = useMyNotifications(5)
+  const isAdmin = sessionHasAdminTools(sessionUser, accessToken)
+
+  const adminHashMigrated = useRef(false)
+
+  const setAdminPanelTab = (panel) => {
+    if (!isAdmin) return
+    setAdminPanel(panel)
+    const admin = panel === 'manage' ? 'catalog' : 'create'
+    void router.replace(
+      { pathname: '/dashboard', query: { admin } },
+      undefined,
+      { shallow: true },
+    )
+  }
+
+  useEffect(() => {
+    if (!router.isReady || !isAdmin) return
+    const raw = router.query.admin
+    const v = Array.isArray(raw) ? raw[0] : raw
+    if (v === 'create') setAdminPanel('create')
+    else if (v === 'catalog' || v === 'manage') setAdminPanel('manage')
+  }, [router.isReady, router.query.admin, isAdmin])
+
+  /** Deep links from sidebar: `/dashboard?admin=…#anchor` */
+  useEffect(() => {
+    if (!router.isReady || !isAdmin || typeof window === 'undefined') return
+    const hash = router.asPath.split('#')[1]?.split('&')[0]
+    if (!hash || !hash.startsWith('admin')) return
+    const t = window.setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 80)
+    return () => window.clearTimeout(t)
+  }, [router.isReady, router.asPath, isAdmin, adminPanel])
+
+  /** Legacy #admin-* bookmarks → ?admin= (Next client navigation often skips hash updates). */
+  useEffect(() => {
+    if (!router.isReady || !isAdmin || typeof window === 'undefined') return
+    if (adminHashMigrated.current) return
+    const h = window.location.hash.replace(/^#/, '')
+    if (h !== 'admin-catalog' && h !== 'admin-manage' && h !== 'admin-create') return
+    adminHashMigrated.current = true
+    const admin = h === 'admin-create' ? 'create' : 'catalog'
+    void router.replace(
+      { pathname: '/dashboard', query: { admin } },
+      undefined,
+      { shallow: true },
+    )
+  }, [router.isReady, isAdmin, router])
+
+  const shouldPromptOnboarding = !isAdmin
   const isOnboardingComplete = Boolean(
     profileQ.data?.universityId &&
       profileQ.data?.deptId &&
@@ -146,204 +433,1777 @@ export default function Dashboard() {
     analyticsObject.totalQuestionsSolved ??
     analyticsObject.solved ??
     null
+  const adminStatsPreview =
+    adminStatsQ.data && typeof adminStatsQ.data === 'object'
+      ? Object.entries(adminStatsQ.data).slice(0, 6)
+      : []
+
+  const universityTableRows = useMemo(
+    () =>
+      universities.map((u) => ({
+        id: u.id,
+        name: u.name,
+        code: u.code || '—',
+        status: u.isActive === false ? 'Inactive' : 'Active',
+      })),
+    [universities],
+  )
+
+  const filteredUniversityRows = useMemo(() => {
+    if (universityStatusFilter === 'active') {
+      return universityTableRows.filter((r) => r.status === 'Active')
+    }
+    if (universityStatusFilter === 'inactive') {
+      return universityTableRows.filter((r) => r.status === 'Inactive')
+    }
+    return universityTableRows
+  }, [universityTableRows, universityStatusFilter])
+
+  const collegeTableRows = useMemo(
+    () =>
+      colleges.map((c) => ({
+        id: c.id,
+        name: c.name,
+        code: c.code || '—',
+        university: universityValue?.name || 'Selected institution',
+        status: c.isActive === false ? 'Inactive' : 'Active',
+      })),
+    [colleges, universityValue],
+  )
+
+  const departmentTableRows = useMemo(
+    () =>
+      departments.map((d) => ({
+        id: d.id,
+        name: d.name,
+        code: d.code || '—',
+        college: collegeValue?.name || 'Selected college',
+        status: d.isActive === false ? 'Inactive' : 'Active',
+      })),
+    [departments, collegeValue],
+  )
+
+  const courseTableRows = useMemo(
+    () =>
+      courseResults.map((c) => ({
+        id: c.id,
+        name: c.name,
+        code: c.code || '—',
+        department: departmentValue?.name || 'Selected department',
+        status: c.isActive === false ? 'Inactive' : 'Active',
+      })),
+    [courseResults, departmentValue],
+  )
+
+  /** Click a directory row to drive the combobox chain (same as picking from search). */
+  const selectCatalogUniversity = useCallback((row) => {
+    const id = row?.id != null ? String(row.id) : ''
+    if (!id) return
+    setUniversityId(id)
+    setUniversityValue({
+      id,
+      name: row.name || '',
+      code: row.code && row.code !== '—' ? row.code : undefined,
+    })
+    setInstitutionSearch(row.name || '')
+  }, [])
+
+  const selectCatalogCollege = useCallback((row) => {
+    const id = row?.id != null ? String(row.id) : ''
+    if (!id) return
+    setCollegeId(id)
+    setCollegeValue({
+      id,
+      name: row.name || '',
+      code: row.code && row.code !== '—' ? row.code : undefined,
+    })
+    setCollegeSearch(row.name || '')
+  }, [])
+
+  const selectCatalogDepartment = useCallback((row) => {
+    const id = row?.id != null ? String(row.id) : ''
+    if (!id) return
+    setDepartmentId(id)
+    setDepartmentValue({
+      id,
+      name: row.name || '',
+      code: row.code && row.code !== '—' ? row.code : undefined,
+    })
+    setDepartmentSearch(row.name || '')
+  }, [])
+
+  const selectCatalogCourse = useCallback((row) => {
+    const id = row?.id != null ? String(row.id) : ''
+    if (!id) return
+    setCourseId(id)
+    setCourseValue({
+      id,
+      name: row.name || '',
+      code: row.code && row.code !== '—' ? row.code : undefined,
+    })
+    setCourseSearch(row.name || '')
+  }, [])
+
+  const invalidateInstitutionQueries = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['institutions'] })
+  }
+
+  const catalogErrorMessage = (err, fallback) => (err instanceof Error ? err.message : fallback)
+
+  const createUniversityM = useMutation({
+    mutationFn: async (payload) => apiClient.post(API.institutions.universities.list, payload),
+    onSuccess: invalidateInstitutionQueries,
+  })
+  const updateUniversityM = useMutation({
+    mutationFn: async ({ id, payload }) => apiClient.patch(API.institutions.universities.detail(id), payload),
+    onSuccess: invalidateInstitutionQueries,
+  })
+  const createCollegeM = useMutation({
+    mutationFn: async (payload) => apiClient.post(API.institutions.colleges.list, payload),
+    onSuccess: invalidateInstitutionQueries,
+  })
+  const updateCollegeM = useMutation({
+    mutationFn: async ({ id, payload }) => apiClient.patch(API.institutions.colleges.detail(id), payload),
+    onSuccess: invalidateInstitutionQueries,
+  })
+  const createDepartmentM = useMutation({
+    mutationFn: async (payload) => apiClient.post(API.institutions.departments.list, payload),
+    onSuccess: invalidateInstitutionQueries,
+  })
+  const updateDepartmentM = useMutation({
+    mutationFn: async ({ id, payload }) => apiClient.patch(API.institutions.departments.detail(id), payload),
+    onSuccess: invalidateInstitutionQueries,
+  })
+  const createCourseM = useMutation({
+    mutationFn: async (payload) => apiClient.post(API.institutions.courses.list, payload),
+    onSuccess: invalidateInstitutionQueries,
+  })
+  const updateCourseM = useMutation({
+    mutationFn: async ({ id, payload }) => apiClient.patch(API.institutions.courses.detail(id), payload),
+    onSuccess: invalidateInstitutionQueries,
+  })
+
+  const universityColumns = useMemo(
+    () => [
+      { header: 'University', accessor: 'name', sortable: true, searchable: true },
+      { header: 'Code', accessor: 'code', sortable: true, searchable: true },
+      { header: 'Status', accessor: 'status', sortable: true },
+      {
+        header: 'ID',
+        accessor: 'id',
+        sortable: true,
+        cell: (row) => <CopyableId value={String(row.id)} />,
+      },
+      {
+        header: 'Actions',
+        accessor: 'actions',
+        cell: (row) => {
+          const rowId = row?.id != null ? String(row.id) : ''
+          return (
+            <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => {
+                  setCatalogManageView('create')
+                  setUniversityForm({
+                    id: rowId,
+                    name: row.name || '',
+                    acronym: row.code === '—' ? '' : row.code,
+                    location: '',
+                    type: 'public',
+                    isActive: row.status !== 'Inactive',
+                  })
+                }}
+                className="rounded border border-white/20 bg-white/[0.04] px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await updateUniversityM.mutateAsync({
+                      id: rowId,
+                      payload: { isActive: row.status === 'Inactive' },
+                    })
+                    setCatalogStatus(
+                      row.status === 'Inactive' ? 'University activated.' : 'University deactivated.',
+                    )
+                  } catch (err) {
+                    setCatalogStatus(catalogErrorMessage(err, 'Failed to update university status.'))
+                  }
+                }}
+                className={`rounded border px-2 py-1 text-xs ${
+                  row.status === 'Inactive'
+                    ? 'border-emerald-400/60 text-emerald-300 hover:bg-emerald-500/10'
+                    : 'border-amber-400/60 text-amber-300 hover:bg-amber-500/10'
+                }`}
+              >
+                {row.status === 'Inactive' ? 'Activate' : 'Deactivate'}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await updateUniversityM.mutateAsync({ id: rowId, payload: { isActive: false } })
+                    setCatalogStatus('University deleted (deactivated).')
+                  } catch (err) {
+                    setCatalogStatus(catalogErrorMessage(err, 'Failed to delete university.'))
+                  }
+                }}
+                className="rounded border border-rose-400/60 px-2 py-1 text-xs text-rose-300 hover:bg-rose-500/10"
+              >
+                Delete
+              </button>
+            </div>
+          )
+        },
+      },
+    ],
+    [updateUniversityM],
+  )
+  const collegeColumns = useMemo(
+    () => [
+      { header: 'College', accessor: 'name', sortable: true, searchable: true },
+      { header: 'University', accessor: 'university', sortable: true, searchable: true },
+      { header: 'Code', accessor: 'code', sortable: true, searchable: true },
+      { header: 'Status', accessor: 'status', sortable: true },
+      {
+        header: 'ID',
+        accessor: 'id',
+        sortable: true,
+        cell: (row) => <CopyableId value={String(row.id)} />,
+      },
+      {
+        header: 'Actions',
+        accessor: 'actions',
+        cell: (row) => {
+          const rowId = row?.id != null ? String(row.id) : ''
+          return (
+            <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => {
+                  setCatalogManageView('create')
+                  setCollegeForm({
+                    id: rowId,
+                    name: row.name || '',
+                    code: row.code === '—' ? '' : row.code,
+                    universityId,
+                    isActive: row.status !== 'Inactive',
+                  })
+                }}
+                className="rounded border border-white/20 bg-white/[0.04] px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await updateCollegeM.mutateAsync({ id: rowId, payload: { isActive: false } })
+                    setCatalogStatus('College archived.')
+                  } catch (err) {
+                    setCatalogStatus(catalogErrorMessage(err, 'Failed to archive college.'))
+                  }
+                }}
+                className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-300 hover:bg-rose-500/10"
+              >
+                Archive
+              </button>
+            </div>
+          )
+        },
+      },
+    ],
+    [universityId, updateCollegeM],
+  )
+  const departmentColumns = useMemo(
+    () => [
+      { header: 'Department', accessor: 'name', sortable: true, searchable: true },
+      { header: 'College', accessor: 'college', sortable: true, searchable: true },
+      { header: 'Code', accessor: 'code', sortable: true, searchable: true },
+      { header: 'Status', accessor: 'status', sortable: true },
+      {
+        header: 'ID',
+        accessor: 'id',
+        sortable: true,
+        cell: (row) => <CopyableId value={String(row.id)} />,
+      },
+      {
+        header: 'Actions',
+        accessor: 'actions',
+        cell: (row) => {
+          const rowId = row?.id != null ? String(row.id) : ''
+          return (
+            <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => {
+                  setCatalogManageView('create')
+                  setDepartmentForm({
+                    id: rowId,
+                    name: row.name || '',
+                    code: row.code === '—' ? '' : row.code,
+                    collegeId,
+                    isActive: row.status !== 'Inactive',
+                  })
+                }}
+                className="rounded border border-white/20 bg-white/[0.04] px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await updateDepartmentM.mutateAsync({ id: rowId, payload: { isActive: false } })
+                    setCatalogStatus('Department archived.')
+                  } catch (err) {
+                    setCatalogStatus(catalogErrorMessage(err, 'Failed to archive department.'))
+                  }
+                }}
+                className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-300 hover:bg-rose-500/10"
+              >
+                Archive
+              </button>
+            </div>
+          )
+        },
+      },
+    ],
+    [collegeId, updateDepartmentM],
+  )
+  const courseColumns = useMemo(
+    () => [
+      { header: 'Course', accessor: 'name', sortable: true, searchable: true },
+      { header: 'Department', accessor: 'department', sortable: true, searchable: true },
+      { header: 'Code', accessor: 'code', sortable: true, searchable: true },
+      { header: 'Status', accessor: 'status', sortable: true },
+      {
+        header: 'ID',
+        accessor: 'id',
+        sortable: true,
+        cell: (row) => <CopyableId value={String(row.id)} />,
+      },
+      {
+        header: 'Actions',
+        accessor: 'actions',
+        cell: (row) => {
+          const rowId = row?.id != null ? String(row.id) : ''
+          return (
+            <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => {
+                  setCatalogManageView('create')
+                  setCourseFormState({
+                    id: rowId,
+                    name: row.name || '',
+                    code: row.code === '—' ? '' : row.code,
+                    deptId: departmentId,
+                    isActive: row.status !== 'Inactive',
+                  })
+                }}
+                className="rounded border border-white/20 bg-white/[0.04] px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await updateCourseM.mutateAsync({ id: rowId, payload: { isActive: false } })
+                    setCatalogStatus('Course archived.')
+                  } catch (err) {
+                    setCatalogStatus(catalogErrorMessage(err, 'Failed to archive course.'))
+                  }
+                }}
+                className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-300 hover:bg-rose-500/10"
+              >
+                Archive
+              </button>
+            </div>
+          )
+        },
+      },
+    ],
+    [departmentId, updateCourseM],
+  )
+
+  const promoCodesQ = useQuery({
+    queryKey: ['admin', 'promo', 'codes'],
+    enabled: isAdmin,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get(API.admin.promo.codes, { signal })
+      return pickArray(data)
+    },
+  })
+
+  const uploadQueueQ = useQuery({
+    queryKey: ['questions', 'upload-queue', 'admin'],
+    enabled: isAdmin,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get(API.questions.uploadQueue, { signal })
+      return pickArray(data)
+    },
+  })
+
+  const deactivatePromoM = useMutation({
+    mutationFn: async (id) => {
+      await apiClient.post(API.admin.promo.deactivate(id))
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'promo', 'codes'] })
+    },
+  })
+
+  const kpiSignals = {
+    user: [3, 4, 6, 5, 7, 8, 9],
+    level: [4, 4, 5, 6, 6, 7, 7],
+    streak: [1, 2, 3, 5, 8, 8, 10],
+    xp: [2, 3, 5, 7, 8, 9, 10],
+  }
+  const sectionMotion = reduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 10 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true, margin: '-50px' },
+        transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+      }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-          {APP_NAME} dashboard
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-400">
-          Browse institutions from the API and fetch past questions by course with required filters.
-        </p>
-      </div>
-
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className={panelClass}>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Signed in user</p>
-          <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">
-            {authMeQ.data?.email || '—'}
-          </p>
-          {authMeQ.isError ? (
-            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-              Could not load `/auth/me`. Session stays active.
+    <div className="space-y-6 text-slate-100">
+      <motion.section
+        {...sectionMotion}
+        className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-[#111827] via-[#0f172a] to-[#111827] p-6 text-white shadow-[0_20px_55px_rgba(15,23,42,0.3)]"
+      >
+        <div
+          className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-orange-500/25 blur-3xl"
+          aria-hidden
+        />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-orange-200">
+              <Sparkles className="h-3.5 w-3.5" />
+              {isAdmin ? 'Admin console' : 'Study cockpit'}
             </p>
-          ) : null}
-        </div>
-        <div className={panelClass}>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Student level</p>
-          <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">
-            {profileQ.data?.levelData ?? profileQ.data?.level ?? '—'}
-          </p>
-        </div>
-        <div className={panelClass}>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Current streak</p>
-          <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">
-            {streakQ.data ?? '—'}
-          </p>
-        </div>
-        <div className={panelClass}>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Total XP</p>
-          <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">
-            {xpQ.data ?? '—'}
-          </p>
-        </div>
-      </section>
-
-      {!isOnboardingComplete || onboardingNotice ? (
-        <section className="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-4 shadow-[0_12px_30px_rgba(251,146,60,0.14)] dark:border-orange-900/70 dark:bg-orange-950/20">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-orange-900 dark:text-orange-200">
-                {onboardingNotice || 'Complete your profile to unlock all features.'}
-              </p>
-              <p className="mt-1 text-xs text-orange-700 dark:text-orange-300">
-                Add institution and program details once; we’ll reuse them across the app.
-              </p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+              {APP_NAME} dashboard
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-100">
+              {isAdmin
+                ? 'Manage catalogue records, content pipeline, and promo operations from one clean workspace.'
+                : 'Browse institutions and pull past questions by course, level, year, and type from one place.'}
+            </p>
+            <p className="mt-2 text-xs font-medium uppercase tracking-wider text-orange-200">
+              Focus window: {timeframe}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                `${courses.length} courses loaded`,
+                `${notificationsQ.data?.length ?? 0} recent notifications`,
+                `Questions solved: ${questionsSolved ?? '—'}`,
+              ].map((chip) => (
+                <span
+                  key={chip}
+                  className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-slate-100"
+                >
+                  {chip}
+                </span>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
+          </div>
+          <div className="flex items-center gap-2">
+            {!isAdmin ? (
               <Link
                 href="/onboarding"
-                className="rounded-md bg-orange-600 px-3 py-2 text-sm font-medium text-white hover:bg-orange-700"
+                className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-400"
               >
                 Complete profile
               </Link>
-              {onboardingNotice ? (
-                <button
-                  type="button"
-                  className="rounded-md border border-orange-400 px-3 py-2 text-sm text-orange-800 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-200 dark:hover:bg-orange-900/30"
-                  onClick={() => setOnboardingNotice(null)}
-                >
-                  Dismiss
-                </button>
-              ) : null}
-            </div>
+            ) : null}
+            <Link
+              href="/developer/api-reference"
+              className="rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20"
+            >
+              API docs
+            </Link>
           </div>
-        </section>
+        </div>
+      </motion.section>
+
+      {isAdmin ? (
+        <motion.section {...sectionMotion} id="admin-panel-tabs" className="scroll-mt-24">
+          <div className="inline-flex rounded-xl border border-white/10 bg-[#0b101a]/95 p-1">
+            <button
+              type="button"
+              onClick={() => setAdminPanelTab('manage')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                adminPanel === 'manage'
+                  ? 'bg-orange-600 text-white'
+                  : 'text-slate-300 hover:bg-white/10'
+              }`}
+            >
+              Manage records
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdminPanelTab('create')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                adminPanel === 'create'
+                  ? 'bg-orange-600 text-white'
+                  : 'text-slate-300 hover:bg-white/10'
+              }`}
+            >
+              Create content
+            </button>
+          </div>
+        </motion.section>
+      ) : (
+        <motion.section {...sectionMotion}>
+          <CommandBar
+            search={search}
+            onSearch={setSearch}
+            timeframe={timeframe}
+            setTimeframe={setTimeframe}
+            onResetFilters={() => {
+              setYear('2024')
+              setLevel('300')
+              setType('all')
+              setUniversityId('')
+              setCollegeId('')
+              setDepartmentId('')
+              setCourseId('')
+              setUniversityValue(null)
+              setCollegeValue(null)
+              setDepartmentValue(null)
+              setCourseValue(null)
+              setInstitutionSearch('')
+              setCollegeSearch('')
+              setDepartmentSearch('')
+              setCourseSearch('')
+              setSearch('')
+            }}
+          />
+        </motion.section>
+      )}
+
+      {!isAdmin ? (
+      <motion.section {...sectionMotion} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <StatCard
+            label="Signed in user"
+            value={authMeQ.data?.email || sessionEmail || '—'}
+            hint={authMeQ.isError ? 'Using local session profile.' : undefined}
+            tone="sky"
+          />
+          <TinySparkline values={kpiSignals.user} />
+        </div>
+        <div>
+          <StatCard
+            label="Student level"
+            value={profileQ.data?.levelData ?? profileQ.data?.level ?? '—'}
+            tone="violet"
+          />
+          <TinySparkline values={kpiSignals.level} />
+        </div>
+        <div>
+          <StatCard label="Current streak" value={streakQ.data ?? '—'} tone="orange" />
+          <TinySparkline values={kpiSignals.streak} />
+        </div>
+        <div>
+          <StatCard label="Total XP" value={xpQ.data ?? '—'} tone="emerald" />
+          <TinySparkline values={kpiSignals.xp} />
+        </div>
+      </motion.section>
       ) : null}
 
-      <section className={panelClass}>
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-            Institution catalog
-          </h3>
-          <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-            <input
-              type="checkbox"
-              checked={activeOnly}
-              onChange={(e) => setActiveOnly(e.target.checked)}
-            />
-            Active only
-          </label>
+      {shouldPromptOnboarding && (!isOnboardingComplete || onboardingNotice) ? (
+        <OnboardingNotice
+          notice={onboardingNotice}
+          onDismiss={() => setOnboardingNotice(null)}
+        />
+      ) : null}
+
+      {!isAdmin ? (
+      <motion.section {...sectionMotion} className="grid gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-9">
+          <SectionCard className="h-full">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <SectionTitle icon={BookOpen} title="Questions" />
+              <div className="flex flex-wrap items-center gap-3">
+                {courseId && year && level && (questionsQ.data?.length ?? 0) > 0 ? (
+                  <Link
+                    href={`/practice?${new URLSearchParams({
+                      courseId,
+                      year,
+                      level,
+                      type: type || 'all',
+                      mode: 'quiz',
+                      ...(courseValue?.name?.trim()
+                        ? { courseName: courseValue.name.trim() }
+                        : {}),
+                    }).toString()}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-teal-500/40 bg-teal-500/10 px-3 py-1.5 text-xs font-semibold text-teal-200 hover:bg-teal-500/20"
+                  >
+                    <ListOrdered className="h-3.5 w-3.5" aria-hidden />
+                    Quiz mode
+                  </Link>
+                ) : null}
+                <label className="flex items-center gap-2 text-xs text-slate-400">
+                  <input
+                    type="checkbox"
+                    checked={activeOnly}
+                    onChange={(e) => setActiveOnly(e.target.checked)}
+                  />
+                  Active only
+                </label>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <EntityCombobox
+                id="dash-university"
+                label="Institution"
+                placeholder="Search institution"
+                value={universityValue}
+                search={institutionSearch}
+                onSearchChange={setInstitutionSearch}
+                onSelect={(item) => {
+                  const id = item?.id != null ? String(item.id) : ''
+                  setUniversityValue(id ? { ...item, id } : item)
+                  setUniversityId(id)
+                }}
+                options={universities}
+                loading={universitiesQ.isLoading}
+              />
+              <EntityCombobox
+                id="dash-college"
+                label="College / Faculty"
+                placeholder="Search college"
+                value={collegeValue}
+                search={collegeSearch}
+                onSearchChange={setCollegeSearch}
+                onSelect={(item) => {
+                  const id = item?.id != null ? String(item.id) : ''
+                  setCollegeValue(id ? { ...item, id } : item)
+                  setCollegeId(id)
+                }}
+                options={colleges}
+                loading={collegesQ.isLoading}
+                disabled={!universityId}
+              />
+              <EntityCombobox
+                id="dash-department"
+                label="Department"
+                placeholder="Search department"
+                value={departmentValue}
+                search={departmentSearch}
+                onSearchChange={setDepartmentSearch}
+                onSelect={(item) => {
+                  const id = item?.id != null ? String(item.id) : ''
+                  setDepartmentValue(id ? { ...item, id } : item)
+                  setDepartmentId(id)
+                }}
+                options={departments}
+                loading={departmentsQ.isLoading}
+                disabled={!collegeId}
+              />
+              <EntityCombobox
+                id="dash-course"
+                label="Course"
+                placeholder="Search course"
+                value={courseValue}
+                search={courseSearch}
+                onSearchChange={setCourseSearch}
+                onSelect={(item) => {
+                  const id = item?.id != null ? String(item.id) : ''
+                  setCourseValue(id ? { ...item, id } : item)
+                  setCourseId(id)
+                }}
+                options={courses}
+                loading={coursesQ.isLoading}
+                disabled={!departmentId}
+              />
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <SelectField
+                label="Year"
+                value={year}
+                onChange={setYear}
+                options={['2025', '2024', '2023', '2022', '2021'].map((v) => ({
+                  value: v,
+                  label: v,
+                }))}
+              />
+              <SelectField
+                label="Level"
+                value={level}
+                onChange={setLevel}
+                options={['100', '200', '300', '400', '500'].map((v) => ({
+                  value: v,
+                  label: `Level ${v}`,
+                }))}
+              />
+              <SelectField
+                label="Question type"
+                value={type}
+                onChange={setType}
+                options={QUESTION_TYPE_FILTER_OPTIONS}
+              />
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              <span className="font-medium text-slate-400 dark:text-slate-300">Year {year}</span>
+              {' · '}
+              <span className="font-medium text-slate-400 dark:text-slate-300">Level {level}</span>
+              {' · '}
+              <span className="font-medium text-slate-400 dark:text-slate-300">
+                {QUESTION_TYPE_FILTER_OPTIONS.find((o) => o.value === type)?.label ?? type}
+              </span>
+              . Use <strong className="font-semibold text-slate-300">All types</strong> when your
+              import mixes labels (for example essay vs theory) so every item appears.
+            </p>
+
+            {!courseId ? (
+              <p className="mt-5 text-sm text-slate-400">Click filters above to start finding questions.</p>
+            ) : questionsQ.isLoading ? (
+              <div className="mt-5 space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <SkeletonQuestionCard key={`dash-questions-skeleton-${i}`} />
+                ))}
+              </div>
+            ) : questionsQ.isError ? (
+              <p className="mt-5 text-sm text-rose-600">
+                Could not load questions. Try <strong className="font-semibold">All types</strong> or
+                adjust year and level.
+              </p>
+            ) : (
+              <div className="mt-5 space-y-4">
+                {(questionsQ.data || []).length ? (
+                  <>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-orange-200/80">
+                      {(questionsQ.data || []).length} question
+                      {(questionsQ.data || []).length === 1 ? '' : 's'} for this course
+                    </p>
+                    {questionTypeMix.length > 1 ? (
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                        <span className="shrink-0">By type:</span>
+                        {questionTypeMix.map(({ type: t, count }) => (
+                          <span
+                            key={t}
+                            className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 font-medium capitalize text-slate-300"
+                          >
+                            {t} · {count}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+                <div className="grid gap-4">
+                  {(questionsQ.data || []).map((q, idx) => (
+                    <CourseQuestionCard key={q.id} question={q} index={idx} />
+                  ))}
+                </div>
+                {questionsQ.data?.length === 0 ? (
+                  <p className="text-sm text-slate-400">No questions matched your filters.</p>
+                ) : null}
+              </div>
+            )}
+          </SectionCard>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <EntityCombobox
-            id="dash-university"
-            label="Institution"
-            placeholder="Search institution"
-            value={universityValue}
-            search={institutionSearch}
-            onSearchChange={setInstitutionSearch}
-            onSelect={(item) => {
-              setUniversityValue(item)
-              setUniversityId(item.id)
-            }}
-            options={universities}
-            loading={universitiesQ.isLoading}
-          />
-          <EntityCombobox
-            id="dash-college"
-            label="College / Faculty"
-            placeholder="Search college"
-            value={collegeValue}
-            search={collegeSearch}
-            onSearchChange={setCollegeSearch}
-            onSelect={(item) => {
-              setCollegeValue(item)
-              setCollegeId(item.id)
-            }}
-            options={colleges}
-            loading={collegesQ.isLoading}
-            disabled={!universityId}
-          />
-          <EntityCombobox
-            id="dash-department"
-            label="Department"
-            placeholder="Search department"
-            value={departmentValue}
-            search={departmentSearch}
-            onSearchChange={setDepartmentSearch}
-            onSelect={(item) => {
-              setDepartmentValue(item)
-              setDepartmentId(item.id)
-            }}
-            options={departments}
-            loading={departmentsQ.isLoading}
-            disabled={!collegeId}
-          />
-          <EntityCombobox
-            id="dash-course"
-            label="Course / Program"
-            placeholder="Search course"
-            value={courseValue}
-            search={courseSearch}
-            onSearchChange={setCourseSearch}
-            onSelect={(item) => {
-              setCourseValue(item)
-              setCourseId(item.id)
-            }}
-            options={courses}
-            loading={coursesQ.isLoading}
-            disabled={!departmentId}
-          />
+        <div className="xl:col-span-3">
+          <SectionCard>
+            <SectionTitle icon={Bell} title="Notifications" />
+            {notificationsQ.isLoading ? (
+              <div className="mt-3 space-y-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <SkeletonNotificationRow key={`dashboard-notification-skeleton-${i}`} />
+                ))}
+              </div>
+            ) : notificationsQ.isError ? (
+              <p className="mt-3 text-sm text-slate-400">Notifications unavailable.</p>
+            ) : notificationsQ.data?.length ? (
+              <ul className="mt-3 space-y-2">
+                {notificationsQ.data.slice(0, 5).map((note) => (
+                  <li
+                    key={note.id}
+                    className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm"
+                  >
+                    <p className="text-slate-100">{note.title}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-slate-400">No notifications.</p>
+            )}
+          </SectionCard>
         </div>
+      </motion.section>
+      ) : null}
 
-        <div className="mt-4">
-          <label className="relative block">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search courses by name or code"
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-50"
-            />
-          </label>
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            {courseResults.length} course{courseResults.length === 1 ? '' : 's'} found
-          </p>
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className={panelClass}>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Learning analytics</h3>
-          <div className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            <p>Questions solved: {questionsSolved ?? '—'}</p>
-            <p>Profile loaded: {profileQ.isSuccess ? 'Yes' : 'No'}</p>
-            <p>Analytics endpoint: {analyticsQ.isError ? 'Unavailable' : 'Connected'}</p>
-          </div>
-        </div>
-        <div className={panelClass}>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Admin stats</h3>
+      {isAdmin ? (
+      <motion.section {...sectionMotion} className="grid gap-4 lg:grid-cols-2">
+        <SectionCard>
+          <SectionTitle icon={Shield} title="Admin stats" />
           {adminStatsQ.isError ? (
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
               Not available for this user role.
             </p>
           ) : adminStatsQ.isLoading ? (
-            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading admin stats…</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonStatCard key={`admin-stats-skeleton-${i}`} />
+              ))}
+            </div>
+          ) : adminStatsPreview.length ? (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {adminStatsPreview.map(([key, val]) => (
+                <div
+                  key={key}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-900"
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {key}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {typeof val === 'number' || typeof val === 'string'
+                      ? String(val)
+                      : JSON.stringify(val)}
+                  </p>
+                </div>
+              ))}
+            </div>
           ) : (
             <pre className="mt-3 max-h-40 overflow-auto rounded bg-slate-50 p-2 text-xs text-slate-700 dark:bg-neutral-900 dark:text-slate-300">
               {JSON.stringify(adminStatsQ.data || {}, null, 2)}
             </pre>
           )}
-        </div>
-      </section>
+        </SectionCard>
+      </motion.section>
+      ) : null}
 
-      <section className={panelClass}>
-        <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-50">
-          Past questions
-        </h3>
+      {isAdmin && adminPanel === 'create' ? (
+        <motion.section {...sectionMotion} id="admin-create" className="scroll-mt-24 grid gap-4 xl:grid-cols-3">
+          <SectionCard id="admin-create-question" className="scroll-mt-28">
+            <SectionTitle icon={BookOpen} title="Create question" />
+            <form
+              className="mt-3 space-y-2"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setAdminActionLoading((s) => ({ ...s, question: true }))
+                setAdminActionStatus((s) => ({ ...s, question: '' }))
+                try {
+                  const fd = new FormData()
+                  fd.append('courseId', questionForm.courseId.trim())
+                  fd.append('year', questionForm.year.trim())
+                  fd.append('levelData', questionForm.levelData.trim())
+                  fd.append('questionText', questionForm.questionText.trim())
+                  fd.append('type', questionForm.type.trim())
+                  fd.append('source', questionForm.source.trim())
+                  await apiClient.post(API.questions.create, fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                  })
+                  setAdminActionStatus((s) => ({ ...s, question: 'Question created successfully.' }))
+                  setQuestionForm((v) => ({ ...v, questionText: '' }))
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : 'Failed to create question.'
+                  setAdminActionStatus((s) => ({ ...s, question: msg }))
+                } finally {
+                  setAdminActionLoading((s) => ({ ...s, question: false }))
+                }
+              }}
+            >
+              <input
+                placeholder="Course ID"
+                value={questionForm.courseId}
+                onChange={(e) => setQuestionForm((s) => ({ ...s, courseId: e.target.value }))}
+                className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                required
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  placeholder="Year"
+                  value={questionForm.year}
+                  onChange={(e) => setQuestionForm((s) => ({ ...s, year: e.target.value }))}
+                  className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                  required
+                />
+                <input
+                  placeholder="Level"
+                  value={questionForm.levelData}
+                  onChange={(e) => setQuestionForm((s) => ({ ...s, levelData: e.target.value }))}
+                  className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                  required
+                />
+              </div>
+              <input
+                placeholder="Type (theory/objective/practical)"
+                value={questionForm.type}
+                onChange={(e) => setQuestionForm((s) => ({ ...s, type: e.target.value }))}
+                className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                required
+              />
+              <textarea
+                placeholder="Question text"
+                value={questionForm.questionText}
+                onChange={(e) => setQuestionForm((s) => ({ ...s, questionText: e.target.value }))}
+                className="min-h-24 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm text-slate-100"
+                required
+              />
+              <button
+                type="submit"
+                disabled={adminActionLoading.question}
+                className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-60"
+              >
+                {adminActionLoading.question ? 'Creating…' : 'Create question'}
+              </button>
+              {adminActionStatus.question ? (
+                <p className="text-xs text-slate-300">{adminActionStatus.question}</p>
+              ) : null}
+            </form>
+          </SectionCard>
+
+          <SectionCard id="admin-create-flashcard" className="scroll-mt-28">
+            <SectionTitle icon={Sparkles} title="Create flashcard" />
+            <form
+              className="mt-3 space-y-2"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setAdminActionLoading((s) => ({ ...s, flashcard: true }))
+                setAdminActionStatus((s) => ({ ...s, flashcard: '' }))
+                try {
+                  await apiClient.post(API.flashcards.list, {
+                    courseId: flashcardForm.courseId.trim(),
+                    front: flashcardForm.front.trim(),
+                    back: flashcardForm.back.trim(),
+                    source: flashcardForm.source.trim(),
+                  })
+                  setAdminActionStatus((s) => ({ ...s, flashcard: 'Flashcard created successfully.' }))
+                  setFlashcardForm((v) => ({ ...v, front: '', back: '' }))
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : 'Failed to create flashcard.'
+                  setAdminActionStatus((s) => ({ ...s, flashcard: msg }))
+                } finally {
+                  setAdminActionLoading((s) => ({ ...s, flashcard: false }))
+                }
+              }}
+            >
+              <input
+                placeholder="Course ID"
+                value={flashcardForm.courseId}
+                onChange={(e) => setFlashcardForm((s) => ({ ...s, courseId: e.target.value }))}
+                className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                required
+              />
+              <textarea
+                placeholder="Front"
+                value={flashcardForm.front}
+                onChange={(e) => setFlashcardForm((s) => ({ ...s, front: e.target.value }))}
+                className="min-h-16 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm text-slate-100"
+                required
+              />
+              <textarea
+                placeholder="Back"
+                value={flashcardForm.back}
+                onChange={(e) => setFlashcardForm((s) => ({ ...s, back: e.target.value }))}
+                className="min-h-16 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm text-slate-100"
+                required
+              />
+              <button
+                type="submit"
+                disabled={adminActionLoading.flashcard}
+                className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-60"
+              >
+                {adminActionLoading.flashcard ? 'Creating…' : 'Create flashcard'}
+              </button>
+              {adminActionStatus.flashcard ? (
+                <p className="text-xs text-slate-300">{adminActionStatus.flashcard}</p>
+              ) : null}
+            </form>
+          </SectionCard>
+
+          <SectionCard id="admin-create-promo" className="scroll-mt-28">
+            <SectionTitle icon={Shield} title="Create promo code" />
+            <form
+              className="mt-3 space-y-2"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setAdminActionLoading((s) => ({ ...s, promo: true }))
+                setAdminActionStatus((s) => ({ ...s, promo: '' }))
+                const plan = String(promoForm.unlocksPlan || '').trim()
+                const creditsRaw = String(promoForm.questionCredits || '').trim()
+                const nCredits = creditsRaw ? Number(creditsRaw) : NaN
+                const hasPlan = plan === 'basic' || plan === 'pro'
+                const hasCredits = Number.isFinite(nCredits) && nCredits >= 1
+                if (!hasPlan && !hasCredits) {
+                  setAdminActionStatus((s) => ({
+                    ...s,
+                    promo: 'Choose a plan (basic/pro) and/or enter question credits (≥ 1).',
+                  }))
+                  setAdminActionLoading((s) => ({ ...s, promo: false }))
+                  return
+                }
+                try {
+                  await apiClient.post(API.admin.promo.codes, {
+                    code: promoForm.code.trim(),
+                    maxRedemptions: Number(promoForm.maxRedemptions),
+                    ...(hasPlan ? { unlocksPlan: plan } : {}),
+                    ...(hasCredits ? { questionCredits: Math.floor(nCredits) } : {}),
+                    ...(promoForm.expiresAt
+                      ? { expiresAt: new Date(promoForm.expiresAt).getTime() }
+                      : {}),
+                    ...(promoForm.creditExpiresAt
+                      ? {
+                          creditExpiresAt: new Date(promoForm.creditExpiresAt).getTime(),
+                        }
+                      : {}),
+                  })
+                  setAdminActionStatus((s) => ({ ...s, promo: 'Promo code created successfully.' }))
+                  setPromoForm((v) => ({ ...v, code: '' }))
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : 'Failed to create promo code.'
+                  setAdminActionStatus((s) => ({ ...s, promo: msg }))
+                } finally {
+                  setAdminActionLoading((s) => ({ ...s, promo: false }))
+                }
+              }}
+            >
+              <input
+                placeholder="Code (e.g. WELCOME2026)"
+                value={promoForm.code}
+                onChange={(e) => setPromoForm((s) => ({ ...s, code: e.target.value.toUpperCase() }))}
+                className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                required
+              />
+              <select
+                value={promoForm.unlocksPlan}
+                onChange={(e) => setPromoForm((s) => ({ ...s, unlocksPlan: e.target.value }))}
+                className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+              >
+                <option value="">No plan (credits-only)</option>
+                <option value="basic">basic</option>
+                <option value="pro">pro</option>
+              </select>
+              <input
+                placeholder="Question credits (optional, ≥1)"
+                value={promoForm.questionCredits}
+                onChange={(e) => setPromoForm((s) => ({ ...s, questionCredits: e.target.value }))}
+                className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+              />
+              <input
+                placeholder="Max redemptions"
+                value={promoForm.maxRedemptions}
+                onChange={(e) => setPromoForm((s) => ({ ...s, maxRedemptions: e.target.value }))}
+                className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                required
+              />
+              <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                Code expires
+              </label>
+              <input
+                type="datetime-local"
+                value={promoForm.expiresAt}
+                onChange={(e) => setPromoForm((s) => ({ ...s, expiresAt: e.target.value }))}
+                className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+              />
+              <label className="block text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                Credit grant expires (optional)
+              </label>
+              <input
+                type="datetime-local"
+                value={promoForm.creditExpiresAt}
+                onChange={(e) => setPromoForm((s) => ({ ...s, creditExpiresAt: e.target.value }))}
+                className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+              />
+              <button
+                type="submit"
+                disabled={adminActionLoading.promo}
+                className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-60"
+              >
+                {adminActionLoading.promo ? 'Creating…' : 'Create promo code'}
+              </button>
+              {adminActionStatus.promo ? (
+                <p className="text-xs text-slate-300">{adminActionStatus.promo}</p>
+              ) : null}
+            </form>
+          </SectionCard>
+
+          <SectionCard id="admin-upload-bundle" className="scroll-mt-28 xl:col-span-3">
+            <SectionTitle icon={BookOpen} title="Upload question bundle (PDF + JSON)" />
+            <p className="mt-2 max-w-3xl text-xs leading-relaxed text-slate-400">
+              Multipart <span className="font-mono">POST /questions/upload-bundle</span> with{' '}
+              <span className="font-mono">courseId</span>, <span className="font-mono">pdf</span>, and{' '}
+              <span className="font-mono">extracted</span> (JSON). Copy the course ID from{' '}
+              <span className="text-slate-300">Admin → Catalog → Browse</span> (Courses table or selection summary).
+            </p>
+            <form
+              className="mt-6 space-y-8"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                const cid = bundleUpload.courseId.trim()
+                if (!cid || !bundleUpload.pdf || !bundleUpload.json) {
+                  setBundleStatus('Course id, PDF, and JSON are required.')
+                  return
+                }
+                setAdminActionLoading((s) => ({ ...s, bundle: true }))
+                setBundleStatus('')
+                try {
+                  const fd = new FormData()
+                  fd.append('courseId', cid)
+                  fd.append('pdf', bundleUpload.pdf)
+                  fd.append('extracted', bundleUpload.json)
+                  await apiClient.post(API.questions.uploadBundle, fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                  })
+                  setBundleStatus('Bundle uploaded and applied.')
+                  setBundleUpload((s) => ({ ...s, pdf: null, json: null }))
+                  await queryClient.invalidateQueries({ queryKey: ['questions'] })
+                } catch (err) {
+                  const msg =
+                    err?.response?.data?.message ||
+                    (err instanceof Error ? err.message : 'Bundle upload failed.')
+                  setBundleStatus(String(msg))
+                } finally {
+                  setAdminActionLoading((s) => ({ ...s, bundle: false }))
+                }
+              }}
+            >
+              <div className="space-y-3 border-b border-white/10 pb-8">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">1. Target course</p>
+                <label className="flex flex-col gap-2">
+                  <span className="text-xs font-medium text-slate-300">Course ID</span>
+                  <input
+                    placeholder="Paste course ID from the catalog (Courses table)"
+                    value={bundleUpload.courseId}
+                    onChange={(e) =>
+                      setBundleUpload((s) => ({ ...s, courseId: e.target.value }))
+                    }
+                    className="h-12 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 font-mono text-sm text-slate-100"
+                    required
+                  />
+                </label>
+              </div>
+              <div className="space-y-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">2. Files</p>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <label className="flex min-h-[88px] flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <span className="text-xs font-medium text-slate-300">Original PDF</span>
+                    <span className="text-[11px] text-slate-500">Exam paper or source PDF</span>
+                    <input
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      className="mt-1 text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-orange-500"
+                      onChange={(e) =>
+                        setBundleUpload((s) => ({
+                          ...s,
+                          pdf: e.target.files?.[0] ?? null,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="flex min-h-[88px] flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <span className="text-xs font-medium text-slate-300">Extracted JSON</span>
+                    <span className="text-[11px] text-slate-500">Structured questions payload</span>
+                    <input
+                      type="file"
+                      accept="application/json,.json"
+                      className="mt-1 text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-orange-500"
+                      onChange={(e) =>
+                        setBundleUpload((s) => ({
+                          ...s,
+                          json: e.target.files?.[0] ?? null,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="submit"
+                  disabled={adminActionLoading.bundle}
+                  className="order-2 min-h-11 w-full rounded-lg bg-orange-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 disabled:opacity-60 sm:order-1 sm:w-auto sm:min-w-[200px]"
+                >
+                  {adminActionLoading.bundle ? 'Uploading…' : 'Upload bundle'}
+                </button>
+                {bundleStatus ? (
+                  <p
+                    className={`order-1 text-xs sm:order-2 sm:max-w-md sm:text-right ${bundleStatus.includes('failed') || bundleStatus.toLowerCase().includes('required') ? 'text-rose-400' : 'text-emerald-300'}`}
+                  >
+                    {bundleStatus}
+                  </p>
+                ) : (
+                  <span className="order-1 hidden text-[11px] text-slate-500 sm:order-2 sm:inline">
+                    PDF and JSON are required before upload.
+                  </span>
+                )}
+              </div>
+            </form>
+          </SectionCard>
+        </motion.section>
+      ) : null}
+
+      {isAdmin && adminPanel === 'manage' ? (
+        <motion.section {...sectionMotion} id="admin-catalog" className="scroll-mt-24 grid gap-4 xl:grid-cols-2">
+          <SectionCard className="xl:col-span-2">
+            <SectionTitle icon={Building2} title="Institutions catalog" />
+            <p className="mt-2 max-w-3xl text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              Work top-down: pick a university, then college, department, and course (search fields or{' '}
+              <span className="text-slate-400">click a row</span> in each table). Each table lists the children of your
+              current selection. Use the copy control on IDs for API payloads and uploads.
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setCatalogManageView('browse')}
+                className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
+                  catalogManageView === 'browse'
+                    ? 'border-orange-500/50 bg-orange-500/15 text-orange-100'
+                    : 'border-white/10 bg-white/[0.04] text-slate-400 hover:border-white/20 hover:text-slate-200'
+                }`}
+              >
+                <Table2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Browse &amp; directories
+              </button>
+              <button
+                type="button"
+                onClick={() => setCatalogManageView('create')}
+                className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
+                  catalogManageView === 'create'
+                    ? 'border-orange-500/50 bg-orange-500/15 text-orange-100'
+                    : 'border-white/10 bg-white/[0.04] text-slate-400 hover:border-white/20 hover:text-slate-200'
+                }`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Add or edit records
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <EntityCombobox
+                id="admin-university"
+                label="University"
+                placeholder="Search university"
+                value={universityValue}
+                search={institutionSearch}
+                onSearchChange={setInstitutionSearch}
+                onSelect={(item) => {
+                  const id = item?.id != null ? String(item.id) : ''
+                  setUniversityValue(id ? { ...item, id } : item)
+                  setUniversityId(id)
+                }}
+                options={universities}
+                loading={universitiesQ.isLoading}
+              />
+              <EntityCombobox
+                id="admin-college"
+                label="College"
+                placeholder="Search college"
+                value={collegeValue}
+                search={collegeSearch}
+                onSearchChange={setCollegeSearch}
+                onSelect={(item) => {
+                  const id = item?.id != null ? String(item.id) : ''
+                  setCollegeValue(id ? { ...item, id } : item)
+                  setCollegeId(id)
+                }}
+                options={colleges}
+                loading={collegesQ.isLoading}
+                disabled={!universityId}
+              />
+              <EntityCombobox
+                id="admin-department"
+                label="Department"
+                placeholder="Search department"
+                value={departmentValue}
+                search={departmentSearch}
+                onSearchChange={setDepartmentSearch}
+                onSelect={(item) => {
+                  const id = item?.id != null ? String(item.id) : ''
+                  setDepartmentValue(id ? { ...item, id } : item)
+                  setDepartmentId(id)
+                }}
+                options={departments}
+                loading={departmentsQ.isLoading}
+                disabled={!collegeId}
+              />
+              <EntityCombobox
+                id="admin-course"
+                label="Course"
+                placeholder="Search course"
+                value={courseValue}
+                search={courseSearch}
+                onSearchChange={setCourseSearch}
+                onSelect={(item) => {
+                  const id = item?.id != null ? String(item.id) : ''
+                  setCourseValue(id ? { ...item, id } : item)
+                  setCourseId(id)
+                }}
+                options={courses}
+                loading={coursesQ.isLoading}
+                disabled={!departmentId}
+              />
+            </div>
+
+            {catalogManageView === 'create' ? (
+              <>
+                <p className="mt-5 text-xs leading-relaxed text-slate-400">
+                  Use the pickers above so nested records attach to the right parent. Universities can be added without
+                  selecting anything else first.
+                </p>
+                <div className="mt-4 grid gap-4 xl:grid-cols-2">
+              <form
+                className="rounded-xl border border-white/10 bg-white/[0.03] p-4 md:p-5"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  try {
+                    if (universityForm.id) {
+                      await updateUniversityM.mutateAsync({
+                        id: universityForm.id,
+                        payload: {
+                          name: universityForm.name.trim(),
+                          acronym: universityForm.acronym.trim(),
+                          location: universityForm.location.trim(),
+                          type: universityForm.type,
+                          isActive: universityForm.isActive,
+                        },
+                      })
+                      setCatalogStatus('University updated.')
+                    } else {
+                      await createUniversityM.mutateAsync({
+                        name: universityForm.name.trim(),
+                        acronym: universityForm.acronym.trim(),
+                        location: universityForm.location.trim(),
+                        type: universityForm.type,
+                        isActive: universityForm.isActive,
+                      })
+                      setCatalogStatus('University created.')
+                    }
+                    setUniversityForm({
+                      id: '',
+                      name: '',
+                      acronym: '',
+                      location: '',
+                      type: 'public',
+                      isActive: true,
+                    })
+                  } catch (err) {
+                    setCatalogStatus(catalogErrorMessage(err, 'Could not save university.'))
+                  }
+                }}
+              >
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {universityForm.id ? 'Edit university' : 'Create university'}
+                </p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <input
+                    placeholder="Name"
+                    value={universityForm.name}
+                    onChange={(e) => setUniversityForm((s) => ({ ...s, name: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                    required
+                  />
+                  <input
+                    placeholder="Acronym"
+                    value={universityForm.acronym}
+                    onChange={(e) => setUniversityForm((s) => ({ ...s, acronym: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                    required
+                  />
+                  <input
+                    placeholder="Location"
+                    value={universityForm.location}
+                    onChange={(e) => setUniversityForm((s) => ({ ...s, location: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                    required
+                  />
+                  <select
+                    value={universityForm.type}
+                    onChange={(e) => setUniversityForm((s) => ({ ...s, type: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                  >
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                  </select>
+                </div>
+                <button className="mt-3 rounded-lg bg-orange-600 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-700">
+                  {universityForm.id ? 'Update' : 'Create'}
+                </button>
+              </form>
+
+              <form
+                className="rounded-xl border border-white/10 bg-white/[0.03] p-4 md:p-5"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  try {
+                    const payload = {
+                      name: collegeForm.name.trim(),
+                      code: collegeForm.code.trim() || undefined,
+                      universityId: collegeForm.universityId || universityId,
+                      isActive: collegeForm.isActive,
+                    }
+                    if (collegeForm.id) {
+                      await updateCollegeM.mutateAsync({ id: collegeForm.id, payload })
+                      setCatalogStatus('College updated.')
+                    } else {
+                      await createCollegeM.mutateAsync(payload)
+                      setCatalogStatus('College created.')
+                    }
+                    setCollegeForm({ id: '', name: '', code: '', universityId: universityId || '', isActive: true })
+                  } catch (err) {
+                    setCatalogStatus(catalogErrorMessage(err, 'Could not save college.'))
+                  }
+                }}
+              >
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {collegeForm.id ? 'Edit college' : 'Create college'}
+                </p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <input
+                    placeholder="College name"
+                    value={collegeForm.name}
+                    onChange={(e) => setCollegeForm((s) => ({ ...s, name: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                    required
+                  />
+                  <input
+                    placeholder="College code (optional)"
+                    value={collegeForm.code}
+                    onChange={(e) => setCollegeForm((s) => ({ ...s, code: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                  />
+                </div>
+                <button
+                  disabled={!universityId && !collegeForm.universityId}
+                  className="mt-3 rounded-lg bg-orange-600 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+                >
+                  {collegeForm.id ? 'Update' : 'Create'}
+                </button>
+              </form>
+
+              <form
+                className="rounded-xl border border-white/10 bg-white/[0.03] p-4 md:p-5"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  try {
+                    const payload = {
+                      name: departmentForm.name.trim(),
+                      code: departmentForm.code.trim() || undefined,
+                      collegeId: departmentForm.collegeId || collegeId,
+                      isActive: departmentForm.isActive,
+                    }
+                    if (departmentForm.id) {
+                      await updateDepartmentM.mutateAsync({ id: departmentForm.id, payload })
+                      setCatalogStatus('Department updated.')
+                    } else {
+                      await createDepartmentM.mutateAsync(payload)
+                      setCatalogStatus('Department created.')
+                    }
+                    setDepartmentForm({ id: '', name: '', code: '', collegeId: collegeId || '', isActive: true })
+                  } catch (err) {
+                    setCatalogStatus(catalogErrorMessage(err, 'Could not save department.'))
+                  }
+                }}
+              >
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {departmentForm.id ? 'Edit department' : 'Create department'}
+                </p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <input
+                    placeholder="Department name"
+                    value={departmentForm.name}
+                    onChange={(e) => setDepartmentForm((s) => ({ ...s, name: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                    required
+                  />
+                  <input
+                    placeholder="Department code (optional)"
+                    value={departmentForm.code}
+                    onChange={(e) => setDepartmentForm((s) => ({ ...s, code: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                  />
+                </div>
+                <button
+                  disabled={!collegeId && !departmentForm.collegeId}
+                  className="mt-3 rounded-lg bg-orange-600 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+                >
+                  {departmentForm.id ? 'Update' : 'Create'}
+                </button>
+              </form>
+
+              <form
+                className="rounded-xl border border-white/10 bg-white/[0.03] p-4 md:p-5"
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  try {
+                    const payload = {
+                      name: courseFormState.name.trim(),
+                      code: courseFormState.code.trim() || undefined,
+                      deptId: courseFormState.deptId || departmentId,
+                      isActive: courseFormState.isActive,
+                    }
+                    if (courseFormState.id) {
+                      await updateCourseM.mutateAsync({ id: courseFormState.id, payload })
+                      setCatalogStatus('Course updated.')
+                    } else {
+                      await createCourseM.mutateAsync(payload)
+                      setCatalogStatus('Course created.')
+                    }
+                    setCourseFormState({ id: '', name: '', code: '', deptId: departmentId || '', isActive: true })
+                  } catch (err) {
+                    setCatalogStatus(catalogErrorMessage(err, 'Could not save course.'))
+                  }
+                }}
+              >
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {courseFormState.id ? 'Edit course' : 'Create course'}
+                </p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <input
+                    placeholder="Course name"
+                    value={courseFormState.name}
+                    onChange={(e) => setCourseFormState((s) => ({ ...s, name: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                    required
+                  />
+                  <input
+                    placeholder="Course code (optional)"
+                    value={courseFormState.code}
+                    onChange={(e) => setCourseFormState((s) => ({ ...s, code: e.target.value }))}
+                    className="h-11 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-slate-100"
+                  />
+                </div>
+                <button
+                  disabled={!departmentId && !courseFormState.deptId}
+                  className="mt-3 rounded-lg bg-orange-600 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+                >
+                  {courseFormState.id ? 'Update' : 'Create'}
+                </button>
+              </form>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 sm:px-4">
+                  <p className="text-xs font-medium text-slate-400">Current selection — copy IDs</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <CatalogSelectionChip label="University" name={universityValue?.name} id={universityId} />
+                    <CatalogSelectionChip label="College" name={collegeValue?.name} id={collegeId} />
+                    <CatalogSelectionChip label="Department" name={departmentValue?.name} id={departmentId} />
+                    <CatalogSelectionChip label="Course" name={courseValue?.name} id={courseId} />
+                  </div>
+                  {!universityId && !collegeId && !departmentId && !courseId ? (
+                    <p className="mt-2 text-[11px] text-slate-500">
+                      Choose a university above to unlock college IDs, then continue down the chain.
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-[11px] text-slate-500">
+                      The course ID is the one most tools need for uploads and integrations.
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-8 space-y-8">
+              <div className="overflow-hidden rounded-xl border border-white/10">
+                <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.03] px-3 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                    Universities directory
+                  </p>
+                  <div className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-1">
+                    {[
+                      { id: 'all', label: 'All' },
+                      { id: 'active', label: 'Active' },
+                      { id: 'inactive', label: 'Inactive' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setUniversityStatusFilter(opt.id)}
+                        className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                          universityStatusFilter === opt.id
+                            ? 'bg-orange-500 text-white'
+                            : 'text-slate-300 hover:bg-white/10'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <DataTable
+                  data={filteredUniversityRows}
+                  columns={universityColumns}
+                  loading={universitiesQ.isLoading}
+                  searchable
+                  sortable
+                  emptyMessage="No universities found."
+                  onRowClick={selectCatalogUniversity}
+                />
+              </div>
+              <div className="overflow-hidden rounded-xl border border-white/10">
+                <div className="border-b border-white/10 bg-white/[0.03] px-3 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Colleges</p>
+                  <p className="text-[11px] text-slate-500">Scoped to the selected university · ID column is copyable</p>
+                </div>
+                <DataTable
+                  data={collegeTableRows}
+                  columns={collegeColumns}
+                  loading={collegesQ.isLoading}
+                  searchable
+                  sortable
+                  emptyMessage={universityId ? 'No colleges found for this university.' : 'Select a university to load colleges.'}
+                  onRowClick={universityId ? selectCatalogCollege : undefined}
+                />
+              </div>
+              <div className="overflow-hidden rounded-xl border border-white/10">
+                <div className="border-b border-white/10 bg-white/[0.03] px-3 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Departments</p>
+                  <p className="text-[11px] text-slate-500">Scoped to the selected college</p>
+                </div>
+                <DataTable
+                  data={departmentTableRows}
+                  columns={departmentColumns}
+                  loading={departmentsQ.isLoading}
+                  searchable
+                  sortable
+                  emptyMessage={collegeId ? 'No departments found for this college.' : 'Select a college to load departments.'}
+                  onRowClick={collegeId ? selectCatalogDepartment : undefined}
+                />
+              </div>
+              <div className="overflow-hidden rounded-xl border border-white/10">
+                <div className="border-b border-white/10 bg-white/[0.03] px-3 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Courses</p>
+                  <p className="text-[11px] text-slate-500">Scoped to the selected department · use this course ID for bundle upload</p>
+                </div>
+                <DataTable
+                  data={courseTableRows}
+                  columns={courseColumns}
+                  loading={coursesQ.isLoading}
+                  searchable
+                  sortable
+                  emptyMessage={departmentId ? 'No courses found for this department.' : 'Select a department to load courses.'}
+                  onRowClick={departmentId ? selectCatalogCourse : undefined}
+                />
+              </div>
+                </div>
+              </>
+            )}
+
+            {catalogStatus ? (
+              <p className="mt-4 text-xs text-slate-300">{catalogStatus}</p>
+            ) : null}
+          </SectionCard>
+
+          <SectionCard id="admin-promo-list" className="scroll-mt-28">
+            <SectionTitle icon={Shield} title="Promo codes" />
+            {promoCodesQ.isLoading ? (
+              <div className="mt-3 space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonNotificationRow key={`promo-codes-skeleton-${i}`} />
+                ))}
+              </div>
+            ) : promoCodesQ.isError ? (
+              <p className="mt-3 text-sm text-rose-600">Could not load promo codes.</p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {promoCodesQ.data.slice(0, 8).map((row) => {
+                  const rec = asRecord(row) || {}
+                  const id = typeof rec.id === 'string' ? rec.id : ''
+                  const code = typeof rec.code === 'string' ? rec.code : '—'
+                  const plan = typeof rec.unlocksPlan === 'string' ? rec.unlocksPlan : '—'
+                  const active = rec.active !== false
+                  return (
+                    <div
+                      key={id || code}
+                      className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-100">{code}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          plan: {plan} · {active ? 'active' : 'inactive'}
+                        </p>
+                      </div>
+                      {active && id ? (
+                        <button
+                          type="button"
+                          disabled={deactivatePromoM.isPending}
+                          onClick={() => deactivatePromoM.mutate(id)}
+                          className="rounded-md border border-rose-300 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                        >
+                          Deactivate
+                        </button>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard id="admin-upload-queue" className="scroll-mt-28">
+            <SectionTitle icon={BookOpen} title="Question upload queue" />
+            {uploadQueueQ.isLoading ? (
+              <div className="mt-3 space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <SkeletonQuestionCard key={`upload-queue-skeleton-${i}`} />
+                ))}
+              </div>
+            ) : uploadQueueQ.isError ? (
+              <p className="mt-3 text-sm text-rose-600">Could not load upload queue.</p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {uploadQueueQ.data.slice(0, 8).map((row, idx) => {
+                  const rec = asRecord(row) || {}
+                  const id =
+                    typeof rec.id === 'string'
+                      ? rec.id
+                      : typeof rec._id === 'string'
+                        ? rec._id
+                        : `queue-${idx}`
+                  const status =
+                    typeof rec.status === 'string'
+                      ? rec.status
+                      : typeof rec.state === 'string'
+                        ? rec.state
+                        : 'queued'
+                  const filename =
+                    typeof rec.filename === 'string'
+                      ? rec.filename
+                      : typeof rec.fileName === 'string'
+                        ? rec.fileName
+                        : typeof rec.name === 'string'
+                          ? rec.name
+                          : 'upload item'
+                  return (
+                    <div
+                      key={id}
+                      className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm"
+                    >
+                      <p className="font-medium text-slate-100">{filename}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">status: {status}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </SectionCard>
+        </motion.section>
+      ) : null}
+
+      {false && !isAdmin ? (
+      <motion.div {...sectionMotion} id="past-questions" className="scroll-mt-24">
+      <SectionCard>
+        <div className="mb-4">
+          <SectionTitle icon={BookOpen} title="Past questions" />
+        </div>
         {!isOnboardingComplete ? (
           <div className="rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-orange-900 dark:border-orange-900/70 dark:bg-orange-950/20 dark:text-orange-200">
             Complete onboarding to unlock past questions for your profile.
@@ -372,14 +2232,10 @@ export default function Dashboard() {
             }))}
           />
           <SelectField
-            label="Type"
+            label="Question type"
             value={type}
             onChange={setType}
-            options={[
-              { value: 'theory', label: 'Theory' },
-              { value: 'objective', label: 'Objective' },
-              { value: 'practical', label: 'Practical' },
-            ]}
+            options={QUESTION_TYPE_FILTER_OPTIONS}
           />
         </div>
 
@@ -388,33 +2244,38 @@ export default function Dashboard() {
             Select a course to load questions.
           </p>
         ) : questionsQ.isLoading ? (
-          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading questions…</p>
+          <div className="mt-4 grid gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonQuestionCard key={`legacy-questions-skeleton-${i}`} />
+            ))}
+          </div>
         ) : questionsQ.isError ? (
           <p className="mt-4 text-sm text-rose-500">
-            Could not load questions with this filter set. Confirm `year`, `level`, and `type`.
+            Could not load questions. Try All types or adjust year and level.
           </p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                <tr>
-                  <th className="px-2 py-2">Question</th>
-                  <th className="px-2 py-2">Type</th>
-                  <th className="px-2 py-2">Year</th>
-                  <th className="px-2 py-2">Level</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(questionsQ.data || []).map((q) => (
-                  <tr key={q.id} className="border-t border-slate-100 dark:border-neutral-800">
-                    <td className="px-2 py-2 text-slate-900 dark:text-slate-100">{q.questionText}</td>
-                    <td className="px-2 py-2 text-slate-600 dark:text-slate-300">{q.type || '—'}</td>
-                    <td className="px-2 py-2 text-slate-600 dark:text-slate-300">{q.year || '—'}</td>
-                    <td className="px-2 py-2 text-slate-600 dark:text-slate-300">{q.level || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="mt-4 grid gap-3">
+            {(questionsQ.data || []).map((q) => (
+              <article
+                key={q.id}
+                className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 transition hover:border-orange-300 hover:bg-orange-50/50 dark:border-neutral-800 dark:bg-neutral-900/60 dark:hover:border-orange-900/40 dark:hover:bg-orange-950/10"
+              >
+                <p className="line-clamp-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+                  {q.questionText}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 font-semibold text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-200">
+                    {q.type || '—'}
+                  </span>
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-1 font-medium text-slate-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-300">
+                    Year {q.year || '—'}
+                  </span>
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-1 font-medium text-slate-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-300">
+                    Level {q.level || '—'}
+                  </span>
+                </div>
+              </article>
+            ))}
             {questionsQ.data?.length === 0 ? (
               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                 No questions matched this course/filter combination.
@@ -422,12 +2283,19 @@ export default function Dashboard() {
             ) : null}
           </div>
         )}
-      </section>
+      </SectionCard>
+      </motion.div>
+      ) : null}
 
-      <section className={panelClass}>
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Recent notifications</h3>
+      {false && !isAdmin ? (
+      <motion.div {...sectionMotion} id="notifications" className="scroll-mt-24">
+      <SectionCard>
+        <SectionTitle icon={Bell} title="Recent notifications" />
         {notificationsQ.isLoading ? (
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading notifications…</p>
+          <div className="mt-3 space-y-2">
+            <div className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-neutral-800" />
+            <div className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-neutral-800" />
+          </div>
         ) : notificationsQ.isError ? (
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
             Notifications endpoint unavailable.
@@ -437,7 +2305,7 @@ export default function Dashboard() {
             {notificationsQ.data.map((note) => (
               <li
                 key={note.id}
-                className="rounded-lg border border-slate-100 px-3 py-2 text-sm dark:border-neutral-800"
+                className="rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm dark:border-neutral-800 dark:bg-neutral-900/40"
               >
                 <p className="text-slate-800 dark:text-slate-100">{note.title}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{note.createdAt || ''}</p>
@@ -447,7 +2315,9 @@ export default function Dashboard() {
         ) : (
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No notifications found.</p>
         )}
-      </section>
+      </SectionCard>
+      </motion.div>
+      ) : null}
     </div>
   )
 }

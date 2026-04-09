@@ -46,6 +46,8 @@ if (typeof window !== 'undefined' && token && !disabled) {
     ui_host: 'https://us.posthog.com',
     defaults: '2026-01-30',
     capture_exceptions: true,
+    // Runtime safety: avoid loading posthog-recorder.js, which can crash React 19 clients.
+    disable_session_recording: true,
     loaded: (ph) => {
       ph.register({
         app_name: appNameForAnalytics,

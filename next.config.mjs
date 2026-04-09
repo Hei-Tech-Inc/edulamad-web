@@ -57,12 +57,12 @@ const nextConfig = {
       },
       {
         source: '/platform/organisations',
-        destination: '/platform/tenants',
+        destination: '/dashboard?admin=catalog',
         permanent: false,
       },
       {
         source: '/platform/organisations/:orgId',
-        destination: '/platform/tenants?org=:orgId',
+        destination: '/dashboard?admin=catalog',
         permanent: false,
       },
     ]
@@ -74,20 +74,18 @@ const nextConfig = {
         destination: `${apiProxyTarget}/:path*`,
       },
     ]
-    // Only proxy PostHog in production builds — in dev the proxy runs in Node and often
-    // ETIMEDOUTs (jamming the terminal) while the browser can reach PostHog directly.
-    if (process.env.NODE_ENV !== 'development') {
-      rules.push(
-        {
-          source: '/ingest/static/:path*',
-          destination: 'https://us-assets.i.posthog.com/static/:path*',
-        },
-        {
-          source: '/ingest/:path*',
-          destination: 'https://us.i.posthog.com/:path*',
-        },
-      )
-    }
+    // PostHog first-party `/ingest` proxy. Include dev so analytics requests are not handled by
+    // Next (which would 500 and spam vendor-chunk errors when the SDK points at `/ingest`).
+    rules.push(
+      {
+        source: '/ingest/static/:path*',
+        destination: 'https://us-assets.i.posthog.com/static/:path*',
+      },
+      {
+        source: '/ingest/:path*',
+        destination: 'https://us.i.posthog.com/:path*',
+      },
+    )
     return rules
   },
   skipTrailingSlashRedirect: true,

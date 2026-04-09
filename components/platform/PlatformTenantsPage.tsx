@@ -39,6 +39,7 @@ import {
 import { useToast } from '../Toast';
 import { isApiError } from '@/lib/api-error';
 import { TenantAccessPanel } from './TenantAccessPanel';
+import { SkeletonNotificationRow } from '@/components/ui/skeleton';
 
 const PLAN_KEYS = [
   'plan',
@@ -519,8 +520,10 @@ export default function PlatformTenantsPage() {
 
   if (!user) {
     return (
-      <div className="flex justify-center py-24">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-sky-600 border-t-transparent" />
+      <div className="space-y-3 py-8">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonNotificationRow key={`tenant-console-auth-skeleton-${i}`} />
+        ))}
       </div>
     );
   }
@@ -699,10 +702,11 @@ export default function PlatformTenantsPage() {
                     colSpan={colCount}
                     className="px-4 py-20 text-center text-slate-500 dark:text-slate-400"
                   >
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-                      Loading tenants…
-                    </span>
+                    <div className="space-y-2">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <SkeletonNotificationRow key={`tenant-console-list-skeleton-${i}`} />
+                      ))}
+                    </div>
                   </td>
                 </tr>
               ) : items.length === 0 ? (
@@ -940,8 +944,10 @@ export default function PlatformTenantsPage() {
 
               <div className="flex-1 overflow-y-auto px-5 py-5">
                 {detailQ.isLoading && drawerTab !== 'raw' ? (
-                  <div className="flex justify-center py-12">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-600 border-t-transparent" />
+                  <div className="space-y-2 py-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <SkeletonNotificationRow key={`tenant-console-drawer-skeleton-${i}`} />
+                    ))}
                   </div>
                 ) : null}
                 {detailQ.isError ? (
@@ -1071,8 +1077,7 @@ export default function PlatformTenantsPage() {
                   <span className="font-mono">DELETE /platform/organisations/:id</span>{' '}
                   (soft-delete, <span className="font-mono">{'{ id, deletedAt }'}</span>) ·{' '}
                   <span className="font-mono">PUT /platform/organisations/:id</span> (update) ·{' '}
-                  <span className="font-mono">POST /platform/organisations</span> (create) · roles /
-                  members <span className="font-mono">/admin/roles</span>,{' '}
+                  <span className="font-mono">POST /platform/organisations</span> (create) · members{' '}
                   <span className="font-mono">/admin/organizations/:id/members</span>.
                 </p>
               </footer>

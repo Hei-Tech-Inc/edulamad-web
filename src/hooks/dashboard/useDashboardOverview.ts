@@ -108,19 +108,21 @@ export function useMyNotifications(limit = 5) {
     queryFn: async ({ signal }): Promise<DashboardNotification[]> => {
       const { data } = await apiClient.get<unknown>(API.notifications.me, { signal });
       return pickArray(data)
-        .map((row) => {
+        .flatMap((row): DashboardNotification[] => {
           const obj = asRecord(row);
-          if (!obj) return null;
+          if (!obj) return [];
           const id = pickString(obj, ['id', '_id', 'uuid']);
           const title = pickString(obj, ['title', 'message', 'body']);
-          if (!id || !title) return null;
-          return {
-            id,
-            title,
-            createdAt: pickString(obj, ['createdAt', 'created_at', 'timestamp']) || undefined,
-          };
+          if (!id || !title) return [];
+          return [
+            {
+              id,
+              title,
+              createdAt:
+                pickString(obj, ['createdAt', 'created_at', 'timestamp']) || undefined,
+            },
+          ];
         })
-        .filter((item): item is DashboardNotification => Boolean(item))
         .slice(0, limit);
     },
   });

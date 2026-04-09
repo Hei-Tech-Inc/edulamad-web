@@ -5,6 +5,7 @@ import { fetchUser } from '../store/slices/authSlice'
 import { useData } from '../contexts/DataContext'
 import { DataApiBanner } from './DataApiBanner'
 import { usesMainSidebarLayout } from '../lib/main-layout-routes'
+import { SkeletonProfileHeader } from '@/components/ui/skeleton'
 
 export default function ProtectedRoute({ children }) {
   const router = useRouter()
@@ -20,14 +21,22 @@ export default function ProtectedRoute({ children }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/login')
+      const nextPath =
+        typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/dashboard'
+      const q =
+        nextPath !== '/login' && nextPath !== '/signup'
+          ? `?next=${encodeURIComponent(nextPath)}`
+          : ''
+      router.push(`/login${q}`)
     }
   }, [loading, user, router])
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-sky-600" />
+        <div className="w-full max-w-xl px-4">
+          <SkeletonProfileHeader />
+        </div>
       </div>
     )
   }

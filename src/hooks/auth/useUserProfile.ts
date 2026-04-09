@@ -14,6 +14,11 @@ type UserProfile = {
   isActive?: boolean;
 };
 
+type UploadPhotoResponse = {
+  key?: string;
+  url?: string;
+};
+
 function toProfile(raw: unknown): UserProfile {
   if (!raw || typeof raw !== 'object') {
     throw new AppApiError(500, 'Invalid profile response.');
@@ -34,6 +39,14 @@ function toProfile(raw: unknown): UserProfile {
     emailVerified: typeof r.emailVerified === 'boolean' ? r.emailVerified : undefined,
     isActive: typeof r.isActive === 'boolean' ? r.isActive : undefined,
   };
+}
+
+function pickUploadedPhotoUrl(raw: unknown): string | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.url === 'string' && r.url.trim()) return r.url;
+  if (typeof r.key === 'string' && r.key.trim()) return r.key;
+  return undefined;
 }
 
 export function useUserProfile() {
@@ -73,11 +86,18 @@ export function useUploadProfilePhoto() {
     mutationFn: async (file: File) => {
       const fd = new FormData();
       fd.append('file', file);
-      await apiClient.patch(API.users.profilePhoto, fd, {
+      const { data } = await apiClient.patch<UploadPhotoResponse>(API.users.profilePhoto, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      return pickUploadedPhotoUrl(data);
     },
-    onSuccess: () => {
+    onSuccess: (uploadedPhoto) => {
+      if (uploadedPhoto) {
+        qc.setQueryData<UserProfile | undefined>(['users', 'profile'], (prev) => {
+          if (!prev) return prev;
+          return { ...prev, profilePhoto: uploadedPhoto };
+        });
+      }
       void qc.invalidateQueries({ queryKey: ['users', 'profile'] });
       void qc.invalidateQueries({ queryKey: ['auth', 'me'] });
     },

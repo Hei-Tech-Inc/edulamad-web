@@ -3,27 +3,11 @@ import { apiClient } from '@/api/client';
 import API from '@/api/endpoints';
 import { queryKeys } from '@/api/query-keys';
 
-/** POST /admin/roles — CreateRoleDto */
+/** Backend contract currently has no /admin/roles route. */
 export function useCreateOrgRole() {
-  const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: {
-      name: string;
-      description?: string;
-      organizationId?: string;
-    }) => {
-      const { data } = await apiClient.post<unknown>(
-        API.admin.roles.list,
-        body,
-      );
-      return data;
-    },
-    onSuccess: (_data, vars) => {
-      if (vars.organizationId) {
-        void qc.invalidateQueries({
-          queryKey: queryKeys.admin.orgRoles(vars.organizationId),
-        });
-      }
+    mutationFn: async () => {
+      throw new Error('Role creation is unavailable on this backend.');
     },
   });
 }

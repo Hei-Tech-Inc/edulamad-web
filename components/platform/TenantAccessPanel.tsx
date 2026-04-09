@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { UserPlus, ShieldPlus, RefreshCw } from 'lucide-react';
+import { UserPlus, RefreshCw } from 'lucide-react';
 import { useAdminOrgRoles } from '@/hooks/admin/useAdminOrgRoles';
 import { useAdminOrgMembers } from '@/hooks/admin/useAdminOrgMembers';
-import {
-  useAddOrgMember,
-  useCreateOrgRole,
-} from '@/hooks/admin/useAdminOrgAccessMutations';
+import { useAddOrgMember } from '@/hooks/admin/useAdminOrgAccessMutations';
 import { useToast } from '../Toast';
 import { isApiError } from '@/lib/api-error';
+import { SkeletonNotificationRow } from '@/components/ui/skeleton';
 
 const uuidRe =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -21,40 +19,14 @@ export function TenantAccessPanel({ organizationId, disabled }: Props) {
   const { showToast } = useToast();
   const rolesQ = useAdminOrgRoles(organizationId);
   const membersQ = useAdminOrgMembers(organizationId);
-  const createRoleMut = useCreateOrgRole();
   const addMemberMut = useAddOrgMember();
 
-  const [createOpen, setCreateOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [roleName, setRoleName] = useState('');
-  const [roleDescription, setRoleDescription] = useState('');
   const [memberUserId, setMemberUserId] = useState('');
   const [memberRoleId, setMemberRoleId] = useState('');
 
-  const busy = createRoleMut.isPending || addMemberMut.isPending;
+  const busy = addMemberMut.isPending;
   const idle = !disabled && !busy;
-
-  const onCreateRole = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const name = roleName.trim();
-    if (!name) {
-      showToast('Role name is required', 'error');
-      return;
-    }
-    try {
-      await createRoleMut.mutateAsync({
-        name,
-        ...(roleDescription.trim() ? { description: roleDescription.trim() } : {}),
-        organizationId,
-      });
-      showToast('Role created', 'success');
-      setRoleName('');
-      setRoleDescription('');
-      setCreateOpen(false);
-    } catch (err) {
-      showToast(isApiError(err) ? err.message : 'Create role failed', 'error');
-    }
-  };
 
   const onAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,15 +57,6 @@ export function TenantAccessPanel({ organizationId, disabled }: Props) {
         <button
           type="button"
           disabled={!idle}
-          onClick={() => setCreateOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 shadow-sm hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-45 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-        >
-          <ShieldPlus className="h-4 w-4 text-sky-600" />
-          Create role
-        </button>
-        <button
-          type="button"
-          disabled={!idle}
           onClick={() => setAddOpen(true)}
           className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-xs font-bold text-violet-900 shadow-sm hover:bg-violet-100 disabled:pointer-events-none disabled:opacity-45 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-100 dark:hover:bg-violet-900/60"
         >
@@ -119,7 +82,7 @@ export function TenantAccessPanel({ organizationId, disabled }: Props) {
         <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Organisation roles{' '}
           <span className="font-mono font-normal text-slate-400">
-            GET /admin/roles?organizationId=
+            derived from current members
           </span>
         </h3>
         {rolesQ.isError ? (
@@ -129,11 +92,15 @@ export function TenantAccessPanel({ organizationId, disabled }: Props) {
               : 'Failed to load roles'}
           </p>
         ) : rolesQ.isLoading ? (
-          <p className="text-sm text-slate-500">Loading roles…</p>
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonNotificationRow key={`tenant-roles-skeleton-${i}`} />
+            ))}
+          </div>
         ) : !rolesQ.data?.length ? (
           <p className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700">
-            No roles returned for this organisation. Create one to assign permissions (then attach
-            permission IDs via the API if needed).
+            No role metadata available from this backend. Add members normally and let the server
+            assign default roles.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
@@ -188,7 +155,11 @@ export function TenantAccessPanel({ organizationId, disabled }: Props) {
               : 'Failed to load members'}
           </p>
         ) : membersQ.isLoading ? (
-          <p className="text-sm text-slate-500">Loading members…</p>
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonNotificationRow key={`tenant-members-skeleton-${i}`} />
+            ))}
+          </div>
         ) : !membersQ.data?.length ? (
           <p className="text-sm text-slate-500">No members in admin response yet.</p>
         ) : (
@@ -234,71 +205,6 @@ export function TenantAccessPanel({ organizationId, disabled }: Props) {
           </div>
         )}
       </section>
-
-      {createOpen ? (
-        <>
-          <button
-            type="button"
-            aria-label="Close"
-            className="fixed inset-0 z-[60] bg-slate-950/60 backdrop-blur-[2px]"
-            onClick={() => !busy && setCreateOpen(false)}
-          />
-          <div
-            className="fixed left-1/2 top-1/2 z-[70] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
-            role="dialog"
-          >
-            <h4 className="text-lg font-bold text-slate-900 dark:text-white">Create organisation role</h4>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              POST /admin/roles with <span className="font-mono">organizationId</span> set to this
-              tenant (<span className="font-mono">CreateRoleDto</span>).
-            </p>
-            <form onSubmit={onCreateRole} className="mt-4 space-y-3">
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
-                  Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={roleName}
-                  onChange={(e) => setRoleName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-white"
-                  placeholder="e.g. org-admin"
-                  maxLength={50}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase text-slate-500">
-                  Description
-                </label>
-                <textarea
-                  value={roleDescription}
-                  onChange={(e) => setRoleDescription(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-white"
-                  rows={2}
-                  placeholder="Optional"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setCreateOpen(false)}
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-bold text-white hover:bg-sky-500 disabled:opacity-50"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          </div>
-        </>
-      ) : null}
 
       {addOpen ? (
         <>

@@ -2,6 +2,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import Layout from '../../components/Layout'
 import OpenApiReference from '../../components/developer/OpenApiReference'
 import spec from '../../contexts/api-docs.json'
+import { SkeletonProfileHeader } from '@/components/ui/skeleton'
 
 export default function DeveloperApiReferenceRoute() {
   const { user, initialized, loading } = useAuth()
@@ -9,7 +10,9 @@ export default function DeveloperApiReferenceRoute() {
   if (!initialized || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#050505]">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+        <div className="w-full max-w-xl px-4">
+          <SkeletonProfileHeader />
+        </div>
       </div>
     )
   }

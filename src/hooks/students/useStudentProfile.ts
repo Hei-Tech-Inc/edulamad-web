@@ -103,6 +103,18 @@ function buildStudentProfilePayload(input: UpsertStudentProfileDto): UpsertStude
     throw new AppApiError(400, 'Student profile requires index number, university and department.');
   }
 
+  const validLevels = new Set([100, 200, 300, 400]);
+  const validSemesters = new Set([1, 2]);
+  if (!Number.isInteger(payload.levelData) || !validLevels.has(payload.levelData)) {
+    throw new AppApiError(
+      400,
+      'Level must be one of: 100, 200, 300, or 400.',
+    );
+  }
+  if (!Number.isInteger(payload.semesterData) || !validSemesters.has(payload.semesterData)) {
+    throw new AppApiError(400, 'Semester must be 1 or 2.');
+  }
+
   return payload;
 }
 
@@ -122,7 +134,10 @@ export function useUpsertStudentProfile() {
   return useMutation({
     mutationFn: async (input: UpsertStudentProfileDto) => {
       const payload = buildStudentProfilePayload(input);
-      const { data } = await apiClient.post<unknown>(API.students.meProfile, payload);
+      // Some backends return an ack/envelope for POST instead of the full profile object.
+      // Persist first, then fetch canonical profile shape from GET for stable normalization.
+      await apiClient.post<unknown>(API.students.meProfile, payload);
+      const { data } = await apiClient.get<unknown>(API.students.meProfile);
       return normalizeStudentProfile(data);
     },
     onSuccess: () => {

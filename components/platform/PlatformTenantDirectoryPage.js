@@ -4,6 +4,11 @@ import { useRouter } from 'next/router'
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePlatformOrganisations } from '@/hooks/platform/usePlatformOrganisations'
+import { SkeletonNotificationRow } from '@/components/ui/skeleton'
+import ErrorState from '@/components/ui/ErrorState'
+import EmptyState from '@/components/ui/EmptyState'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import { queryKeys } from '@/api/query-keys'
 
 export default function PlatformTenantDirectoryPage() {
   const router = useRouter()
@@ -18,6 +23,7 @@ export default function PlatformTenantDirectoryPage() {
     limit,
     search,
   })
+  const { refreshing, onRefresh } = usePullToRefresh([queryKeys.platform.all])
 
   useEffect(() => {
     if (user && user.isPlatformSuperAdmin !== true) {
@@ -27,8 +33,10 @@ export default function PlatformTenantDirectoryPage() {
 
   if (!user) {
     return (
-      <div className="flex justify-center py-20">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-sky-600 border-t-transparent" />
+      <div className="space-y-3 py-8">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <SkeletonNotificationRow key={`tenant-dir-auth-skeleton-${i}`} />
+        ))}
       </div>
     )
   }
@@ -89,12 +97,22 @@ export default function PlatformTenantDirectoryPage() {
           <Search className="h-4 w-4" />
           Search
         </button>
+        <button
+          type="button"
+          onClick={() => void onRefresh()}
+          className={btnClass}
+        >
+          {refreshing ? 'Refreshing…' : 'Refresh'}
+        </button>
       </form>
 
       {isError ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
-          {error?.message ?? 'Could not load organisations.'}
-        </div>
+        <ErrorState
+          error={error?.message ?? 'Could not load organisations.'}
+          onRetry={() => {
+            void router.replace(router.asPath)
+          }}
+        />
       ) : null}
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -123,7 +141,11 @@ export default function PlatformTenantDirectoryPage() {
                     colSpan={4}
                     className="px-4 py-12 text-center text-slate-500 dark:text-slate-400"
                   >
-                    Loading…
+                    <div className="space-y-2">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <SkeletonNotificationRow key={`tenant-dir-list-skeleton-${i}`} />
+                      ))}
+                    </div>
                   </td>
                 </tr>
               ) : items.length === 0 ? (
@@ -132,7 +154,10 @@ export default function PlatformTenantDirectoryPage() {
                     colSpan={4}
                     className="px-4 py-12 text-center text-slate-500 dark:text-slate-400"
                   >
-                    No organisations found.
+                    <EmptyState
+                      title="No tenants found"
+                      subtitle="Try a different search query or create a new tenant."
+                    />
                   </td>
                 </tr>
               ) : (

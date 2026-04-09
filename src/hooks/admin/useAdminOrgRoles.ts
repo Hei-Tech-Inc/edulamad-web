@@ -1,6 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/api/client';
-import API from '@/api/endpoints';
 import { queryKeys } from '@/api/query-keys';
 
 export interface AdminOrgRoleRow {
@@ -17,17 +15,13 @@ function normalizeRoles(raw: unknown): AdminOrgRoleRow[] {
   return raw.filter((r) => r && typeof r === 'object') as AdminOrgRoleRow[];
 }
 
-/** GET /admin/roles?organizationId= — OpenAPI AdminRolesController_findAll */
+/** Backend contract currently has no /admin/roles route; return empty roles. */
 export function useAdminOrgRoles(organizationId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.admin.orgRoles(organizationId ?? ''),
-    queryFn: async ({ signal }): Promise<AdminOrgRoleRow[]> => {
+    queryFn: async (): Promise<AdminOrgRoleRow[]> => {
       if (!organizationId) return [];
-      const { data: raw } = await apiClient.get<unknown>(API.admin.roles.list, {
-        params: { organizationId },
-        signal,
-      });
-      return normalizeRoles(raw);
+      return normalizeRoles([]);
     },
     enabled: Boolean(organizationId),
   });

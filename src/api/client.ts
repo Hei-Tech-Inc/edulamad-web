@@ -10,10 +10,13 @@ import type { ApiResponse } from '@/api/types/common.types';
 import { getApiBaseURL } from '@/lib/api-base-url';
 import { AppApiError, parseApiErrorPayload } from '@/lib/api-error';
 import { useAuthStore } from '@/stores/auth.store';
+import { loadingBarActions } from '@/stores/loading-bar.store';
 
 declare module 'axios' {
   export interface InternalAxiosRequestConfig {
     _retry?: boolean;
+    _loadingBarTracked?: boolean;
+    skipLoadingBar?: boolean;
   }
 }
 
@@ -51,6 +54,39 @@ function unwrapEnvelope<T>(raw: unknown): T {
 
 /** No auth interceptor — used for token refresh only. */
 const refreshClient = axios.create({ baseURL });
+let inflightLoadingBarRequests = 0;
+const loadingBarEnabled = process.env.NEXT_PUBLIC_ENABLE_TOP_LOADING_BAR === '1';
+
+function shouldTrackLoadingBar(config: InternalAxiosRequestConfig): boolean {
+  if (!loadingBarEnabled) return false;
+  const skipByFlag = config.skipLoadingBar === true;
+  const h = config.headers;
+  const skipByHeader =
+    Boolean(h && typeof h.get === 'function' && h.get('X-Skip-Loading-Bar') === '1') ||
+    Boolean((h as Record<string, unknown>)?.['X-Skip-Loading-Bar'] === '1');
+  return !skipByFlag && !skipByHeader;
+}
+
+function markRequestStart(config: InternalAxiosRequestConfig): void {
+  if (!shouldTrackLoadingBar(config)) {
+    config._loadingBarTracked = false;
+    return;
+  }
+  config._loadingBarTracked = true;
+  inflightLoadingBarRequests += 1;
+  if (inflightLoadingBarRequests === 1) {
+    loadingBarActions.start();
+  }
+}
+
+function markRequestDone(config?: InternalAxiosRequestConfig, failed = false): void {
+  if (!config?._loadingBarTracked) return;
+  inflightLoadingBarRequests = Math.max(0, inflightLoadingBarRequests - 1);
+  if (inflightLoadingBarRequests === 0) {
+    if (failed) loadingBarActions.error();
+    else loadingBarActions.done();
+  }
+}
 
 /**
  * Unauthenticated API calls only (e.g. sign-up and sign-in).
@@ -59,7 +95,9 @@ const refreshClient = axios.create({ baseURL });
 export const apiClientPublic = axios.create({ baseURL });
 
 apiClientPublic.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  markRequestStart(config);
   if (isLegacyUnsupportedPath(config)) {
+    markRequestDone(config, true);
     throw new AppApiError(
       404,
       'This frontend route still references a legacy `/organisations/*` endpoint that is not available on this backend.',
@@ -77,10 +115,12 @@ apiClientPublic.interceptors.request.use((config: InternalAxiosRequestConfig) =>
 
 apiClientPublic.interceptors.response.use(
   (response: AxiosResponse) => {
+    markRequestDone(response.config);
     response.data = unwrapEnvelope(response.data);
     return response;
   },
   async (error: AxiosError) => {
+    markRequestDone(error.config, true);
     if (isCancel(error) || error.code === 'ERR_CANCELED') {
       return Promise.reject(error);
     }
@@ -91,7 +131,9 @@ apiClientPublic.interceptors.response.use(
 export const apiClient = axios.create({ baseURL });
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  markRequestStart(config);
   if (isLegacyUnsupportedPath(config)) {
+    markRequestDone(config, true);
     throw new AppApiError(
       404,
       'This frontend route still references a legacy `/organisations/*` endpoint that is not available on this backend.',
@@ -133,10 +175,12 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
+    markRequestDone(response.config);
     response.data = unwrapEnvelope(response.data);
     return response;
   },
   async (error: AxiosError) => {
+    markRequestDone(error.config, true);
     if (isCancel(error) || error.code === 'ERR_CANCELED') {
       return Promise.reject(error);
     }

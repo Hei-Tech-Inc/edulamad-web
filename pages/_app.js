@@ -16,6 +16,9 @@ import { store } from '../store'
 import { queryClient } from '@/lib/query-client'
 import { getSafeInternalPath } from '@/lib/safe-next-path'
 import { isPublicAuthRoute } from '@/lib/public-auth-routes'
+import TopLoadingBar from '@/components/ui/loading/TopLoadingBar'
+import { loadingBarActions } from '@/stores/loading-bar.store'
+import { SkeletonProfileHeader } from '@/components/ui/skeleton'
 import '../styles/globals.css'
 
 const ReactQueryDevtools = dynamic(
@@ -26,9 +29,43 @@ const ReactQueryDevtools = dynamic(
 
 // This HOC (Higher-Order Component) wraps the entire app
 function AppWrapper({ Component, pageProps }) {
+  const router = useRouter()
+  const loadingBarEnabled = process.env.NEXT_PUBLIC_ENABLE_TOP_LOADING_BAR === '1'
+
+  useEffect(() => {
+    // Dev/runtime stability: stale localhost service workers can serve old chunks
+    // and cause odd UI behavior (including unresponsive controlled inputs).
+    if (typeof window === 'undefined') return
+    if (process.env.NODE_ENV !== 'development') return
+    if (!('serviceWorker' in navigator)) return
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') return
+
+    void navigator.serviceWorker.getRegistrations().then((regs) => {
+      regs.forEach((reg) => {
+        void reg.unregister()
+      })
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!loadingBarEnabled) return undefined
+    const handleStart = () => loadingBarActions.start()
+    const handleDone = () => loadingBarActions.done()
+    const handleError = () => loadingBarActions.error()
+    router.events.on('routeChangeStart', handleStart)
+    router.events.on('routeChangeComplete', handleDone)
+    router.events.on('routeChangeError', handleError)
+    return () => {
+      router.events.off('routeChangeStart', handleStart)
+      router.events.off('routeChangeComplete', handleDone)
+      router.events.off('routeChangeError', handleError)
+    }
+  }, [router.events, loadingBarEnabled])
+
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
+        {loadingBarEnabled ? <TopLoadingBar /> : null}
         <ThemeProvider>
           <SettingsProvider>
             <AuthProvider>
@@ -92,7 +129,9 @@ function AuthWrapper({ children }) {
     if (!isPublicAuthRoute(currentPath)) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600"></div>
+          <div className="w-full max-w-xl px-4">
+            <SkeletonProfileHeader />
+          </div>
         </div>
       )
     }

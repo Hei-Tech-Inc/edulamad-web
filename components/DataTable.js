@@ -1,6 +1,7 @@
 // components/DataTable.js
 import React, { useState } from 'react'
 import { ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react'
+import SkeletonBox from '@/components/ui/skeleton/SkeletonBox'
 
 export default function DataTable({
   data = [],
@@ -14,7 +15,10 @@ export default function DataTable({
   filterable = false,
   sortable = false,
   onPageChange,
-  emptyMessage = 'No data available'
+  emptyMessage = 'No data available',
+  /** When set, clicking a row invokes this unless the click target is interactive (button, link, input). */
+  onRowClick,
+  getRowKey,
 }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
@@ -65,17 +69,29 @@ export default function DataTable({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
+      <div className="space-y-2.5 p-4">
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <div
+            key={`table-skeleton-row-${idx}`}
+            className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-3"
+          >
+            <SkeletonBox width="24%" height={12} borderRadius={4} />
+            <SkeletonBox width="18%" height={12} borderRadius={4} />
+            <SkeletonBox width="14%" height={12} borderRadius={4} />
+            <div className="ml-auto">
+              <SkeletonBox width={74} height={10} borderRadius={999} />
+            </div>
+          </div>
+        ))}
       </div>
     )
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto bg-[#111827]">
       {/* Search and Filter Bar */}
       {(searchable || filterable) && (
-        <div className="p-4 border-b border-gray-200">
+        <div className="border-b border-white/10 p-4">
           <div className="flex items-center space-x-4">
             {searchable && (
               <div className="flex-1">
@@ -85,7 +101,7 @@ export default function DataTable({
                   </div>
                   <input
                     type="text"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+                    className="block w-full rounded-md border border-white/10 bg-white/[0.04] py-2 pl-10 pr-3 leading-5 text-slate-100 placeholder-slate-500 focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/40 sm:text-sm"
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -96,7 +112,7 @@ export default function DataTable({
             {filterable && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
+                className="inline-flex items-center rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-medium leading-4 text-slate-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
@@ -107,15 +123,15 @@ export default function DataTable({
       )}
 
       {/* Table */}
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+      <table className="min-w-full divide-y divide-white/10">
+        <thead className="bg-white/[0.03]">
           <tr>
             {columns.map((column, index) => (
               <th
                 key={index}
                 scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                  sortable && column.sortable ? 'cursor-pointer hover:text-gray-700' : ''
+                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400 ${
+                  sortable && column.sortable ? 'cursor-pointer hover:text-slate-200' : ''
                 }`}
                 onClick={() => sortable && column.sortable && handleSort(column.accessor)}
               >
@@ -129,49 +145,70 @@ export default function DataTable({
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-white/10 bg-transparent">
           {processedData.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-6 py-4 text-center text-sm text-gray-500">
+              <td colSpan={columns.length} className="px-6 py-4 text-center text-sm text-slate-400">
                 {emptyMessage}
               </td>
             </tr>
           ) : (
-            processedData.map((row, rowIndex) => (
-              <tr key={rowIndex} className="hover:bg-gray-50">
-                {columns.map((column, colIndex) => (
-                  <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {column.cell ? column.cell(row) : row[column.accessor]}
-                  </td>
-                ))}
-              </tr>
-            ))
+            processedData.map((row, rowIndex) => {
+              const rowKey =
+                typeof getRowKey === 'function'
+                  ? getRowKey(row, rowIndex)
+                  : row?.id != null
+                    ? String(row.id)
+                    : rowIndex
+              const rowClickable = Boolean(onRowClick)
+              const handleRowClick = (e) => {
+                if (!onRowClick) return
+                const t = e.target
+                if (t instanceof Element && t.closest('button, a, input, textarea, select, [data-no-row-click]')) {
+                  return
+                }
+                onRowClick(row)
+              }
+              return (
+                <tr
+                  key={rowKey}
+                  onClick={rowClickable ? handleRowClick : undefined}
+                  className={`hover:bg-white/[0.03] ${rowClickable ? 'cursor-pointer' : ''}`}
+                >
+                  {columns.map((column, colIndex) => (
+                    <td key={colIndex} className="whitespace-nowrap px-6 py-4 text-sm text-slate-100">
+                      {column.cell ? column.cell(row) : row[column.accessor]}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })
           )}
         </tbody>
       </table>
 
       {/* Pagination */}
       {pagination && totalPages > 1 && (
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div className="flex items-center justify-between border-t border-white/10 bg-[#111827] px-4 py-3 sm:px-6">
           <div className="flex-1 flex justify-between sm:hidden">
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="relative inline-flex items-center rounded-md border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10"
             >
               Previous
             </button>
             <button
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="relative ml-3 inline-flex items-center rounded-md border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10"
             >
               Next
             </button>
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-slate-400">
                 Showing page <span className="font-medium">{currentPage}</span> of{' '}
                 <span className="font-medium">{totalPages}</span>
               </p>
@@ -181,7 +218,7 @@ export default function DataTable({
                 <button
                   onClick={() => onPageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  className="relative inline-flex items-center rounded-l-md border border-white/10 bg-white/[0.04] px-2 py-2 text-sm font-medium text-slate-400 hover:bg-white/10"
                 >
                   <span className="sr-only">Previous</span>
                   <ChevronLeft className="h-5 w-5" aria-hidden="true" />
@@ -192,8 +229,8 @@ export default function DataTable({
                     onClick={() => onPageChange(index + 1)}
                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                       currentPage === index + 1
-                        ? 'z-10 bg-sky-50 border-sky-500 text-sky-600'
-                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        ? 'z-10 border-orange-500/70 bg-orange-500/15 text-orange-200'
+                        : 'border-white/10 bg-white/[0.04] text-slate-400 hover:bg-white/10'
                     }`}
                   >
                     {index + 1}
@@ -202,7 +239,7 @@ export default function DataTable({
                 <button
                   onClick={() => onPageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  className="relative inline-flex items-center rounded-r-md border border-white/10 bg-white/[0.04] px-2 py-2 text-sm font-medium text-slate-400 hover:bg-white/10"
                 >
                   <span className="sr-only">Next</span>
                   <ChevronRight className="h-5 w-5" aria-hidden="true" />
