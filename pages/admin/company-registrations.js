@@ -5,31 +5,28 @@ import Layout from '../../components/Layout'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useAuth } from '../../contexts/AuthContext'
+import { useAuthStore } from '@/stores/auth.store'
+import { sessionHasAdminTools } from '@/lib/session-admin-access'
 
 export default function AdminRegistrationsPage() {
-  const { user, profile, loading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
+  const sessionUser = useAuthStore((s) => s.user)
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const isAdmin = sessionHasAdminTools(sessionUser, accessToken)
 
-  // Check if user is an admin
   React.useEffect(() => {
-    // Wait for auth to initialize
     if (loading) return
-
-    // If user is not logged in or not an admin, redirect to login
-    if (
-      !user ||
-      (profile && profile.role !== 'admin' && profile.role !== 'super_admin')
-    ) {
-      router.push('/login')
+    if (!user) {
+      void router.replace('/login')
+      return
     }
-  }, [user, profile, loading, router])
+    if (!isAdmin) {
+      void router.replace('/dashboard')
+    }
+  }, [user, loading, isAdmin, router])
 
-  // Show loading while checking auth
-  if (
-    loading ||
-    !user ||
-    (profile && profile.role !== 'admin' && profile.role !== 'super_admin')
-  ) {
+  if (loading || !user || !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600"></div>
@@ -40,13 +37,13 @@ export default function AdminRegistrationsPage() {
   return (
     <>
       <Head>
-        <title>Company Registration Approvals - Admin</title>
+        <title>Registration info — Admin</title>
         <meta
           name="description"
-          content="Approve or reject company registration requests"
+          content="How account registration works on this deployment"
         />
       </Head>
-      <Layout title="Company Registrations">
+      <Layout title="Registration">
         <AdminCompanyRegistrationsPage />
       </Layout>
     </>

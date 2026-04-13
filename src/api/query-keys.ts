@@ -6,9 +6,18 @@ export const queryKeys = {
     me: ['auth', 'me'] as const,
   },
   students: {
+    /** Must stay in sync with AuthWrapper onboarding gate in `pages/_app.js`. */
+    onboardingGate: ['students', 'me-profile', 'onboarding-gate'] as const,
     profile: ['students', 'profile'] as const,
     referral: ['students', 'referral'] as const,
     questionCredits: ['students', 'question-credits'] as const,
+    myCoursesInfinite: (filters: Record<string, unknown>) =>
+      ['students', 'my-courses', 'infinite', filters] as const,
+    myCourseDetail: (filters: {
+      courseId: string;
+      year: string;
+      level: number;
+    }) => ['students', 'my-course', filters] as const,
   },
   apiKeys: {
     all: ['api-keys'] as const,
@@ -58,8 +67,43 @@ export const queryKeys = {
     }) => ['questions', 'byCourse', filters] as const,
     detail: (questionId: string) => ['questions', 'detail', questionId] as const,
     solutions: (questionId: string) => ['questions', 'solutions', questionId] as const,
+    uploadPreview: (uploadQueueId: string) =>
+      ['questions', 'upload-preview', uploadQueueId] as const,
+    sourceDocument: (questionId: string) =>
+      ['questions', 'source-document', questionId] as const,
+  },
+  tasks: {
+    list: (filters: {
+      offset?: number;
+      limit?: number;
+      search?: string;
+      status?: string;
+    }) => ['tasks', 'list', filters] as const,
+    detail: (taskId: string) => ['tasks', 'detail', taskId] as const,
   },
   promo: {
     redeem: ['promo', 'redeem'] as const,
+  },
+  flashcards: {
+    decksByCourse: (courseId: string) =>
+      ['flashcards', 'decks', 'course', courseId] as const,
+    deck: (deckId: string) => ['flashcards', 'deck', deckId] as const,
+    due: (deckId: string) => ['flashcards', 'due', deckId] as const,
+    weak: (deckId: string) => ['flashcards', 'weak', deckId] as const,
+    progress: (deckId: string) => ['flashcards', 'progress', deckId] as const,
+  },
+  discussions: {
+    thread: (questionId: string) => ['discussions', 'thread', questionId] as const,
+    recent: (limit: number) => ['discussions', 'recent', limit] as const,
+  },
+  mnemonics: {
+    course: (courseId: string, topic?: string) =>
+      ['mnemonics', 'course', courseId, topic ?? 'all'] as const,
+  },
+  examCountdown: {
+    course: (courseId: string) => ['exam-countdown', courseId] as const,
+  },
+  gamification: {
+    me: ['gamification', 'me'] as const,
   },
 } as const;

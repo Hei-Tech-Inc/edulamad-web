@@ -53,7 +53,8 @@ function toEntity(input: unknown): CatalogEntity | null {
   };
 }
 
-function normalizeEntities(raw: unknown): CatalogEntity[] {
+/** Normalize list payloads from institutions list endpoints (shared with profile label resolution). */
+export function normalizeEntities(raw: unknown): CatalogEntity[] {
   return pickArray(raw).map(toEntity).filter((v): v is CatalogEntity => Boolean(v));
 }
 

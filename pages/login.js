@@ -1,275 +1,205 @@
-// pages/login.js
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
-import { useRouter } from 'next/router'
 import Link from 'next/link'
-import {
-  Mail,
-  Lock,
-  LogIn,
-  AlertCircle,
-  Eye,
-  EyeOff,
-  Quote,
-} from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
-import AuthSplitLayout from '../components/marketing/AuthSplitLayout'
+import { useRouter } from 'next/router'
+import { AlertCircle, Eye, EyeOff, GraduationCap, Lock, Mail } from 'lucide-react'
 import posthog from 'posthog-js'
+import { useAuth } from '../contexts/AuthContext'
 import { getSafeInternalPath } from '@/lib/safe-next-path'
 import { getMarketingBrandName } from '@/lib/landing-brand'
 
 const BRAND = getMarketingBrandName()
-const LEARNING_QUOTES = [
-  'Once you stop learning, you start dying.',
-  'Learning never exhausts the mind.',
-  'Small steps daily. Big results over time.',
-  'The expert in anything was once a beginner.',
-  'Your future is created by what you do today, not tomorrow.',
-  'Do not stop when you are tired. Stop when you are done.',
+const CAMPUS_MARQUEE = [
+  'University of Ghana',
+  'KNUST',
+  'UCC',
+  'UDS',
+  'UEW',
+  'UHAS',
+  'UMaT',
+  'Ashesi',
+  'Academic City',
+  'Lancaster Ghana',
 ]
 
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#070a12]'
+function mapSignInError(message) {
+  const msg = String(message || '').toLowerCase()
+  if (msg.includes('429')) return 'Too many attempts. Wait a minute before trying again.'
+  if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('invalid')) {
+    return 'Invalid email or password'
+  }
+  return message || 'Could not sign in. Try again.'
+}
 
-export default function Login() {
+export default function LoginPage() {
+  const router = useRouter()
+  const { signInWithEmail, user } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [quoteIndex, setQuoteIndex] = useState(0)
-  const { signInWithEmail, user } = useAuth()
-  const router = useRouter()
 
   useEffect(() => {
-    setQuoteIndex(Math.floor(Math.random() * LEARNING_QUOTES.length))
-  }, [])
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setQuoteIndex((prev) => (prev + 1) % LEARNING_QUOTES.length)
-    }, 7000)
-    return () => window.clearInterval(timer)
-  }, [])
+    if (!router.isReady) return
+    const raw = router.query.email
+    const fromQuery = typeof raw === 'string' ? raw.trim() : ''
+    if (fromQuery) setEmail(fromQuery)
+  }, [router.isReady, router.query.email])
 
   useEffect(() => {
     if (!router.isReady || !user) return
     const dest = getSafeInternalPath(router.query.next) || '/dashboard'
-    router.replace(dest)
-  }, [router.isReady, user, router.query.next, router])
-
-  if (user) {
-    return null
-  }
+    void router.replace(dest)
+  }, [router, router.isReady, router.query.next, user])
 
   const hasReturnTo = Boolean(getSafeInternalPath(router.query.next))
+  const marqueeItems = useMemo(() => [...CAMPUS_MARQUEE, ...CAMPUS_MARQUEE], [])
 
-  const handleEmailLogin = async (e) => {
+  if (user) return null
+
+  const onSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    const { error: signErr } = await signInWithEmail(email, password)
-
+    const { error: signErr } = await signInWithEmail(email.trim(), password)
     if (signErr) {
-      setError(signErr.message)
+      setError(mapSignInError(signErr.message))
       setLoading(false)
-    } else {
-      posthog.identify(email, { email })
-      posthog.capture('user_logged_in', { method: 'email', email })
-      const dest = getSafeInternalPath(router.query.next) || '/dashboard'
-      router.replace(dest)
+      return
     }
+    posthog.identify(email.trim(), { email: email.trim() })
+    posthog.capture('user_logged_in', { method: 'email', email: email.trim() })
+    const dest = getSafeInternalPath(router.query.next) || '/dashboard'
+    void router.replace(dest)
   }
-
-  const inputShell =
-    'flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[15px] text-white transition hover:border-white/[0.14] ' +
-    focusRing
 
   return (
     <>
       <Head>
-        <title>Sign in — {BRAND}</title>
-        <meta
-          name="description"
-          content={`Sign in to ${BRAND} with your email and password.`}
-        />
+        <title>{`Sign in — ${BRAND}`}</title>
       </Head>
-      <AuthSplitLayout
-        title={`Master your exams with ${BRAND}`}
-        subtitle="Learn with confidence using structured practice, smarter filtering, and daily progress."
-        points={[
-          'Course-aligned past question library',
-          'Fast filters for year, level, and type',
-          'Bookmarking and quiz practice',
-          'Daily streaks to stay consistent',
-        ]}
-      >
-        <div className="mb-7 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Welcome back
-          </h1>
-          <p className="mt-2 text-sm text-slate-400 sm:text-base">
-            Sign in with the email and password for your {BRAND} account.
-          </p>
-          {hasReturnTo ? (
-            <p className="mt-3 inline-flex rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-200">
-              After sign-in you&apos;ll continue where you left off
-            </p>
-          ) : null}
-        </div>
+      <main className="hero-grain min-h-screen bg-[#0a0a0a] text-white">
+        <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-4 py-10">
+          <section className="mx-auto w-full max-w-[420px]">
+            <div className="animated-border-inner rounded-2xl bg-[#111111] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.45)] sm:p-10">
+              <div className="mb-6 text-center">
+                <Link href="/" className="inline-flex items-center gap-2 text-white">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
+                    <GraduationCap className="h-4 w-4" />
+                  </span>
+                  <span className="font-semibold">{BRAND}</span>
+                </Link>
+                <h1 className="mt-5 text-3xl font-semibold tracking-tight">Welcome back</h1>
+                <p className="mt-1 text-sm text-slate-400">Sign in to continue studying</p>
+                {hasReturnTo ? (
+                  <p className="mt-3 text-xs text-orange-300">You will continue where you left off.</p>
+                ) : null}
+              </div>
 
-        <div className="mb-5 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4">
-          <div className="flex items-start gap-2">
-            <Quote className="mt-0.5 h-4 w-4 text-orange-300" />
-            <p className="text-sm font-medium text-orange-100">
-              {LEARNING_QUOTES[quoteIndex] || LEARNING_QUOTES[0]}
-            </p>
-          </div>
-        </div>
+              <form onSubmit={onSubmit} className="space-y-4">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Email
+                  </span>
+                  <span className="flex h-12 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3">
+                    <Mail className="h-4 w-4 text-slate-500" />
+                    <input
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading}
+                      placeholder="you@example.com"
+                      className="h-full w-full bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none disabled:opacity-70"
+                    />
+                  </span>
+                </label>
 
-        <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-8">
-              {error ? (
-                <div
-                  className="mb-5 flex gap-3 rounded-xl border border-red-500/35 bg-red-950/35 px-3.5 py-3 text-sm text-red-100"
-                  role="alert"
-                >
-                  <AlertCircle
-                    className="mt-0.5 h-5 w-5 shrink-0 text-red-500"
-                    aria-hidden
-                  />
-                  <p className="min-w-0 flex-1 whitespace-pre-wrap leading-snug">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Password
+                  </span>
+                  <span className={`flex h-12 items-center gap-2 rounded-lg border bg-white/[0.06] px-3 ${error ? 'border-red-500' : 'border-white/10'}`}>
+                    <Lock className="h-4 w-4 text-slate-500" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading}
+                      placeholder="••••••••"
+                      className="h-full w-full bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none disabled:opacity-70"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      className="rounded p-1 text-slate-400 hover:bg-white/10"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </span>
+                </label>
+
+                {error ? (
+                  <p className="flex items-center gap-2 text-sm text-red-300" role="alert">
+                    <AlertCircle className="h-4 w-4" />
                     {error}
                   </p>
-                </div>
-              ) : null}
+                ) : null}
 
-              <form className="space-y-5" onSubmit={handleEmailLogin}>
-                <div className="grid gap-5 sm:grid-cols-1">
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                    >
-                      Email
-                    </label>
-                    <div className={inputShell}>
-                      <Mail
-                        className="h-4 w-4 shrink-0 text-slate-500"
-                        aria-hidden
-                      />
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="min-w-0 flex-1 bg-transparent text-white placeholder:text-slate-500 focus:outline-none"
-                        placeholder="you@example.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400"
-                    >
-                      Password
-                    </label>
-                    <div className={`${inputShell} pr-2`}>
-                      <Lock
-                        className="h-4 w-4 shrink-0 text-slate-500"
-                        aria-hidden
-                      />
-                      <input
-                        id="password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        autoComplete="current-password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="min-w-0 flex-1 bg-transparent text-white placeholder:text-slate-500 focus:outline-none"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((s) => !s)}
-                        className={`shrink-0 rounded-lg p-1.5 text-slate-500 transition hover:bg-white/10 hover:text-slate-300 ${focusRing}`}
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" aria-hidden />
-                        ) : (
-                          <Eye className="h-4 w-4" aria-hidden />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-                  <label className="flex cursor-pointer items-center gap-2 text-slate-400">
-                    <input
-                      id="remember-me"
-                      name="remember-me"
-                      type="checkbox"
-                      className="h-3.5 w-3.5 rounded border-slate-300 bg-white text-orange-600 focus:ring-orange-500/50"
-                    />
-                    Keep me signed in
-                  </label>
-                    <span className="text-slate-500">
-                    Forgot password?{' '}
-                    <Link href="/forgot-password" className="text-orange-700 hover:text-orange-800">
-                      Reset it
-                    </Link>
-                  </span>
+                <div className="text-right text-sm">
+                  <Link href="/forgot-password" className="text-slate-300 hover:text-white">
+                    Forgot password?
+                  </Link>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 py-3.5 text-sm font-bold text-white shadow-[0_12px_32px_rgba(234,88,12,0.25)] transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing}`}
+                  className="btn-primary-sweep w-full rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white disabled:opacity-60"
                 >
-                  {loading ? (
-                    <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Signing in…
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="h-4 w-4" strokeWidth={2.5} />
-                      Sign in
-                    </>
-                  )}
+                  {loading ? 'Signing in...' : 'Sign in'}
                 </button>
               </form>
 
-              <div className="mt-8 space-y-3 border-t border-white/10 pt-6 text-center text-sm">
-                <p className="text-slate-400">
-                  Need an account?{' '}
-                  <Link
-                    href="/register"
-                    className={`font-semibold text-orange-700 transition hover:text-orange-800 ${focusRing} rounded`}
+              <div className="my-5 flex items-center gap-3 text-xs text-slate-500">
+                <div className="h-px flex-1 bg-white/10" />
+                or
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+
+              <p className="text-center text-sm text-slate-400">
+                <Link href="/register" className="font-semibold text-orange-300 hover:text-orange-200">
+                  Create a free account →
+                </Link>
+              </p>
+            </div>
+          </section>
+
+          <section className="mt-8 text-center">
+            <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500">
+              Trusted by students at 15+ Ghanaian universities
+            </p>
+            <div className="ticker-mask overflow-hidden">
+              <div className="landing-marquee-track landing-marquee-animate">
+                {marqueeItems.map((label, i) => (
+                  <span
+                    key={`${label}-${i}`}
+                    className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500"
                   >
-                    Create account
-                  </Link>
-                </p>
-                <p className="text-slate-400">
-                  Invited as a team member?{' '}
-                  <Link
-                    href="/signup"
-                    className={`font-semibold text-orange-700 transition hover:text-orange-800 ${focusRing} rounded`}
-                  >
-                    Complete signup
-                  </Link>
-                </p>
+                    <span className="h-1 w-1 rounded-full bg-orange-500/70" />
+                    {label}
+                  </span>
+                ))}
               </div>
             </div>
-      </AuthSplitLayout>
+          </section>
+        </div>
+      </main>
     </>
   )
 }

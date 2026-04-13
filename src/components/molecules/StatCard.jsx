@@ -37,7 +37,7 @@ export default function StatCard({ label, value, hint, tone = 'orange' }) {
   const toneStyle = TONE_STYLES[tone] || TONE_STYLES.orange
 
   return (
-    <SectionCard className="relative overflow-hidden">
+    <SectionCard className="animated-border-inner animated-border-inner-dim relative overflow-hidden">
       <div
         className={`pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${toneStyle.line}`}
         aria-hidden
@@ -52,21 +52,24 @@ export default function StatCard({ label, value, hint, tone = 'orange' }) {
             {label}
           </p>
           {isLoading ? (
-            <div className="mt-2 h-8 w-24 animate-pulse rounded-lg bg-white/10" />
+            <div className="mt-2 h-9 w-24 animate-pulse rounded-lg bg-white/10" />
           ) : (
-            <p className="mt-2 text-2xl font-semibold tracking-tight text-white">
+            <p className="mt-2 text-[1.75rem] font-bold tracking-tight text-white">
               {value}
             </p>
           )}
           {hint ? (
             <p className="mt-1 text-xs text-slate-400">{hint}</p>
           ) : null}
-          <div className="mt-3 h-1.5 w-full max-w-[140px] overflow-hidden rounded-full bg-white/10">
-            <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
+          <p className="mt-1 text-[10px] text-slate-500">
+            <span className="text-emerald-400/70">↑</span> vs last week
+          </p>
+          <div className="mt-2 h-1.5 w-full max-w-[140px] overflow-hidden rounded-full bg-white/10">
+            <div className="shimmer-bar h-full w-2/3 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
           </div>
         </div>
         <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border ${toneStyle.icon}`}>
-          <Icon className="h-4 w-4" strokeWidth={2} />
+          <Icon className="h-4 w-4" strokeWidth={1.5} />
         </span>
       </div>
     </SectionCard>

@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { Button } from '../ui/button'
 
+const primaryLinkClass =
+  'inline-flex h-9 items-center justify-center rounded-lg bg-orange-600 px-3 text-sm font-medium text-white transition hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2'
+
 export default function OnboardingNotice({ notice, onDismiss }) {
   return (
     <section className="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-4 shadow-[0_12px_30px_rgba(251,146,60,0.14)] dark:border-orange-900/70 dark:bg-orange-950/20">
@@ -14,12 +17,9 @@ export default function OnboardingNotice({ notice, onDismiss }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            asChild
-            className="h-9 rounded-lg bg-orange-600 px-3 text-sm font-medium text-white hover:bg-orange-700"
-          >
-            <Link href="/onboarding">Complete profile</Link>
-          </Button>
+          <Link href="/onboarding" className={primaryLinkClass}>
+            Complete profile
+          </Link>
           {notice ? (
             <Button
               type="button"

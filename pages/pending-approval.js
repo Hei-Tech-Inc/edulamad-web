@@ -8,7 +8,7 @@ export default function PendingApproval() {
   return (
     <>
       <Head>
-        <title>Registration status — {getAppName()}</title>
+        <title>{`Registration status — ${getAppName()}`}</title>
         <meta
           name="description"
           content={`Verify your email and continue to ${getAppName()}.`}

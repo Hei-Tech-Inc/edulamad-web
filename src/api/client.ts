@@ -1,5 +1,6 @@
 import axios, {
   type AxiosError,
+  type AxiosRequestConfig,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
   isCancel,
@@ -9,6 +10,7 @@ import API from '@/api/endpoints';
 import type { ApiResponse } from '@/api/types/common.types';
 import { getApiBaseURL } from '@/lib/api-base-url';
 import { AppApiError, parseApiErrorPayload } from '@/lib/api-error';
+import { isAbortLikeError } from '@/lib/abort-error';
 import { useAuthStore } from '@/stores/auth.store';
 import { loadingBarActions } from '@/stores/loading-bar.store';
 
@@ -21,6 +23,42 @@ declare module 'axios' {
 }
 
 const baseURL = getApiBaseURL();
+
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+const axiosDefaults = { baseURL, timeout: DEFAULT_TIMEOUT_MS } as const;
+
+/** In-flight GET dedupe (same URL + params → one network call). */
+const getInflight = new Map<string, Promise<AxiosResponse<unknown>>>();
+
+function getDedupeKey(url: string, config?: AxiosRequestConfig): string {
+  const p =
+    config?.params && typeof config.params === 'object' && config.params !== null
+      ? JSON.stringify(config.params)
+      : '';
+  return `${url}::${p}`;
+}
+
+/**
+ * GET with request deduplication (TanStack Query already dedupes; this helps non-Query callers).
+ */
+export function apiClientGetDeduped<T>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<AxiosResponse<T>> {
+  const key = getDedupeKey(url, config);
+  const existing = getInflight.get(key);
+  if (existing) {
+    return existing as Promise<AxiosResponse<T>>;
+  }
+  const p = apiClient
+    .get<T>(url, config)
+    .finally(() => {
+      getInflight.delete(key);
+    }) as Promise<AxiosResponse<T>>;
+  getInflight.set(key, p as Promise<AxiosResponse<unknown>>);
+  return p;
+}
 
 /** Never send act-as on global admin / platform catalogue routes (Bearer-only semantics). */
 function requestPathSkipsActAsHeader(config: InternalAxiosRequestConfig): boolean {
@@ -53,7 +91,7 @@ function unwrapEnvelope<T>(raw: unknown): T {
 }
 
 /** No auth interceptor — used for token refresh only. */
-const refreshClient = axios.create({ baseURL });
+const refreshClient = axios.create(axiosDefaults);
 let inflightLoadingBarRequests = 0;
 const loadingBarEnabled = process.env.NEXT_PUBLIC_ENABLE_TOP_LOADING_BAR === '1';
 
@@ -92,7 +130,7 @@ function markRequestDone(config?: InternalAxiosRequestConfig, failed = false): v
  * Unauthenticated API calls only (e.g. sign-up and sign-in).
  * Never attaches `Authorization`, so a stale session cannot break onboarding.
  */
-export const apiClientPublic = axios.create({ baseURL });
+export const apiClientPublic = axios.create(axiosDefaults);
 
 apiClientPublic.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   markRequestStart(config);
@@ -121,14 +159,14 @@ apiClientPublic.interceptors.response.use(
   },
   async (error: AxiosError) => {
     markRequestDone(error.config, true);
-    if (isCancel(error) || error.code === 'ERR_CANCELED') {
+    if (isCancel(error) || error.code === 'ERR_CANCELED' || isAbortLikeError(error)) {
       return Promise.reject(error);
     }
     return Promise.reject(toAppError(error));
   },
 );
 
-export const apiClient = axios.create({ baseURL });
+export const apiClient = axios.create(axiosDefaults);
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   markRequestStart(config);
@@ -181,7 +219,7 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     markRequestDone(error.config, true);
-    if (isCancel(error) || error.code === 'ERR_CANCELED') {
+    if (isCancel(error) || error.code === 'ERR_CANCELED' || isAbortLikeError(error)) {
       return Promise.reject(error);
     }
     const originalRequest = error.config;

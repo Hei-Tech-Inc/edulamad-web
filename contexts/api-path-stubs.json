@@ -1,0 +1,30 @@
+{
+  "info": "Merged by scripts/verify-openapi-endpoints.mjs — routes documented in EDULAMAD API guide but not yet in bundled contexts/api-docs.json. Remove entries once pulled OpenAPI includes them.",
+  "paths": {
+    "/content/offerings": {},
+    "/content/assessments/upload": {},
+    "/content/final/{documentId}": {},
+    "/content/interim/{documentId}": {},
+    "/content/solutions/upload-key": {},
+    "/content/questions/pending-review": {},
+    "/quiz/topics/{courseId}": {},
+    "/quiz/generate": {},
+    "/quiz/{id}/submit": {},
+    "/solutions/question/{questionId}": {},
+    "/solutions/question/{questionId}/best": {},
+    "/solutions/{solutionId}/vote": {},
+    "/discussions/messages": {},
+    "/discussions/threads/{questionId}": {},
+    "/discussions/context/{questionId}": {},
+    "/discussions/recent": {},
+    "/content/validate-course": {},
+    "/content/solutions/bulk-save": {},
+    "/content/assessments/extracted-content": {},
+    "/content/slides/bundle": {},
+    "/content/slides/bundle/{slideId}": {},
+    "/content/slides/bundle/{slideId}/file": {},
+    "/content/slides/bundle/{slideId}/extracted-content": {},
+    "/content/slides/bundle/{slideId}/summary-inline": {},
+    "/content/slides/bundle/{slideId}/publish": {}
+  }
+}

@@ -10,44 +10,46 @@ const DEFAULT_SETTINGS = {
   notifications: {
     email: true,
     push: true,
-    lowFeed: true,
-    mortalityAlert: true,
-    waterQualityAlert: true
+    quizReminders: true,
+    streakMilestones: true,
+    creditBalanceAlerts: true,
   },
   dashboard: {
     defaultTimeRange: '30d',
     showCharts: true,
     showMetrics: true,
-    showStockings: true
+    showActivityFeed: true,
+  },
+}
+
+function normalizeStoredSettings(raw) {
+  if (!raw || typeof raw !== 'object') return { ...DEFAULT_SETTINGS }
+  return {
+    ...DEFAULT_SETTINGS,
+    ...raw,
+    notifications: { ...DEFAULT_SETTINGS.notifications, ...(raw.notifications || {}) },
+    dashboard: { ...DEFAULT_SETTINGS.dashboard, ...(raw.dashboard || {}) },
   }
 }
 
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load settings from localStorage
-    const loadSettings = () => {
-      try {
-        const savedSettings = localStorage.getItem('userSettings')
-        if (savedSettings) {
-          setSettings(JSON.parse(savedSettings))
-        }
-      } catch (error) {
-        console.error('Error loading settings:', error)
-      } finally {
-        setLoading(false)
+    try {
+      const savedSettings = localStorage.getItem('userSettings')
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings)
+        setSettings(normalizeStoredSettings(parsed))
       }
+    } catch (error) {
+      console.error('Error loading settings:', error)
     }
-
-    loadSettings()
   }, [])
 
   const updateSettings = (newSettings) => {
-    setSettings(prev => {
+    setSettings((prev) => {
       const updated = { ...prev, ...newSettings }
-      // Save to localStorage
       localStorage.setItem('userSettings', JSON.stringify(updated))
       return updated
     })
@@ -60,20 +62,11 @@ export function SettingsProvider({ children }) {
 
   const value = {
     settings,
-    loading,
     updateSettings,
-    resetSettings
+    resetSettings,
   }
 
-  if (loading) {
-    return <div>Loading settings...</div>
-  }
-
-  return (
-    <SettingsContext.Provider value={value}>
-      {children}
-    </SettingsContext.Provider>
-  )
+  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>
 }
 
 export const useSettings = () => {
@@ -82,4 +75,4 @@ export const useSettings = () => {
     throw new Error('useSettings must be used within a SettingsProvider')
   }
   return context
-} 
+}

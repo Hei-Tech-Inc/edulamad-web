@@ -75,6 +75,8 @@ function AccountSettingsInner() {
       <SectionTitle
         title="Account settings"
         description="Manage your profile using `/users/profile` and `/users/profile/photo`."
+        titleClassName="text-2xl font-semibold text-slate-100"
+        descriptionClassName="mt-1 text-sm text-slate-300"
       />
 
       <StudentCreditsReferralPanel />

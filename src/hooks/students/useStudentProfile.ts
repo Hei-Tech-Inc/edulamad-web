@@ -25,6 +25,14 @@ function cleanString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+/** Convex / API ids must be strings; catalog items should already be strings but coerce defensively. */
+function cleanId(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return String(value).trim();
+}
+
 function cleanOptionalString(value: unknown): string | undefined {
   const next = cleanString(value);
   return next ? next : undefined;
@@ -58,13 +66,13 @@ function normalizeStudentProfile(raw: unknown): StudentProfileDto {
   const indexNumber = cleanString(rec.indexNumber);
   const universityId = cleanString(rec.universityId);
   const deptId = cleanString(rec.deptId);
-  if (!indexNumber || !universityId || !deptId) {
+  if (!universityId || !deptId) {
     throw new AppApiError(500, 'Student profile response is missing required fields.');
   }
 
   return {
     id: cleanOptionalString(rec.id),
-    indexNumber,
+    indexNumber: indexNumber || '',
     studentCategory: categoryRaw,
     otherStudentCategory: cleanOptionalString(rec.otherStudentCategory),
     universityId,
@@ -76,14 +84,17 @@ function normalizeStudentProfile(raw: unknown): StudentProfileDto {
 }
 
 function buildStudentProfilePayload(input: UpsertStudentProfileDto): UpsertStudentProfileDto {
+  const indexClean = cleanId(input.indexNumber);
+  const levelTrunc = Math.trunc(Number(input.levelData));
+  const semTrunc = Math.trunc(Number(input.semesterData));
   const payload: UpsertStudentProfileDto = {
-    indexNumber: cleanString(input.indexNumber),
     studentCategory: input.studentCategory,
-    universityId: cleanString(input.universityId),
-    deptId: cleanString(input.deptId),
-    levelData: input.levelData,
-    semesterData: input.semesterData,
+    universityId: cleanId(input.universityId),
+    deptId: cleanId(input.deptId),
+    levelData: levelTrunc,
+    semesterData: semTrunc,
   };
+  if (indexClean) payload.indexNumber = indexClean;
 
   const avatarKey = cleanOptionalString(input.avatarKey);
   if (avatarKey) payload.avatarKey = avatarKey;
@@ -99,8 +110,8 @@ function buildStudentProfilePayload(input: UpsertStudentProfileDto): UpsertStude
     payload.otherStudentCategory = otherCategory;
   }
 
-  if (!payload.indexNumber || !payload.universityId || !payload.deptId) {
-    throw new AppApiError(400, 'Student profile requires index number, university and department.');
+  if (!payload.universityId || !payload.deptId) {
+    throw new AppApiError(400, 'Student profile requires university and department.');
   }
 
   const validLevels = new Set([100, 200, 300, 400]);
@@ -116,6 +127,61 @@ function buildStudentProfilePayload(input: UpsertStudentProfileDto): UpsertStude
   }
 
   return payload;
+}
+
+/**
+ * If the HTTP institutions catalog cannot resolve these ids, Convex profile writes will also fail.
+ * Fails fast with a clear message instead of a generic Convex mutation error.
+ */
+async function assertCatalogRefsBeforeProfileSave(payload: UpsertStudentProfileDto): Promise<void> {
+  try {
+    await apiClient.get(API.institutions.universities.detail(payload.universityId));
+  } catch (e) {
+    if (e instanceof AppApiError && e.status === 404) {
+      throw new AppApiError(
+        400,
+        'The selected university was not found on this API. Go back to step 1 and choose your institution again, and confirm NEXT_PUBLIC_API_URL / API_PROXY_TARGET match the server that serves your catalog.',
+      );
+    }
+  }
+  try {
+    await apiClient.get(API.institutions.departments.courses(payload.deptId), {
+      params: { activeOnly: true },
+    });
+  } catch (e) {
+    if (e instanceof AppApiError && e.status === 404) {
+      throw new AppApiError(
+        400,
+        'The selected department was not found on this API. Go back to step 2 and pick your faculty and department again from the search lists.',
+      );
+    }
+  }
+}
+
+/** Map generic Convex/backend failures to actionable copy; keep server message for support. */
+function enrichConvexProfileSaveError(
+  err: unknown,
+  payload: UpsertStudentProfileDto,
+): AppApiError | unknown {
+  if (!(err instanceof AppApiError)) return err;
+  if (!/convex mutation failed/i.test(err.message)) return err;
+
+  const hasIndex = Boolean(cleanString(payload.indexNumber ?? ''));
+  const hint = [
+    'Could not save your study profile (server could not write to the database).',
+    '',
+    'Try this:',
+    '• Open step 2 and pick your faculty and department again from the search lists — IDs must exist in this API environment.',
+    hasIndex
+      ? '• Check your index number matches your school’s format.'
+      : '• Add your index number if your deployment requires it.',
+    '• Sign out and sign in again if you recently changed API URL or database.',
+    '• If the app can load universities/departments but saving still fails, the API’s Convex data may be out of sync with the catalog — check backend logs for this request ID and verify Convex seeds reference the same institution IDs.',
+    '',
+    `Server message: ${err.message.trim()}`,
+  ].join('\n');
+
+  return new AppApiError(err.status, hint, err.code, err.details);
 }
 
 export function useStudentProfile() {
@@ -134,14 +200,20 @@ export function useUpsertStudentProfile() {
   return useMutation({
     mutationFn: async (input: UpsertStudentProfileDto) => {
       const payload = buildStudentProfilePayload(input);
+      await assertCatalogRefsBeforeProfileSave(payload);
       // Some backends return an ack/envelope for POST instead of the full profile object.
       // Persist first, then fetch canonical profile shape from GET for stable normalization.
-      await apiClient.post<unknown>(API.students.meProfile, payload);
+      try {
+        await apiClient.post<unknown>(API.students.meProfile, payload);
+      } catch (err) {
+        throw enrichConvexProfileSaveError(err, payload);
+      }
       const { data } = await apiClient.get<unknown>(API.students.meProfile);
       return normalizeStudentProfile(data);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.students.profile });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.students.onboardingGate });
     },
   });
 }

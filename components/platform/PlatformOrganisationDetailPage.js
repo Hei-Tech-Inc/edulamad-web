@@ -61,7 +61,7 @@ export default function PlatformOrganisationDetailPage() {
   }
   if (user.isPlatformSuperAdmin !== true) return null
 
-  const workInTenant = () => {
+  const workAsInstitution = () => {
     if (!orgId) return
     setActAsOrg(orgId, typeof orgName === 'string' ? orgName : null)
     router.push('/dashboard')
@@ -76,7 +76,7 @@ export default function PlatformOrganisationDetailPage() {
             className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-sky-600 hover:text-sky-500 dark:text-sky-400"
           >
             <ArrowLeft className="h-4 w-4" />
-            Tenant directory
+            Institution directory
           </Link>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
             <Building2 className="h-7 w-7 text-sky-600 dark:text-sky-400" />
@@ -90,12 +90,12 @@ export default function PlatformOrganisationDetailPage() {
         </div>
         <button
           type="button"
-          onClick={workInTenant}
+          onClick={workAsInstitution}
           disabled={!orgId || isLoading}
           className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ExternalLink className="h-4 w-4" />
-          Work in tenant
+          Work as institution
         </button>
       </div>
 
@@ -104,11 +104,11 @@ export default function PlatformOrganisationDetailPage() {
         <code className="rounded bg-slate-200 px-1 font-mono text-xs dark:bg-slate-800">
           GET /platform/organisations/:orgId
         </code>
-        . Use &quot;Work in tenant&quot; to attach{' '}
+        . Use &quot;Work as institution&quot; to attach{' '}
         <code className="rounded bg-slate-200 px-1 font-mono text-xs dark:bg-slate-800">
           X-Act-As-Org-Id
         </code>{' '}
-        on subsequent tenant API calls while you stay logged in as the platform
+        on subsequent org-scoped API calls while you stay logged in as the platform
         admin.
       </p>
 

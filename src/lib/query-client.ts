@@ -6,27 +6,35 @@ function isBenignCancellation(error: unknown): boolean {
   return isCancelledError(error) || isAbortLikeError(error);
 }
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 2,
-      gcTime: 1000 * 60 * 10,
-      retry: (failureCount, error) => {
-        if (isBenignCancellation(error)) return false;
-        if (isApiError(error) && [401, 403, 404].includes(error.status)) {
-          return false;
-        }
-        return failureCount < 2;
+export function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000,
+        gcTime: 5 * 60 * 1000,
+        throwOnError: false,
+        retry: (failureCount, error) => {
+          if (isBenignCancellation(error)) return false;
+          if (isApiError(error) && [401, 403, 404].includes(error.status)) {
+            return false;
+          }
+          return failureCount < 2;
+        },
+        refetchOnWindowFocus: false,
       },
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      onError: (error) => {
-        if (isBenignCancellation(error)) return;
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[mutation]', error);
-        }
+      mutations: {
+        retry: false,
+        throwOnError: false,
+        onError: (error) => {
+          if (isBenignCancellation(error)) return;
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[mutation]', error);
+          }
+        },
       },
     },
-  },
-});
+  });
+}
+
+/** Shared client for the browser app (Pages Router). */
+export const queryClient = makeQueryClient();

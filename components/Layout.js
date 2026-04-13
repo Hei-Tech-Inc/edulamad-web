@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Header from './Header'
 import Sidebar from './Sidebar'
+import AppTabBar from './AppTabBar'
 
 const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
   const router = useRouter()
@@ -10,17 +11,20 @@ const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const isPlatformShell = router.pathname.startsWith('/platform')
-  const isInstitutionConsole = router.pathname === '/platform/tenants'
+  const isInstitutionConsole = router.pathname === '/platform/institutions'
+  const showPrimaryTabs = !isPlatformShell && !isInstitutionConsole
 
   useEffect(() => {
     const path = router.pathname
     let newTitle = 'Dashboard'
     if (path.startsWith('/platform')) {
-      newTitle = path === '/platform/tenants' ? 'Institutions console' : 'Platform'
+      newTitle = path === '/platform/institutions' ? 'Institutions console' : 'Platform'
     } else if (path === '/dashboard') {
       newTitle = 'Dashboard'
-    } else if (path === '/practice') {
+    } else if (path.startsWith('/quiz')) {
       newTitle = 'Quiz mode'
+    } else if (path.startsWith('/flashcards')) {
+      newTitle = 'Flashcards'
     }
     setTitle(newTitle)
   }, [router.pathname])
@@ -57,6 +61,7 @@ const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
         }`}
       >
         <Header title={title} />
+        {showPrimaryTabs ? <AppTabBar /> : null}
         <main
           className={`settings-light mx-auto min-h-[calc(100vh-4rem)] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 ${isInstitutionConsole ? 'max-w-none' : 'max-w-[1520px]'}`}
         >

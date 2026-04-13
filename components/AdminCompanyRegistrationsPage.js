@@ -1,4 +1,4 @@
-// components/AdminCompanyRegistrationsPage.js — legacy Supabase queue removed
+// components/AdminCompanyRegistrationsPage.js — legacy approval queue removed
 import React from 'react'
 import Link from 'next/link'
 import { Briefcase, ArrowRight } from 'lucide-react'
@@ -12,9 +12,8 @@ const AdminCompanyRegistrationsPage = () => {
             Account registration
           </h1>
           <p className="mt-3 text-lg text-slate-600 dark:text-slate-400">
-            {getAppName()} does not use the old &quot;pending company
-            registrations&quot; queue. New users register from{' '}
-            <strong>Create account</strong> on the public site.
+            {getAppName()} does not use a legacy &quot;pending registrations&quot; queue. New users
+            sign up from <strong>Create account</strong> on the public site.
           </p>
         </div>
 
@@ -28,14 +27,14 @@ const AdminCompanyRegistrationsPage = () => {
                 Admin tools
               </h2>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                Use the admin area to manage tenants and settings if your account
-                has the right permissions.
+                Use the admin area to manage institutions and settings if your account has the
+                right permissions.
               </p>
               <Link
                 href="/admin/admin"
                 className="mt-4 inline-flex items-center text-sm font-medium text-orange-600 transition hover:text-orange-700"
               >
-                Open company management
+                Open institution management
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </div>

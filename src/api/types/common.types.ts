@@ -52,7 +52,7 @@ export interface RequestUser {
   orgId: string | null;
   role: OrgRole;
   permissions: Permission[];
-  /** SaaS platform super admin — `GET /platform/*`, optional `X-Act-As-Org-Id` on tenant routes. */
+  /** SaaS platform super admin — `GET /platform/*`, optional `X-Act-As-Org-Id` on org-scoped routes. */
   isPlatformSuperAdmin?: boolean;
   emailVerified?: boolean;
   isActive?: boolean;

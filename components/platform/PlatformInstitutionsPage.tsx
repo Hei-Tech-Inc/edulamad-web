@@ -34,11 +34,11 @@ import type { PlatformOrganisationListItem } from '@/api/types/platform.types';
 import { OrganisationFormSheet } from './OrganisationFormSheet';
 import {
   mergeOrganisationProfile,
-  normalizePlatformTenantDetailPayload,
-} from '@/lib/platform-tenant-detail';
+  normalizePlatformInstitutionDetailPayload,
+} from '@/lib/platform-institution-detail';
 import { useToast } from '../Toast';
 import { isApiError } from '@/lib/api-error';
-import { TenantAccessPanel } from './TenantAccessPanel';
+import { InstitutionAccessPanel } from './InstitutionAccessPanel';
 import { SkeletonNotificationRow } from '@/components/ui/skeleton';
 
 const PLAN_KEYS = [
@@ -51,7 +51,7 @@ const PLAN_KEYS = [
 ] as const;
 
 /** Resolve commercial / billing plan label from organisation-shaped objects. */
-function resolveTenantPlan(
+function resolveInstitutionPlan(
   o: Record<string, unknown> | null | undefined,
 ): string {
   if (!o) return '—';
@@ -102,7 +102,7 @@ function formatCell(v: unknown): string {
   return String(v);
 }
 
-function tenantStatusMeta(r: Record<string, unknown>): {
+function institutionStatusMeta(r: Record<string, unknown>): {
   label: string;
   tone: 'ok' | 'warn' | 'muted' | 'bad';
 } {
@@ -153,7 +153,7 @@ function StatusPill({
   );
 }
 
-function renderTenantTableCell(
+function renderInstitutionTableCell(
   k: string,
   r: Record<string, unknown>,
 ): ReactNode {
@@ -163,7 +163,7 @@ function renderTenantTableCell(
     return <StatusPill label="Removed" tone="bad" />;
   }
   if (k === 'status' || k === 'isActive') {
-    const m = tenantStatusMeta(r);
+    const m = institutionStatusMeta(r);
     return <StatusPill label={m.label} tone={m.tone} />;
   }
   if (k === 'name') {
@@ -186,7 +186,7 @@ function renderTenantTableCell(
     k === 'subscriptionPlan' ||
     k === 'planTier'
   ) {
-    const p = resolveTenantPlan({ ...r, [k]: r[k] });
+    const p = resolveInstitutionPlan({ ...r, [k]: r[k] });
     if (p === '—') return <span className="text-slate-400">—</span>;
     return <PlanBadge plan={p} size="sm" />;
   }
@@ -292,7 +292,7 @@ type TabId =
   | 'extra'
   | 'raw';
 
-export default function PlatformTenantsPage() {
+export default function PlatformInstitutionsPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const setActAsOrg = useAuthStore((s) => s.setActAsOrg);
@@ -357,7 +357,7 @@ export default function PlatformTenantsPage() {
       const q = { ...router.query } as Record<string, string | string[]>;
       if (orgId) q.org = orgId;
       else delete q.org;
-      void router.replace({ pathname: '/platform/tenants', query: q }, undefined, {
+      void router.replace({ pathname: '/platform/institutions', query: q }, undefined, {
         shallow: true,
       });
     },
@@ -377,7 +377,7 @@ export default function PlatformTenantsPage() {
   }, [setOrgInUrl]);
 
   const detailPayload = useMemo(
-    () => normalizePlatformTenantDetailPayload(detailQ.data ?? {}),
+    () => normalizePlatformInstitutionDetailPayload(detailQ.data ?? {}),
     [detailQ.data],
   );
 
@@ -391,7 +391,7 @@ export default function PlatformTenantsPage() {
   const planSummaryLabel = useMemo(() => {
     const labels = new Set<string>();
     items.forEach((row) => {
-      const p = resolveTenantPlan(row as unknown as Record<string, unknown>);
+      const p = resolveInstitutionPlan(row as unknown as Record<string, unknown>);
       if (p !== '—') labels.add(p);
     });
     if (!labels.size) return '—';
@@ -446,7 +446,7 @@ export default function PlatformTenantsPage() {
     [detailPayload.organisation, selectedListRow],
   );
 
-  const tenantIsRemoved =
+  const orgIsInactive =
     mergedOrg != null &&
     mergedOrg.deletedAt != null &&
     String(mergedOrg.deletedAt).trim() !== '';
@@ -474,22 +474,22 @@ export default function PlatformTenantsPage() {
   const onDelete = async (orgId: string, name: string) => {
     if (
       !window.confirm(
-        `Soft-delete tenant "${name}"? The slug can be reused after removal. This calls DELETE /platform/organisations/:id.`,
+        `Soft-delete institution "${name}"? The slug can be reused after removal. This calls DELETE /platform/organisations/:id.`,
       )
     ) {
       return;
     }
     try {
       await deleteMut.mutateAsync(orgId);
-      showToast('Tenant removed (soft-delete)', 'success');
+      showToast('Institution removed (soft-delete)', 'success');
       if (selectedOrgId === orgId) closeDrawer();
     } catch (err) {
       showToast(isApiError(err) ? err.message : 'Delete failed', 'error');
     }
   };
 
-  const workInTenant = () => {
-    if (!selectedOrgId || !mergedOrg || tenantIsRemoved) {
+  const workAsInstitution = () => {
+    if (!selectedOrgId || !mergedOrg || orgIsInactive) {
       return;
     }
     const label =
@@ -522,7 +522,7 @@ export default function PlatformTenantsPage() {
     return (
       <div className="space-y-3 py-8">
         {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonNotificationRow key={`tenant-console-auth-skeleton-${i}`} />
+          <SkeletonNotificationRow key={`inst-console-auth-skeleton-${i}`} />
         ))}
       </div>
     );
@@ -558,7 +558,7 @@ export default function PlatformTenantsPage() {
         <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
         <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100">
           <Sparkles className="h-3.5 w-3.5 text-sky-500" />
-          Tenant console
+          Institutions console
         </span>
       </nav>
 
@@ -573,15 +573,15 @@ export default function PlatformTenantsPage() {
             </p>
             <div>
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Tenant console
+                Institutions console
               </h1>
               <p className="mt-3 text-sm leading-relaxed text-slate-300/95">
                 Dedicated control room for every organisation — search and
-                inspect tenants, open the live API payload, and run create / update /
+                inspect organisations, open the live API payload, and run create / update /
                 delete using the same DTOs as in{' '}
                 <span className="font-mono text-orange-200/90">api-docs.json</span>.
-                Switch into a tenant with{' '}
-                <strong className="text-white">Work in tenant</strong> (
+                Switch into an institution with{' '}
+                <strong className="text-white">Work as institution</strong> (
                 <span className="font-mono text-[11px] text-sky-200/80">
                   X-Act-As-Org-Id
                 </span>
@@ -612,7 +612,7 @@ export default function PlatformTenantsPage() {
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-sky-500 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-sky-500/25 transition hover:bg-sky-400"
           >
             <Plus className="h-4 w-4" strokeWidth={2.5} />
-            New tenant
+            New institution
           </button>
         </div>
       </div>
@@ -669,7 +669,7 @@ export default function PlatformTenantsPage() {
         >
           {listQ.error instanceof Error
             ? listQ.error.message
-            : 'Failed to load tenants.'}
+            : 'Failed to load institutions.'}
         </div>
       ) : null}
 
@@ -704,7 +704,7 @@ export default function PlatformTenantsPage() {
                   >
                     <div className="space-y-2">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <SkeletonNotificationRow key={`tenant-console-list-skeleton-${i}`} />
+                        <SkeletonNotificationRow key={`inst-console-list-skeleton-${i}`} />
                       ))}
                     </div>
                   </td>
@@ -716,10 +716,10 @@ export default function PlatformTenantsPage() {
                     className="px-4 py-20 text-center text-slate-500 dark:text-slate-400"
                   >
                     <p className="text-base font-medium text-slate-700 dark:text-slate-200">
-                      No tenants match this search.
+                      No institutions match this search.
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      Clear the query or add a new tenant to get started.
+                      Clear the query or add a new institution to get started.
                     </p>
                   </td>
                 </tr>
@@ -742,7 +742,7 @@ export default function PlatformTenantsPage() {
                           className="max-w-[220px] px-4 py-3.5 text-slate-800 dark:text-slate-200"
                           title={formatCell(r[k])}
                         >
-                          <div className="truncate">{renderTenantTableCell(k, r)}</div>
+                          <div className="truncate">{renderInstitutionTableCell(k, r)}</div>
                         </td>
                       ))}
                       <td
@@ -762,7 +762,7 @@ export default function PlatformTenantsPage() {
                             disabled={rowRemoved}
                             onClick={() => openEdit(row)}
                             className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900 dark:hover:bg-slate-800"
-                            title="Edit tenant"
+                            title="Edit institution"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
@@ -779,7 +779,7 @@ export default function PlatformTenantsPage() {
                             title={
                               rowRemoved
                                 ? 'Already removed'
-                                : 'Soft-delete tenant'
+                                : 'Soft-delete institution'
                             }
                           >
                             <Trash2 className="h-4 w-4" />
@@ -802,7 +802,7 @@ export default function PlatformTenantsPage() {
             <span className="tabular-nums">{pag.pages}</span>
             <span className="text-slate-400 dark:text-slate-500">
               {' '}
-              · <span className="tabular-nums">{pag.total}</span> tenants
+              · <span className="tabular-nums">{pag.total}</span> institutions
             </span>
           </span>
           <div className="flex gap-2">
@@ -874,7 +874,7 @@ export default function PlatformTenantsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-400">
-                      Tenant inspector
+                      Institution inspector
                     </p>
                     <h2 className="mt-2 flex items-center gap-2 truncate text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
@@ -894,7 +894,7 @@ export default function PlatformTenantsPage() {
                         Plan
                       </span>
                       <PlanBadge
-                        plan={resolveTenantPlan(mergedOrg)}
+                        plan={resolveInstitutionPlan(mergedOrg)}
                         size="lg"
                       />
                     </div>
@@ -902,17 +902,17 @@ export default function PlatformTenantsPage() {
                   <div className="flex shrink-0 gap-2">
                     <button
                       type="button"
-                      disabled={tenantIsRemoved}
-                      onClick={workInTenant}
+                      disabled={orgIsInactive}
+                      onClick={workAsInstitution}
                       title={
-                        tenantIsRemoved
+                        orgIsInactive
                           ? 'Organisation is soft-deleted'
                           : 'Set X-Act-As-Org-Id and open the dashboard'
                       }
                       className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-violet-600/20 hover:bg-violet-500 disabled:pointer-events-none disabled:opacity-45"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
-                      Work in tenant
+                      Work as institution
                     </button>
                     <button
                       type="button"
@@ -946,7 +946,7 @@ export default function PlatformTenantsPage() {
                 {detailQ.isLoading && drawerTab !== 'raw' ? (
                   <div className="space-y-2 py-4">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <SkeletonNotificationRow key={`tenant-console-drawer-skeleton-${i}`} />
+                      <SkeletonNotificationRow key={`inst-console-drawer-skeleton-${i}`} />
                     ))}
                   </div>
                 ) : null}
@@ -966,12 +966,12 @@ export default function PlatformTenantsPage() {
                       </p>
                       <div className="mt-2">
                         <PlanBadge
-                          plan={resolveTenantPlan(mergedOrg)}
+                          plan={resolveInstitutionPlan(mergedOrg)}
                           size="lg"
                         />
                       </div>
                       <p className="mt-2 text-xs text-amber-900/80 dark:text-amber-200/70">
-                        Pulled from tenant payload (
+                        Pulled from organisation payload (
                         <span className="font-mono">plan</span>,{' '}
                         <span className="font-mono">subscriptionPlan</span>, etc.).
                       </p>
@@ -979,7 +979,7 @@ export default function PlatformTenantsPage() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
-                        disabled={tenantIsRemoved}
+                        disabled={orgIsInactive}
                         onClick={() => {
                           if (!selectedOrgId) return;
                           openEdit({
@@ -992,11 +992,11 @@ export default function PlatformTenantsPage() {
                         className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow-sm disabled:pointer-events-none disabled:opacity-45 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                        Edit tenant
+                        Edit institution
                       </button>
                       <button
                         type="button"
-                        disabled={tenantIsRemoved}
+                        disabled={orgIsInactive}
                         onClick={() =>
                           onDelete(
                             selectedOrgId!,
@@ -1009,7 +1009,7 @@ export default function PlatformTenantsPage() {
                         Remove
                       </button>
                       <Link
-                        href="/platform/tenants"
+                        href="/platform/institutions"
                         className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-sky-600 hover:underline dark:text-sky-400"
                         onClick={(e) => {
                           e.preventDefault();
@@ -1024,9 +1024,9 @@ export default function PlatformTenantsPage() {
                 ) : null}
 
                 {drawerTab === 'access' && selectedOrgId ? (
-                  <TenantAccessPanel
+                  <InstitutionAccessPanel
                     organizationId={selectedOrgId}
-                    disabled={tenantIsRemoved}
+                    disabled={orgIsInactive}
                   />
                 ) : null}
                 {drawerTab === 'users' ? (

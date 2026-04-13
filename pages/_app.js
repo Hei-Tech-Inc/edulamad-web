@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import { QueryClientProvider } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { SettingsProvider } from '../contexts/SettingsContext'
@@ -14,11 +15,16 @@ import { ToastProvider } from '../components/Toast'
 import { Provider } from 'react-redux'
 import { store } from '../store'
 import { queryClient } from '@/lib/query-client'
+import { subscribeAbortUnhandledRejectionSilencer } from '@/lib/abort-error'
+import { queryKeys } from '@/api/query-keys'
 import { getSafeInternalPath } from '@/lib/safe-next-path'
 import { isPublicAuthRoute } from '@/lib/public-auth-routes'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
 import TopLoadingBar from '@/components/ui/loading/TopLoadingBar'
 import { loadingBarActions } from '@/stores/loading-bar.store'
 import { SkeletonProfileHeader } from '@/components/ui/skeleton'
+import { AppErrorBoundary } from '@/components/providers/AppErrorBoundary'
 import '../styles/globals.css'
 
 const ReactQueryDevtools = dynamic(
@@ -31,6 +37,10 @@ const ReactQueryDevtools = dynamic(
 function AppWrapper({ Component, pageProps }) {
   const router = useRouter()
   const loadingBarEnabled = process.env.NEXT_PUBLIC_ENABLE_TOP_LOADING_BAR === '1'
+
+  useEffect(() => {
+    return subscribeAbortUnhandledRejectionSilencer()
+  }, [])
 
   useEffect(() => {
     // Dev/runtime stability: stale localhost service workers can serve old chunks
@@ -74,7 +84,9 @@ function AppWrapper({ Component, pageProps }) {
                   <NotificationProvider>
                     <AnalyticsProvider>
                       <AuthWrapper>
-                        <Component {...pageProps} />
+                        <AppErrorBoundary>
+                          <Component {...pageProps} />
+                        </AppErrorBoundary>
                       </AuthWrapper>
                     </AnalyticsProvider>
                   </NotificationProvider>
@@ -97,6 +109,41 @@ function AuthWrapper({ children }) {
   const router = useRouter()
 
   const currentPath = router.pathname
+  const onOnboardingRoute = currentPath === '/onboarding'
+  const onAuthEntryRoute =
+    isPublicAuthRoute(currentPath) &&
+    currentPath !== '/' &&
+    currentPath !== '/developer/api-keys' &&
+    currentPath !== '/developer/api-reference'
+
+  const profileGateQ = useQuery({
+    queryKey: queryKeys.students.onboardingGate,
+    enabled: Boolean(initialized && !loading && user),
+    retry: false,
+    staleTime: 30_000,
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get(API.students.meProfile, { signal })
+      return data
+    },
+  })
+
+  const rawProfile = profileGateQ.data && typeof profileGateQ.data === 'object' ? profileGateQ.data : null
+  const levelOk =
+    typeof rawProfile?.levelData === 'number'
+      ? Number.isFinite(rawProfile.levelData)
+      : typeof rawProfile?.level === 'number' && Number.isFinite(rawProfile.level)
+  const semOk =
+    typeof rawProfile?.semesterData === 'number'
+      ? Number.isFinite(rawProfile.semesterData)
+      : typeof rawProfile?.semester === 'number' && Number.isFinite(rawProfile.semester)
+
+  const onboardingComplete = Boolean(
+    rawProfile?.universityId &&
+      rawProfile?.deptId &&
+      rawProfile?.studentCategory &&
+      levelOk &&
+      semOk,
+  )
 
   // Redirect unauthenticated users to login
   useEffect(() => {
@@ -107,21 +154,38 @@ function AuthWrapper({ children }) {
       router.push('/login')
     }
 
-    // If logged in on auth entry pages, redirect to app (home `/` stays marketing for everyone)
+    if (!user) return
+    if (profileGateQ.isLoading || profileGateQ.isFetching) return
+
     if (
-      user &&
-      isPublicAuthRoute(currentPath) &&
-      currentPath !== '/' &&
-      currentPath !== '/developer/api-keys' &&
-      currentPath !== '/developer/api-reference'
+      !onboardingComplete &&
+      !onOnboardingRoute &&
+      currentPath !== '/verify-email' &&
+      currentPath !== '/'
     ) {
-      const dest =
-        currentPath === '/login'
-          ? getSafeInternalPath(router.query.next) || '/dashboard'
-          : '/dashboard'
+      router.push('/onboarding')
+      return
+    }
+
+    // If logged in on auth entry pages, redirect to the right app destination.
+    if (onAuthEntryRoute) {
+      const nextDest = currentPath === '/login' ? getSafeInternalPath(router.query.next) : null
+      const dest = onboardingComplete ? nextDest || '/dashboard' : '/onboarding'
       router.push(dest)
     }
-  }, [user, initialized, loading, currentPath, router, router.query.next])
+  }, [
+    user,
+    initialized,
+    loading,
+    currentPath,
+    onOnboardingRoute,
+    onboardingComplete,
+    onAuthEntryRoute,
+    profileGateQ.isLoading,
+    profileGateQ.isFetching,
+    router,
+    router.query.next,
+  ])
 
   // Loading state
   if (loading || !initialized) {

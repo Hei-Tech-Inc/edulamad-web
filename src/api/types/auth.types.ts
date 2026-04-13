@@ -46,7 +46,7 @@ export interface LoginResponse {
   refreshToken: string;
 }
 
-/** Optional tenant snapshot if the API adds it; not part of the published register example. */
+/** Optional org snapshot if the API adds it; not part of the published register example. */
 export interface AuthOrgDto {
   id: string;
   name: string;

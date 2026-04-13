@@ -1,13 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useQuery } from '@tanstack/react-query';
 import MarketingShell from '../components/marketing/MarketingShell';
 import {
   useResendVerification,
   useVerifyEmail,
 } from '@/hooks/auth/useAuthRecovery';
 import { AppApiError } from '@/lib/api-error';
+import { apiClient } from '@/api/client';
+import API from '@/api/endpoints';
+import { useAuthStore } from '@/stores/auth.store';
 
 function toMessage(err, fallback) {
   if (err instanceof AppApiError) return err.message;
@@ -17,6 +21,7 @@ function toMessage(err, fallback) {
 
 export default function VerifyEmailPage() {
   const router = useRouter();
+  const accessToken = useAuthStore((s) => s.accessToken);
   const verifyM = useVerifyEmail();
   const resendM = useResendVerification();
   const token = useMemo(
@@ -26,6 +31,35 @@ export default function VerifyEmailPage() {
   const [email, setEmail] = useState('');
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
+
+  const mePoll = useQuery({
+    queryKey: ['auth', 'me', 'verify-poll'],
+    enabled: Boolean(accessToken),
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get(API.auth.me, { signal });
+      return data;
+    },
+    refetchInterval: 5000,
+    staleTime: 0,
+  });
+
+  useEffect(() => {
+    const u = mePoll.data;
+    if (!u || typeof u !== 'object') return;
+    const rec = u;
+    const ev =
+      rec.emailVerified === true
+        ? true
+        : rec.user &&
+            typeof rec.user === 'object' &&
+            rec.user !== null &&
+            'emailVerified' in rec.user
+          ? rec.user.emailVerified === true
+          : false;
+    if (ev) {
+      void router.replace('/onboarding');
+    }
+  }, [mePoll.data, router]);
 
   const onVerify = async (e) => {
     e.preventDefault();

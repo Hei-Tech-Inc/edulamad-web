@@ -168,6 +168,11 @@ export function parseApiErrorPayload(
     finalMessage = statusFallbackMessage(401);
   }
 
+  const requestId = pickString(rec.requestId);
+  if (requestId && !finalMessage.includes(requestId)) {
+    finalMessage = `${finalMessage}\n\nRequest ID: ${requestId}`;
+  }
+
   return {
     message: finalMessage,
     code,

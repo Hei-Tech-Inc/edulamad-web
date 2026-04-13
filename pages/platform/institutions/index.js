@@ -1,12 +1,12 @@
 import ProtectedRoute from '../../../components/ProtectedRoute'
 import Layout from '../../../components/Layout'
-import PlatformTenantsPage from '../../../components/platform/PlatformTenantsPage'
+import PlatformInstitutionsPage from '../../../components/platform/PlatformInstitutionsPage'
 
-export default function PlatformTenants() {
+export default function PlatformInstitutionsRoute() {
   return (
     <ProtectedRoute>
       <Layout>
-        <PlatformTenantsPage />
+        <PlatformInstitutionsPage />
       </Layout>
     </ProtectedRoute>
   )

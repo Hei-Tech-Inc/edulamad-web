@@ -192,7 +192,7 @@ export default function DeveloperApiKeysPage({ previewMode = false }) {
   return (
     <>
       <Head>
-        <title>Developer — API keys · {APP_NAME}</title>
+        <title>{`Developer — API keys · ${APP_NAME}`}</title>
       </Head>
       <div
         className={

@@ -70,7 +70,7 @@ export interface PlatformOrganisationDetailBody {
   organization?: Record<string, unknown>;
   users?: unknown[];
   sites?: unknown[];
-  /** Legacy key from older APIs; normalised as `linkedSites` in the tenant UI. */
+  /** Legacy key from older APIs; normalised as `linkedSites` in the institution console UI. */
   farms?: unknown[];
   auditLogs?: unknown[];
   audit_logs?: unknown[];

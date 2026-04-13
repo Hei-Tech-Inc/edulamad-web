@@ -28,11 +28,11 @@ export default function ErrorState({ error, onRetry, fullScreen = false, classNa
     <div
       className={`${fullScreen ? 'flex min-h-[40vh] items-center justify-center' : ''} ${className}`.trim()}
     >
-      <div className="w-full rounded-2xl border border-rose-500/25 bg-rose-500/10 px-5 py-6 text-center">
-        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-rose-400/30 bg-rose-500/10 text-rose-200">
+      <div className="w-full rounded-2xl border border-rose-300 bg-rose-50 px-5 py-6 text-center dark:border-rose-500/25 dark:bg-rose-500/10">
+        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-rose-300 bg-rose-100 text-rose-600 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200">
           <AlertTriangle className="h-5 w-5" />
         </div>
-        <p className="mt-3 text-sm font-medium text-rose-100">{toMessage(error)}</p>
+        <p className="mt-3 text-sm font-medium text-rose-700 dark:text-rose-100">{toMessage(error)}</p>
         <div className="mt-4">
           <Button variant="outline" onClick={onRetry}>
             Try again

@@ -14,7 +14,8 @@ export const STUDENT_CATEGORIES = [
 ] as const;
 
 export type UpsertStudentProfileDto = {
-  indexNumber: string;
+  /** Optional in OpenAPI; omit when unknown — some flows allow completing profile without an index yet. */
+  indexNumber?: string;
   studentCategory: StudentCategory;
   otherStudentCategory?: string;
   universityId: string;

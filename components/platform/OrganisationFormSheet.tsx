@@ -161,7 +161,7 @@ export function OrganisationFormSheet({
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            {mode === 'create' ? 'Create tenant' : 'Edit tenant'}
+            {mode === 'create' ? 'Create institution' : 'Edit institution'}
           </h2>
           <button
             type="button"

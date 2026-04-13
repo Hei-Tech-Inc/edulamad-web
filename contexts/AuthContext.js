@@ -15,6 +15,7 @@ import {
 import { toCompatUser } from '@/lib/auth-compat'
 import { AppApiError } from '@/lib/api-error'
 import { formatAuthErrorMessage } from '@/lib/format-auth-error'
+import { queryKeys } from '@/api/query-keys'
 import { queryClient } from '@/lib/query-client'
 import { useAuthStore } from '@/stores/auth.store'
 import { store } from '../store'
@@ -81,6 +82,8 @@ export function AuthProvider({ children }) {
       useAuthStore
         .getState()
         .setUser(mapAuthUserToRequestUser(data.user, data.accessToken))
+      void queryClient.invalidateQueries({ queryKey: queryKeys.students.onboardingGate })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.students.profile })
     } catch (e) {
       return { data: null, error: { message: formatAuthErrorMessage(e) } }
     }
@@ -157,6 +160,8 @@ export function AuthProvider({ children }) {
       if (regData?.org && typeof regData.org === 'object') {
         useAuthStore.getState().setOrg(regData.org)
       }
+      void queryClient.invalidateQueries({ queryKey: queryKeys.students.onboardingGate })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.students.profile })
       await hydrateReduxUserAfterSession()
 
       return { data: { ...regData, session: { accessToken, refreshToken, user } }, error: null, setupError: null }
@@ -168,6 +173,7 @@ export function AuthProvider({ children }) {
             message: e.message,
             details: e.details,
             code: e.code,
+            status: e.status,
           },
           setupError: null,
         }

@@ -88,7 +88,7 @@ export default function SignUp() {
   return (
     <>
       <Head>
-        <title>Sign up — {BRAND}</title>
+        <title>{`Sign up — ${BRAND}`}</title>
         <meta
           name="description"
           content={`Create your ${BRAND} account when you have an invite.`}

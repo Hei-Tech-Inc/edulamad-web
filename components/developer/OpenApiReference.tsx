@@ -468,7 +468,7 @@ export default function OpenApiReference({
   return (
     <>
       <Head>
-        <title>API reference · {appName}</title>
+        <title>{`API reference · ${appName}`}</title>
         <meta
           name="description"
           content={`${appName} HTTP API — OpenAPI reference synced from your deployment when available.`}

@@ -40,6 +40,7 @@ Install these packages if not present:
   react-hook-form
   @hookform/resolvers
   zustand
+  shadcdn
   @tanstack/react-table@8
   date-fns (already installed)
 
@@ -50,122 +51,7 @@ Zustand one at a time without breaking anything.
 Do NOT remove Recharts — keep all existing charts.
 Do NOT remove xlsx — keep export functionality.
 
-Do Not forget to have Organization Onbarding flow.
 
-═══════════════════════════════════════════════════════
-SECTION 3 — PROJECT STRUCTURE
-═══════════════════════════════════════════════════════
-
-Create this structure. Do not move existing files.
-Add new files alongside existing ones.
-
-src/
-├── api/
-│   ├── client.ts           ← axios instance
-│   ├── endpoints.ts        ← all API endpoint strings
-│   └── types/              ← one file per domain, 
-│       ├── auth.types.ts      generated from Swagger JSON
-│       ├── farm.types.ts
-│       ├── unit.types.ts
-│       ├── cycle.types.ts
-│       ├── daily-record.types.ts
-│       ├── weight-sample.types.ts
-│       ├── feeding-log.types.ts
-│       ├── harvest.types.ts
-│       ├── disease-event.types.ts
-│       ├── weather.types.ts
-│       ├── feed.types.ts
-│       ├── analytics.types.ts
-│       ├── notification.types.ts
-│       └── common.types.ts  ← PaginatedResponse, ApiResponse,
-│                               ApiError, RequestUser
-├── hooks/
-│   ├── auth/
-│   │   ├── useAuth.ts
-│   │   ├── useLogin.ts
-│   │   ├── useRegister.ts
-│   │   └── useLogout.ts
-│   ├── farms/
-│   │   ├── useFarms.ts
-│   │   ├── useFarm.ts
-│   │   ├── useFarmSummary.ts
-│   │   ├── useCreateFarm.ts
-│   │   ├── useUpdateFarm.ts
-│   │   └── useDeleteFarm.ts
-│   ├── units/
-│   │   ├── useUnits.ts
-│   │   ├── useUnit.ts
-│   │   ├── useUnitSummary.ts
-│   │   ├── useCreateUnit.ts
-│   │   ├── useUpdateUnit.ts
-│   │   └── useDeleteUnit.ts
-│   ├── cycles/
-│   │   ├── useCycles.ts
-│   │   ├── useCycle.ts
-│   │   ├── useCycleGrowth.ts
-│   │   ├── useCreateCycle.ts
-│   │   └── useApproveCycle.ts
-│   ├── daily-records/
-│   │   ├── useDailyRecords.ts
-│   │   ├── useCreateDailyRecord.ts
-│   │   ├── useBulkCreateDailyRecords.ts
-│   │   └── useVerifyDailyRecord.ts
-│   ├── weight-samples/
-│   │   ├── useWeightSamples.ts
-│   │   ├── useCreateWeightSample.ts
-│   │   └── useApproveWeightSample.ts
-│   ├── feeding-logs/
-│   │   ├── useFeedingLogs.ts
-│   │   ├── useCreateFeedingLog.ts
-│   │   └── useFcr.ts
-│   ├── harvests/
-│   │   ├── useHarvests.ts
-│   │   ├── useCreateHarvest.ts
-│   │   ├── useApproveHarvest.ts
-│   │   └── useProfitability.ts
-│   ├── feed/
-│   │   ├── useFeedSuppliers.ts
-│   │   ├── useFeedTypes.ts
-│   │   ├── useLowStock.ts
-│   │   ├── useFeedInventory.ts
-│   │   ├── useFeedPurchases.ts
-│   │   ├── useFeedPurchaseSummary.ts
-│   │   ├── useCreateFeedPurchase.ts
-│   │   └── useInventoryAdjustment.ts
-│   ├── analytics/
-│   │   ├── useOverview.ts
-│   │   ├── useGrowthTrends.ts
-│   │   ├── useHarvestReadiness.ts
-│   │   ├── useMortalityTrends.ts
-│   │   ├── useFeedEfficiency.ts
-│   │   ├── useFeedCostTrends.ts
-│   │   └── useFeedBrandPerformance.ts
-│   ├── notifications/
-│   │   ├── useNotifications.ts
-│   │   ├── useMarkRead.ts
-│   │   └── useMarkAllRead.ts
-│   └── users/
-│       ├── useUsers.ts
-│       ├── useInviteUser.ts
-│       └── useUpdateUserRole.ts
-├── stores/
-│   ├── auth.store.ts       ← Zustand (replaces authSlice)
-│   └── ui.store.ts         ← sidebar open, active farm, etc
-├── lib/
-│   ├── query-client.ts     ← TanStack Query client config
-│   ├── axios.ts            ← re-export of api/client
-│   └── permissions.ts      ← hasPermission() helper
-└── schemas/
-    ├── farm.schema.ts      ← Zod schemas for all forms
-    ├── unit.schema.ts
-    ├── cycle.schema.ts
-    ├── daily-record.schema.ts
-    ├── weight-sample.schema.ts
-    ├── feeding-log.schema.ts
-    ├── harvest.schema.ts
-    ├── disease-event.schema.ts
-    ├── weather.schema.ts
-    └── feed.schema.ts
 
 ═══════════════════════════════════════════════════════
 SECTION 4 — API CLIENT
@@ -175,698 +61,3361 @@ src/api/client.ts:
 
 Create an axios instance with:
   baseURL: process.env.NEXT_PUBLIC_API_URL
-    (default http://localhost:3001/api/v1)
+    (default http://localhost:5003/api/v1)
 
-Request interceptor:
-  Read access token from auth store (Zustand).
-  Attach as: Authorization: Bearer {token}
-  Attach X-Request-ID: nanoid() on every request
 
-Response interceptor — handle errors:
-  401 → attempt token refresh via POST /auth/refresh
-        using refresh token from auth store.
-        If refresh succeeds: retry original request
-          with new access token.
-        If refresh fails: clear auth store, 
-          redirect to /login.
-  403 → do not redirect. Return error so component
-        can show permission denied message.
-  422 → extract validation errors array from 
-        error.response.data.error.details,
-        return as structured ValidationError.
-  500 → log to console in dev, show generic message.
-  Network error → show "Cannot connect to server" toast.
+```json
 
-All responses follow this envelope:
 {
-  success: boolean,
-  data: T,
-  meta: { timestamp, version, requestId },
-  pagination?: { page, limit, total, pages }
-}
-Unwrap automatically in interceptor so hooks receive 
-data directly, not the envelope.
-
-src/api/endpoints.ts:
-
-Export a typed const object with all endpoint strings.
-Derive every endpoint from the Swagger JSON provided.
-Example structure:
-const API = {
-  auth: {
-    login: '/auth/login',
-    register: '/auth/register',
-    refresh: '/auth/refresh',
-    logout: '/auth/logout',
-    me: '/auth/me',
-  },
-  farms: {
-    list: '/farms',
-    create: '/farms',
-    detail: (id: string) => `/farms/${id}`,
-    update: (id: string) => `/farms/${id}`,
-    delete: (id: string) => `/farms/${id}`,
-    summary: (id: string) => `/farms/${id}/summary`,
-  },
-  // ... complete for every endpoint in the Swagger JSON
-}
-export default API;
-
-═══════════════════════════════════════════════════════
-SECTION 5 — TYPESCRIPT TYPES
-═══════════════════════════════════════════════════════
-
-Read the Swagger JSON schemas section completely.
-Generate TypeScript interfaces for every schema.
-Rules:
-- Use the exact field names from the Swagger JSON
-- All nullable fields: field?: Type | null
-- All enums: TypeScript string union types
-- Do not use `any` anywhere
-- Export every type
-
-src/api/types/common.types.ts must include:
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  meta: {
-    timestamp: string;
-    version: string;
-    requestId: string;
-  };
-  pagination?: Pagination;
-}
-
-export interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  pages: number;
-}
-
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: ValidationErrorDetail[];
-}
-
-export interface ValidationErrorDetail {
-  field: string;
-  message: string;
-}
-
-export interface PaginatedResponse<T> {
-  items: T[];
-  pagination: Pagination;
-}
-
-export interface RequestUser {
-  id: string;
-  orgId: string;
-  role: OrgRole;
-  permissions: Permission[];
-}
-
-export type OrgRole = 
-  'owner' | 'admin' | 'manager' | 
-  'supervisor' | 'worker' | 'viewer';
-
-═══════════════════════════════════════════════════════
-SECTION 6 — AUTH STORE (Zustand)
-═══════════════════════════════════════════════════════
-
-src/stores/auth.store.ts:
-
-interface AuthState {
-  user: RequestUser | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  
-  setTokens: (access: string, refresh: string) => void;
-  setUser: (user: RequestUser) => void;
-  clearAuth: () => void;
-  hasPermission: (permission: Permission) => boolean;
-}
-
-Use zustand/middleware persist with localStorage.
-Persist: accessToken, refreshToken, user.
-Do not persist: isLoading.
-
-hasPermission checks user.permissions array.
-Returns false if user is null.
-
-src/lib/permissions.ts:
-
-export function hasPermission(
-  user: RequestUser | null, 
-  permission: Permission
-): boolean
-
-export function hasRole(
-  user: RequestUser | null,
-  role: OrgRole | OrgRole[]
-): boolean
-
-export function canApprove(
-  user: RequestUser,
-  record: { createdByUserId: string }
-): boolean  // returns user.id !== record.createdByUserId
-             // AND user has the approval permission
-
-═══════════════════════════════════════════════════════
-SECTION 7 — TANSTACK QUERY SETUP
-═══════════════════════════════════════════════════════
-
-src/lib/query-client.ts:
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 2,      // 2 minutes
-      gcTime: 1000 * 60 * 10,         // 10 minutes  
-      retry: (failureCount, error) => {
-        // Do not retry on 401, 403, 404
-        if (isApiError(error) && [401,403,404]
-            .includes(error.status)) return false;
-        return failureCount < 2;
-      },
-      refetchOnWindowFocus: false,
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get API information",
+        "tags": [
+          "app"
+        ]
+      }
     },
-    mutations: {
-      onError: (error) => {
-        // Global mutation error toast
-        // Extract message from ApiError shape
+    "/verify-email": {
+      "get": {
+        "operationId": "AuthRedirectController_verifyEmail",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "description": "Email verification token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified successfully"
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          }
+        },
+        "summary": "Verify email address (for email links without /auth prefix)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "operationId": "MetricsController_getMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Prometheus metrics in text format"
+          }
+        },
+        "summary": "Prometheus metrics endpoint",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/users/profile": {
+      "get": {
+        "description": "Get the authenticated user's profile information. Password field is excluded from response.",
+        "operationId": "UsersController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "email": "user@example.com",
+                    "name": "John Doe",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "emailVerified": true,
+                    "isActive": true,
+                    "profilePhoto": "https://cdn.example.com/public/photo.jpg",
+                    "createdAt": "2026-01-17T15:30:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get current user profile",
+        "tags": [
+          "users"
+        ]
+      },
+      "patch": {
+        "description": "Update the authenticated user's profile information. User will be re-indexed in search if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "UsersController_updateProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "email": "user@example.com",
+                    "name": "John Doe Updated",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "emailVerified": true,
+                    "isActive": true,
+                    "updatedAt": "2026-01-17T16:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update user profile",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/profile/photo": {
+      "patch": {
+        "description": "Upload a profile photo. **Requires FEATURE_OBJECT_STORAGE_ENABLED=true**. When disabled, this endpoint will return an error. Only image files are accepted.",
+        "operationId": "UsersController_uploadProfilePhoto",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file (JPEG, PNG, GIF, etc.)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile photo uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "key": "public/1705492800000-profile.jpg",
+                    "url": "https://cdn.example.com/public/1705492800000-profile.jpg",
+                    "message": "Profile photo uploaded successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No file provided or file is not an image"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "503": {
+            "description": "Object storage not available (FEATURE_OBJECT_STORAGE_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload profile photo",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "description": "Register a new user account. Password must be at least 8 characters. User will be indexed in search if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "securePassword123",
+                    "name": "John Doe"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User successfully registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "user": {
+                      "id": "123e4567-e89b-12d3-a456-426614174000",
+                      "email": "user@example.com",
+                      "name": "John Doe",
+                      "emailVerified": false,
+                      "isActive": true,
+                      "createdAt": "2026-01-16T10:00:00.000Z"
+                    },
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+                    "refreshToken": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "409": {
+            "description": "User with this email already exists"
+          },
+          "429": {
+            "description": "Too many requests - rate limited"
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "description": "Authenticate user and receive access and refresh tokens. Access tokens expire in 15 minutes, refresh tokens in 7 days.",
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "securePassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User successfully logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "user": {
+                      "id": "123e4567-e89b-12d3-a456-426614174000",
+                      "email": "user@example.com",
+                      "name": "John Doe",
+                      "emailVerified": true,
+                      "isActive": true,
+                      "createdAt": "2026-01-16T10:00:00.000Z"
+                    },
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+                    "refreshToken": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "429": {
+            "description": "Too many requests - rate limited"
+          }
+        },
+        "summary": "Login user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "description": "Obtain a new access token using a valid refresh token. Refresh tokens are valid for 7 days by default.",
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "refreshToken": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refreshToken": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          }
+        },
+        "summary": "Refresh access token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "User logged out successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Logout user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "description": "Verify email address using verification token. Requires FEATURE_MAIL_ENABLED=true and FEATURE_EMAIL_VERIFICATION_ENABLED=true",
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Email verified successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Verify email address (POST)",
+        "tags": [
+          "auth"
+        ]
+      },
+      "get": {
+        "description": "Verify email address via GET request (typically used in email links). Requires FEATURE_MAIL_ENABLED=true and FEATURE_EMAIL_VERIFICATION_ENABLED=true",
+        "operationId": "AuthController_verifyEmailGet",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "description": "Email verification token",
+            "schema": {
+              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Email verified successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Verify email address (GET - for email links)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/resend-verification": {
+      "post": {
+        "description": "Resend email verification link. Requires FEATURE_MAIL_ENABLED=true and FEATURE_EMAIL_VERIFICATION_ENABLED=true",
+        "operationId": "AuthController_resendVerification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification email sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Verification email sent"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email already verified or invalid email"
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Resend verification email",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "description": "Request a password reset email. Requires FEATURE_MAIL_ENABLED=true",
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "email": "user@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "If the email exists, a password reset link has been sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "If the email exists, a password reset link has been sent"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Request password reset",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "description": "Reset password using reset token from email. Requires FEATURE_MAIL_ENABLED=true",
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+                    "password": "newSecurePassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Password reset successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Reset password",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "AuthController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current user information"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get current user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The Health Check is successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The Health Check is not successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        },
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Health check endpoint",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/files/upload": {
+      "post": {
+        "description": "Upload a file to object storage. **Requires FEATURE_OBJECT_STORAGE_ENABLED=true**. When disabled, this endpoint will return an error.",
+        "operationId": "FilesController_uploadFile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File to upload (any file type)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "key": "public/1705492800000-document.pdf",
+                    "url": "https://cdn.example.com/public/1705492800000-document.pdf",
+                    "filename": "document.pdf",
+                    "mimetype": "application/pdf",
+                    "size": 102400
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No file provided or invalid file"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "503": {
+            "description": "Object storage not available (FEATURE_OBJECT_STORAGE_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload a file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/{key}/signed-url": {
+      "get": {
+        "description": "Generate a time-limited signed URL for accessing a private file. **Requires FEATURE_OBJECT_STORAGE_ENABLED=true**.",
+        "operationId": "FilesController_getSignedUrl",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed URL generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "url": "https://s3.amazonaws.com/bucket/private/1705492800000-secret.pdf?X-Amz-Algorithm=...&X-Amz-Expires=3600"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "403": {
+            "description": "Access denied - user does not own this file"
+          },
+          "404": {
+            "description": "File not found"
+          },
+          "503": {
+            "description": "Object storage not available (FEATURE_OBJECT_STORAGE_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get signed URL for private file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/{key}": {
+      "delete": {
+        "description": "Delete a file from object storage. **Requires FEATURE_OBJECT_STORAGE_ENABLED=true**.",
+        "operationId": "FilesController_deleteFile",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "File deleted successfully"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "403": {
+            "description": "Access denied - user does not own this file"
+          },
+          "404": {
+            "description": "File not found"
+          },
+          "503": {
+            "description": "Object storage not available (FEATURE_OBJECT_STORAGE_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/search/tasks": {
+      "get": {
+        "description": "Returns no tasks. Task search depended on PostgreSQL/TypeORM, which Convex MVP replaced.",
+        "operationId": "SearchController_searchTasks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Empty task results"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Search tasks (removed — tasks module retired for EDULAMAD MVP)",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/search/users": {
+      "get": {
+        "description": "Search users by query string. **Requires FEATURE_SEARCH_ENABLED=true**.",
+        "operationId": "SearchController_searchUsers",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "example": "john",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Offset for pagination",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "example": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "503": {
+            "description": "Search service not available (FEATURE_SEARCH_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Search users using Meilisearch",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/search/global": {
+      "get": {
+        "description": "Task search is disabled without the legacy tasks datastore.",
+        "operationId": "SearchController_globalSearch",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "example": "learn",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per type",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Global search (users only for EDULAMAD MVP)",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/institutions/universities": {
+      "get": {
+        "operationId": "InstitutionsController_listUniversities",
+        "parameters": [
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List universities (cached)",
+        "tags": [
+          "institutions"
+        ]
+      },
+      "post": {
+        "operationId": "InstitutionsController_createUniversity",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUniversityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create university (admin)",
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/universities/{id}": {
+      "get": {
+        "operationId": "InstitutionsController_getUniversity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get university by id",
+        "tags": [
+          "institutions"
+        ]
+      },
+      "patch": {
+        "operationId": "InstitutionsController_updateUniversity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUniversityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update university (admin)",
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/universities/{universityId}/colleges": {
+      "get": {
+        "operationId": "InstitutionsController_listColleges",
+        "parameters": [
+          {
+            "name": "universityId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/colleges": {
+      "post": {
+        "operationId": "InstitutionsController_createCollege",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/colleges/{id}": {
+      "patch": {
+        "operationId": "InstitutionsController_updateCollege",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/colleges/{collegeId}/departments": {
+      "get": {
+        "operationId": "InstitutionsController_listDepartments",
+        "parameters": [
+          {
+            "name": "collegeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/departments": {
+      "post": {
+        "operationId": "InstitutionsController_createDepartment",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/departments/{id}": {
+      "patch": {
+        "operationId": "InstitutionsController_updateDepartment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/departments/{deptId}/courses": {
+      "get": {
+        "operationId": "InstitutionsController_listCourses",
+        "parameters": [
+          {
+            "name": "deptId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/courses/by-code/{code}": {
+      "get": {
+        "operationId": "InstitutionsController_getCourseByCode",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/courses/{id}": {
+      "get": {
+        "operationId": "InstitutionsController_getCourse",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      },
+      "patch": {
+        "operationId": "InstitutionsController_updateCourse",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/courses": {
+      "post": {
+        "operationId": "InstitutionsController_createCourse",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/students/me/profile": {
+      "get": {
+        "operationId": "StudentsController_myProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Current student profile (Convex studentProfiles)",
+        "tags": [
+          "students"
+        ]
+      },
+      "post": {
+        "operationId": "StudentsController_upsertProfile",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create or update student profile",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/me/streak": {
+      "post": {
+        "operationId": "StudentsController_streak",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Record daily activity for streak",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/me/xp": {
+      "post": {
+        "operationId": "StudentsController_xp",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Award XP (internal / gamification use)",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/questions/courses/{courseId}": {
+      "get": {
+        "operationId": "QuestionsController_listByCourse",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List past questions for a course",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}/solutions": {
+      "get": {
+        "operationId": "QuestionsController_listSolutions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}": {
+      "get": {
+        "operationId": "QuestionsController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      },
+      "delete": {
+        "operationId": "QuestionsController_softDelete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/upload-queue": {
+      "post": {
+        "operationId": "QuestionsController_uploadQueue",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions": {
+      "post": {
+        "operationId": "QuestionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "courseId": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "number"
+                  },
+                  "levelData": {
+                    "type": "number"
+                  },
+                  "questionText": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create question; optional attachment → R2",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}/verify": {
+      "patch": {
+        "operationId": "QuestionsController_verify",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{questionId}/solutions": {
+      "post": {
+        "operationId": "QuestionsController_addSolution",
+        "parameters": [
+          {
+            "name": "questionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/solutions/{solutionId}/upvote": {
+      "post": {
+        "operationId": "QuestionsController_upvote",
+        "parameters": [
+          {
+            "name": "solutionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/ai/chat": {
+      "post": {
+        "operationId": "AiController_chat",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Chat completion (OpenAI + Convex session + usage log)",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/ai/complete": {
+      "post": {
+        "operationId": "AiController_complete",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "One-shot completion",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/slides/courses/{courseId}": {
+      "get": {
+        "operationId": "SlidesController_list",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List slides for course",
+        "tags": [
+          "slides"
+        ]
+      },
+      "post": {
+        "operationId": "SlidesController_upload",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload slide to R2 and enqueue processing",
+        "tags": [
+          "slides"
+        ]
+      }
+    },
+    "/slides/{id}/outputs": {
+      "get": {
+        "operationId": "SlidesController_outputs",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "slides"
+        ]
+      }
+    },
+    "/slides/{id}": {
+      "delete": {
+        "operationId": "SlidesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "slides"
+        ]
+      }
+    },
+    "/exams/simulations": {
+      "post": {
+        "operationId": "ExamsController_start",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Start exam simulation",
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/exams/simulations/{id}": {
+      "get": {
+        "operationId": "ExamsController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/exams/simulations/{id}/answers": {
+      "patch": {
+        "operationId": "ExamsController_answers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/exams/simulations/{id}/complete": {
+      "post": {
+        "operationId": "ExamsController_complete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/exams/simulations/{id}/abandon": {
+      "post": {
+        "operationId": "ExamsController_abandon",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/subscriptions/plans": {
+      "get": {
+        "operationId": "SubscriptionsController_plans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List subscription plans",
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/subscriptions/me": {
+      "get": {
+        "operationId": "SubscriptionsController_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/subscriptions/pay/upload-fee": {
+      "post": {
+        "operationId": "SubscriptionsController_payUploadFee",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/subscriptions/webhooks/paystack": {
+      "post": {
+        "operationId": "SubscriptionsController_paystackWebhook",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Paystack webhook (requires raw body + x-paystack-signature in production)",
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/gamification/leaderboard": {
+      "get": {
+        "operationId": "GamificationController_leaderboard",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Leaderboard (cached)",
+        "tags": [
+          "gamification"
+        ]
+      }
+    },
+    "/gamification/badges/me": {
+      "get": {
+        "operationId": "GamificationController_myBadges",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "gamification"
+        ]
+      }
+    },
+    "/gamification/wallet/me": {
+      "get": {
+        "operationId": "GamificationController_wallet",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "gamification"
+        ]
+      }
+    },
+    "/ta/upload-queue": {
+      "get": {
+        "operationId": "TaController_queue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List upload queue items",
+        "tags": [
+          "ta"
+        ]
+      }
+    },
+    "/ta/upload-queue/{id}": {
+      "patch": {
+        "operationId": "TaController_review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "ta"
+        ]
+      }
+    },
+    "/notifications/me": {
+      "get": {
+        "operationId": "NotificationsController_myNotifications",
+        "parameters": [
+          {
+            "name": "unreadOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "In-app notifications for the current user (Convex users id)",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/notifications/{id}/read": {
+      "patch": {
+        "operationId": "NotificationsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark a notification as read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/analytics/me": {
+      "get": {
+        "operationId": "AnalyticsController_mySnapshots",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Learning analytics snapshots for the current user",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/bookmarks/me": {
+      "get": {
+        "operationId": "BookmarksController_myBookmarks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List bookmarks for current user",
+        "tags": [
+          "bookmarks"
+        ]
+      }
+    },
+    "/bookmarks": {
+      "post": {
+        "operationId": "BookmarksController_add",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookmarkDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Add a bookmark (idempotent per ref)",
+        "tags": [
+          "bookmarks"
+        ]
+      }
+    },
+    "/bookmarks/{id}": {
+      "delete": {
+        "operationId": "BookmarksController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Remove a bookmark",
+        "tags": [
+          "bookmarks"
+        ]
+      }
+    },
+    "/flashcards/me": {
+      "get": {
+        "operationId": "FlashcardsController_myFlashcards",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List flashcards for current user",
+        "tags": [
+          "flashcards"
+        ]
+      }
+    },
+    "/flashcards": {
+      "post": {
+        "operationId": "FlashcardsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFlashcardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a flashcard",
+        "tags": [
+          "flashcards"
+        ]
+      }
+    },
+    "/flashcards/{id}": {
+      "patch": {
+        "operationId": "FlashcardsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFlashcardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update a flashcard",
+        "tags": [
+          "flashcards"
+        ]
+      },
+      "delete": {
+        "operationId": "FlashcardsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a flashcard",
+        "tags": [
+          "flashcards"
+        ]
+      }
+    },
+    "/timetables/me": {
+      "get": {
+        "operationId": "TimetablesController_myTimetables",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List exam timetable entries for current user",
+        "tags": [
+          "timetables"
+        ]
+      }
+    },
+    "/timetables": {
+      "post": {
+        "operationId": "TimetablesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTimetableDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a timetable entry",
+        "tags": [
+          "timetables"
+        ]
+      }
+    },
+    "/timetables/{id}": {
+      "patch": {
+        "operationId": "TimetablesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTimetableDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update a timetable entry",
+        "tags": [
+          "timetables"
+        ]
+      },
+      "delete": {
+        "operationId": "TimetablesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a timetable entry",
+        "tags": [
+          "timetables"
+        ]
+      }
+    },
+    "/admin/stats": {
+      "get": {
+        "operationId": "AdminController_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Aggregated stats (cached)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/notifications": {
+      "post": {
+        "operationId": "AdminController_createNotification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminNotificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create an in-app / push / email notification for a user",
+        "tags": [
+          "admin"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "NestJS Production API",
+    "description": "Production-ready NestJS backend boilerplate API documentation.\n    \n**Feature Status:**\n- Background jobs disabled\n- Email service disabled\n- Object storage disabled\n\n**Feature Toggles:**\nAll features are controlled via environment variables:\n- FEATURE_REDIS_ENABLED\n- FEATURE_JOBS_ENABLED\n- FEATURE_MAIL_ENABLED\n- FEATURE_EMAIL_VERIFICATION_ENABLED\n- FEATURE_OBJECT_STORAGE_ENABLED\n- FEATURE_SEARCH_ENABLED\n\nSet these to \"true\" or \"false\" to enable/disable features.",
+    "version": "1.0",
+    "contact": {
+
+    }
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authentication endpoints"
+    },
+    {
+      "name": "admin",
+      "description": "Admin management endpoints (organizations, roles, permissions)"
+    },
+    {
+      "name": "users",
+      "description": "User management"
+    },
+    {
+      "name": "tasks",
+      "description": "Task management"
+    },
+    {
+      "name": "files",
+      "description": "File upload and management (requires FEATURE_OBJECT_STORAGE_ENABLED=true)"
+    },
+    {
+      "name": "search",
+      "description": "Search endpoints (requires FEATURE_SEARCH_ENABLED=true)"
+    },
+    {
+      "name": "health",
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "metrics",
+      "description": "Metrics endpoints"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "JWT-auth": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "name": "JWT",
+        "description": "Enter JWT token",
+        "in": "header"
+      }
+    },
+    "schemas": {
+      "UserPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "description": "UI theme preference",
+            "enum": [
+              "light",
+              "dark",
+              "auto"
+            ],
+            "example": "dark"
+          },
+          "language": {
+            "type": "string",
+            "description": "Language preference (ISO 639-1 code)",
+            "example": "en"
+          },
+          "notifications": {
+            "type": "object",
+            "description": "Notification preferences",
+            "example": {
+              "email": true,
+              "push": false,
+              "sms": false
+            }
+          }
+        }
+      },
+      "SocialLinksDto": {
+        "type": "object",
+        "properties": {
+          "twitter": {
+            "type": "string",
+            "description": "Twitter profile URL",
+            "example": "https://twitter.com/username",
+            "format": "uri"
+          },
+          "linkedin": {
+            "type": "string",
+            "description": "LinkedIn profile URL",
+            "example": "https://linkedin.com/in/username",
+            "format": "uri"
+          },
+          "github": {
+            "type": "string",
+            "description": "GitHub profile URL",
+            "example": "https://github.com/username",
+            "format": "uri"
+          },
+          "facebook": {
+            "type": "string",
+            "description": "Facebook profile URL",
+            "example": "https://facebook.com/username",
+            "format": "uri"
+          }
+        }
+      },
+      "UpdateUserProfileDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "First name",
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Last name",
+            "example": "Doe"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number",
+            "example": "+1234567890"
+          },
+          "bio": {
+            "type": "string",
+            "description": "User bio",
+            "example": "Software engineer passionate about NestJS and TypeScript"
+          },
+          "profilePhoto": {
+            "type": "string",
+            "description": "Profile photo URL or S3 key",
+            "example": "public/1705492800000-profile.jpg"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth (ISO 8601 format)",
+            "example": "1990-01-01",
+            "format": "date"
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address",
+            "example": "123 Main St"
+          },
+          "city": {
+            "type": "string",
+            "description": "City",
+            "example": "San Francisco"
+          },
+          "state": {
+            "type": "string",
+            "description": "State or province",
+            "example": "CA"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country",
+            "example": "USA"
+          },
+          "zipCode": {
+            "type": "string",
+            "description": "ZIP or postal code",
+            "example": "94102"
+          },
+          "website": {
+            "type": "string",
+            "description": "Personal website URL",
+            "example": "https://johndoe.com",
+            "format": "uri"
+          },
+          "company": {
+            "type": "string",
+            "description": "Company name",
+            "example": "Acme Corporation"
+          },
+          "jobTitle": {
+            "type": "string",
+            "description": "Job title",
+            "example": "Senior Software Engineer"
+          },
+          "preferences": {
+            "description": "User preferences",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserPreferencesDto"
+              }
+            ]
+          },
+          "socialLinks": {
+            "description": "Social media links",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SocialLinksDto"
+              }
+            ]
+          }
+        }
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password (minimum 8 characters)",
+            "example": "password123",
+            "minLength": 8
+          },
+          "name": {
+            "type": "string",
+            "description": "User full name",
+            "example": "John Doe"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "name"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "example": "password123"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token received from login or register",
+            "example": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "VerifyEmailDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Email verification token sent to user email",
+            "example": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address to send password reset link",
+            "example": "user@example.com",
+            "format": "email"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Password reset token received via email",
+            "example": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+          },
+          "password": {
+            "type": "string",
+            "description": "New password (minimum 8 characters)",
+            "example": "newpassword123",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ]
+      },
+      "CreateUniversityDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "acronym": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "logoKey": {
+            "type": "string"
+          },
+          "websiteUrl": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "name",
+          "acronym",
+          "location",
+          "type",
+          "isActive"
+        ]
+      },
+      "UpdateUniversityDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "acronym": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "logoKey": {
+            "type": "string"
+          },
+          "websiteUrl": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateBookmarkDto": {
+        "type": "object",
+        "properties": {
+          "refType": {
+            "type": "string",
+            "enum": [
+              "question",
+              "solution",
+              "slide"
+            ]
+          },
+          "refId": {
+            "type": "string",
+            "description": "Target document id (Convex string id)"
+          }
+        },
+        "required": [
+          "refType",
+          "refId"
+        ]
+      },
+      "CreateFlashcardDto": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "description": "Convex courses table id"
+          },
+          "front": {
+            "type": "string"
+          },
+          "back": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "manual"
+            ]
+          }
+        },
+        "required": [
+          "courseId",
+          "front",
+          "back",
+          "source"
+        ]
+      },
+      "UpdateFlashcardDto": {
+        "type": "object",
+        "properties": {
+          "front": {
+            "type": "string"
+          },
+          "back": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "manual"
+            ]
+          }
+        }
+      },
+      "CreateTimetableDto": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "description": "Convex courses table id"
+          },
+          "examDate": {
+            "type": "string",
+            "example": "2026-05-12"
+          },
+          "remindAt": {
+            "type": "number",
+            "description": "Unix ms when to remind"
+          },
+          "notified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "courseId",
+          "examDate",
+          "remindAt",
+          "notified"
+        ]
+      },
+      "UpdateTimetableDto": {
+        "type": "object",
+        "properties": {
+          "examDate": {
+            "type": "string",
+            "example": "2026-05-12"
+          },
+          "remindAt": {
+            "type": "number"
+          },
+          "notified": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateAdminNotificationDto": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "string",
+            "description": "Convex users table id of the recipient"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "push",
+              "email",
+              "in_app"
+            ]
+          },
+          "ctaUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "studentId",
+          "type",
+          "title",
+          "body",
+          "channel"
+        ]
       }
     }
   }
-});
-
-In pages/_app.js:
-Wrap with QueryClientProvider.
-Add ReactQueryDevtools in development only.
-Keep existing Redux Provider and other providers.
-
-═══════════════════════════════════════════════════════
-SECTION 8 — QUERY KEYS
-═══════════════════════════════════════════════════════
-
-src/api/query-keys.ts:
-
-Export a const object with all query keys.
-Keys must be structured arrays so invalidation works 
-precisely:
-
-export const queryKeys = {
-  farms: {
-    all: ['farms'] as const,
-    lists: () => [...queryKeys.farms.all, 'list'] as const,
-    list: (filters: FarmFilters) => 
-      [...queryKeys.farms.lists(), filters] as const,
-    details: () => [...queryKeys.farms.all, 'detail'] as const,
-    detail: (id: string) => 
-      [...queryKeys.farms.details(), id] as const,
-    summary: (id: string) => 
-      [...queryKeys.farms.all, 'summary', id] as const,
-  },
-  units: { /* same pattern */ },
-  cycles: { /* same pattern, also by pondId */ },
-  dailyRecords: { /* by pondId + date range */ },
-  weightSamples: { /* by pondId */ },
-  feedingLogs: { /* by pondId */ },
-  harvests: { /* by orgId + filters */ },
-  feed: {
-    suppliers: { all, lists, detail },
-    types: { all, lists, detail, lowStock },
-    purchases: { all, lists, detail, summary },
-    inventory: { all, transactions },
-  },
-  analytics: {
-    overview: ['analytics', 'overview'] as const,
-    growthTrends: (pondId: string) => 
-      ['analytics', 'growth', pondId] as const,
-    harvestReadiness: ['analytics', 'readiness'] as const,
-    mortalityTrends: (filters) => 
-      ['analytics', 'mortality', filters] as const,
-    feedEfficiency: ['analytics', 'feed-efficiency'] as const,
-  },
-  notifications: {
-    all: ['notifications'] as const,
-  },
 }
 
-═══════════════════════════════════════════════════════
-SECTION 9 — HOOKS PATTERN
-═══════════════════════════════════════════════════════
-
-Write ALL hooks following this exact pattern.
-Do not deviate.
-
-Query hook example (useFarms.ts):
-
-import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '@/api/query-keys';
-import { apiClient } from '@/api/client';
-import API from '@/api/endpoints';
-import type { Farm, FarmFilters } from '@/api/types/farm.types';
-import type { PaginatedResponse } from '@/api/types/common.types';
-
-export function useFarms(filters?: FarmFilters) {
-  return useQuery({
-    queryKey: queryKeys.farms.list(filters ?? {}),
-    queryFn: () => apiClient.get<PaginatedResponse<Farm>>(
-      API.farms.list, { params: filters }
-    ),
-  });
-}
-
-Mutation hook example (useCreateFarm.ts):
-
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/api/query-keys';
-import { apiClient } from '@/api/client';
-import API from '@/api/endpoints';
-import type { Farm, CreateFarmDto } from '@/api/types/farm.types';
-
-export function useCreateFarm() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (data: CreateFarmDto) =>
-      apiClient.post<Farm>(API.farms.create, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.farms.lists() 
-      });
-    },
-  });
-}
-
-Write ALL hooks listed in Section 3.
-Every hook must be fully implemented — not a stub.
-Include all params, types, and invalidations.
-
-Special hooks to note:
-
-useBulkCreateDailyRecords:
-  mutationFn accepts array, posts to bulk endpoint
-  onSuccess: invalidate daily records AND feed inventory
-    (bulk insert decrements stock)
-
-useCreateHarvest:
-  onSuccess: invalidate harvests, cycles (status changes),
-    units (status changes to fallow if full harvest),
-    analytics overview
-
-useCreateFeedPurchase:
-  onSuccess: invalidate feed inventory, feed types
-    (stock updates), feed purchases list
-
-useInventoryAdjustment:
-  onSuccess: invalidate feed inventory, 
-    feed inventory transactions
-
-useNotifications — use useQuery with refetchInterval: 30000
-  (poll every 30 seconds for new notifications)
-
-═══════════════════════════════════════════════════════
-SECTION 10 — ZOD SCHEMAS
-═══════════════════════════════════════════════════════
-
-Write Zod schemas for every form in the application.
-Derive field constraints from the Swagger JSON.
-
-src/schemas/farm.schema.ts example:
-
-import { z } from 'zod';
-
-export const createFarmSchema = z.object({
-  name: z.string().min(2).max(255),
-  region: z.enum(['greater_accra', 'volta', 'ashanti',
-    'central', 'northern', 'upper_east', 'upper_west',
-    'western', 'eastern', 'bono', 'other']),
-  district: z.string().max(255).optional(),
-  community: z.string().max(255).optional(),
-  waterSource: z.enum(['river','borehole','rain',
-    'municipal','pond','mixed']),
-  totalLandAreaHa: z.number().positive().optional(),
-  waterAreaHa: z.number().positive().optional(),
-  electricityAccess: z.boolean().default(false),
-  roadAccessType: z.enum(['tarred','gravel',
-    'dirt','footpath']).optional(),
-  gpsLatitude: z.number().min(-90).max(90).optional(),
-  gpsLongitude: z.number().min(-180).max(180).optional(),
-});
-
-export type CreateFarmDto = z.infer<typeof createFarmSchema>;
-
-Write schemas for:
-createFarmSchema, updateFarmSchema,
-createUnitSchema, updateUnitSchema,
-createCycleSchema,
-createDailyRecordSchema, bulkDailyRecordSchema,
-createWeightSampleSchema,
-createFeedingLogSchema,
-createHarvestSchema,
-createDiseaseEventSchema,
-createWeatherObservationSchema,
-createFeedSupplierSchema,
-createFeedTypeSchema,
-createFeedPurchaseSchema,
-inventoryAdjustmentSchema,
-loginSchema, registerSchema,
-inviteUserSchema
-
-═══════════════════════════════════════════════════════
-SECTION 11 — REPLACE SUPABASE CALLS
-═══════════════════════════════════════════════════════
-
-Go through every file in lib/ that calls Supabase.
-Replace each function with a call to the equivalent hook.
-Map as follows:
-
-lib/cageService.js         → hooks/units/*
-lib/stockingService.js     → hooks/cycles/*
-lib/databaseService.js     → hooks/daily-records/*,
-                             hooks/weight-samples/*,
-                             hooks/harvests/*
-lib/feedService.js         → hooks/feed/*
-lib/auditLogService.js     → keep for now, wrap later
-lib/userService.js         → hooks/users/*
-lib/companyService.js      → replace with org API calls
-lib/analyticsService.js    → hooks/analytics/*
-lib/notificationService.js → hooks/notifications/*
-
-For each page that uses a service:
-- Remove the useEffect + direct service call pattern
-- Replace with the appropriate hook from hooks/
-- Use hook's data, isLoading, error directly
-
-Do NOT change any UI — only replace data fetching.
-
-═══════════════════════════════════════════════════════
-SECTION 12 — AUTH MIGRATION
-═══════════════════════════════════════════════════════
-
-contexts/AuthContext.js currently uses Supabase auth.
-Replace with Nsuo API auth.
-
-Keep AuthContext.js but gut the Supabase calls:
-
-useAuth hook:
-  - reads from Zustand auth store
-  - exposes: user, isAuthenticated, isLoading,
-    hasPermission, hasRole
-
-Login flow:
-  - call POST /auth/login via useLogin mutation
-  - on success: store tokens + user in Zustand
-  - redirect to /dashboard
-
-Register flow:
-  - call POST /auth/register via useRegister mutation
-  - on success: store tokens + user in Zustand
-  - redirect to /dashboard
-
-Logout flow:
-  - call POST /auth/logout
-  - clear Zustand store regardless of response
-  - redirect to /login
-
-Token refresh:
-  - handled in axios interceptor (Section 4)
-  - Zustand store updated with new tokens
-
-Replace AuthWrapper HOC:
-  - Read isAuthenticated from Zustand store
-  - Keep same route protection logic
-  - Remove all Supabase auth.getSession() calls
-
-Add middleware.ts at repo root:
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-const PUBLIC_ROUTES = ['/login', '/signup', 
-  '/register-company', '/pending-approval'];
-
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('accessToken')?.value;
-  const isPublic = PUBLIC_ROUTES.some(route => 
-    request.nextUrl.pathname.startsWith(route));
-  
-  if (!token && !isPublic) {
-    return NextResponse.redirect(
-      new URL('/login', request.url));
-  }
-  if (token && isPublic) {
-    return NextResponse.redirect(
-      new URL('/dashboard', request.url));
-  }
-  return NextResponse.next();
-}
-
-export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
-};
-
-Also store accessToken in httpOnly cookie on login 
-(for middleware to read) AND in Zustand (for axios).
-
-═══════════════════════════════════════════════════════
-SECTION 13 — TANSTACK TABLE
-═══════════════════════════════════════════════════════
-
-Replace the existing DataTable.js component with 
-TanStack Table v8.
-
-Create src/components/ui/DataTable.tsx:
-
-Features to implement:
-- Server-side pagination (page, limit passed as query params)
-- Server-side sorting (sort, order passed as query params)  
-- Column visibility toggle
-- Row selection with checkbox
-- Sticky header
-- Loading skeleton (same row count as current page)
-- Empty state with icon and message
-- Mobile: hide lower-priority columns below md breakpoint
-
-Props interface:
-interface DataTableProps<T> {
-  data: T[];
-  columns: ColumnDef<T>[];
-  pagination?: Pagination;
-  onPageChange?: (page: number) => void;
-  onPageSizeChange?: (size: number) => void;
-  onSortChange?: (sort: string, order: 'ASC'|'DESC') => void;
-  isLoading?: boolean;
-  emptyMessage?: string;
-  selectable?: boolean;
-  onSelectionChange?: (rows: T[]) => void;
-}
-
-Apply this component to these existing pages:
-pages/cages/index.js (now units)
-pages/daily-data.js
-pages/biweekly-records.js
-pages/stocking-management.js
-pages/audit-logs.js
-pages/feed-purchases.js
-pages/users.js
-
-═══════════════════════════════════════════════════════
-SECTION 14 — UNITS PAGE (replaces cages pages)
-═══════════════════════════════════════════════════════
-
-The existing pages/cages/ directory handles cages only.
-The API now has a unified units endpoint.
-
-Update pages/cages/index.js:
-- Rename display to "Units" 
-- Add unitType filter tabs: All / Ponds / Cages / 
-  Nurseries / Tanks
-- Use useUnits({ farmId, type }) hook
-- Display unitType badge on each row
-
-Update pages/create-cage.js → becomes create-unit 
-effectively:
-- Add unitType select field at the top of the form
-- Show/hide relevant fields based on unitType
-  (cage: dimensions, material — pond: soilType, liner)
-- Use createUnitSchema
-
-═══════════════════════════════════════════════════════
-SECTION 15 — FEED MANAGEMENT PAGES
-═══════════════════════════════════════════════════════
-
-The existing feed management pages already have UI.
-Replace their data fetching only.
-
-pages/feed-management.js:
-  Replace lib/feedService calls with:
-  useFeeding logs hook, useFeedInventory hook
-
-pages/feed-management/overview.js:
-  useFeedInventory() — current stock levels
-  useLowStock() — alert banner if any items low
-  useFeedPurchaseSummary({ from, to }) — cost summary
-
-pages/feed-management/analytics.js:
-  useFeedEfficiency()
-  useFeedCostTrends({ from, to })
-  useFeedBrandPerformance()
-
-pages/stock-levels.js:
-  useLowStock() hook
-  Add reorder suggestion: 
-    deficit = minimumStockKg - currentStockKg
-    Show "Order {deficit}kg to reach minimum" inline
-
-pages/inventory-transactions.js:
-  useFeedInventory + transactions endpoint
-  Show running balance column
-
-New page — pages/feed-purchases.js (if not exists):
-  useFeedPurchases({ feedTypeId, from, to })
-  DataTable with: date, supplier, feed type, qty, 
-  price/kg, total, batch number
-  Add "New Purchase" button → modal with 
-  createFeedPurchaseSchema form
-
-New page — pages/inventory-alerts.js:
-  useLowStock() with auto-refresh every 5 minutes
-  useQueryClient().invalidateQueries on manual refresh
-
-═══════════════════════════════════════════════════════
-SECTION 16 — NOTIFICATIONS
-═══════════════════════════════════════════════════════
-
-Existing NotificationContext.js uses Supabase 
-real-time subscription. Replace with polling.
-
-Update contexts/NotificationContext.js:
-  Remove supabase.channel() subscription
-  Use useNotifications() hook (polls every 30s)
-  Keep same context shape so existing components work:
-  { notifications, unreadCount, markRead, markAllRead }
-
-Add notification bell in the top nav:
-  Show unreadCount badge
-  Dropdown: list last 10 notifications
-  "Mark all read" button
-  Link to /notifications page
-
-New page pages/notifications.js:
-  Full list, paginated
-  Filter: all / unread / by type
-  Mark individual as read on click
-
-═══════════════════════════════════════════════════════
-SECTION 17 — ENVIRONMENT SETUP
-═══════════════════════════════════════════════════════
-
-Create/update .env.local:
-NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
-NEXT_PUBLIC_APP_NAME=Nsuo
-
-Create .env.example with all variables documented.
-
-Update next.config.mjs:
-- Remove eslint: { ignoreDuringBuilds: true }
-- Add rewrites for /api/* → NestJS in development
-  (so CORS is not an issue during dev)
-```javascript
-async rewrites() {
-  return [
-    {
-      source: '/api/backend/:path*',
-      destination: 'http://localhost:3001/api/v1/:path*',
-    },
-  ];
-},
 ```
-
-═══════════════════════════════════════════════════════
-SECTION 18 — ERROR HANDLING COMPONENTS
-═══════════════════════════════════════════════════════
-
-Create src/components/ui/ErrorBoundary.tsx:
-  Class component ErrorBoundary
-  Shows friendly error page with retry button
-  Logs error to console in dev
-
-Create src/components/ui/ApiErrorMessage.tsx:
-  Renders ApiError shape into user-readable message
-  Handles: VALIDATION_ERROR (show field errors),
-  FORBIDDEN (show permission message),
-  NOT_FOUND (show not found message),
-  INTERNAL_SERVER_ERROR (show generic message)
-
-Create src/components/ui/LoadingSkeleton.tsx:
-  Variants: table, card, form, dashboard
-  Uses Tailwind animate-pulse
-
-Update pages/500.js and pages/404.js with proper
-styled pages matching the app design.
-
-═══════════════════════════════════════════════════════
-SECTION 19 — PERMISSIONS IN UI
-═══════════════════════════════════════════════════════
-
-Create src/components/ui/PermissionGate.tsx:
-
-interface PermissionGateProps {
-  permission: Permission;
-  fallback?: ReactNode;
-  children: ReactNode;
-}
-
-function PermissionGate({ permission, fallback, children }) {
-  const { user } = useAuthStore();
-  if (!hasPermission(user, permission)) {
-    return fallback ?? null;
-  }
-  return children;
-}
-
-Use PermissionGate to conditionally show:
-- "New Farm" button: farms.create
-- "Approve" button on stocking: stocking.approve
-- "Approve" button on weight samples: biweekly.approve
-- "Approve" button on harvest: harvests.approve
-- Delete buttons: respective delete permissions
-- Admin nav links: audit_logs.read
-- Finance data: finance.read
-- Export buttons: reports.export
-
-═══════════════════════════════════════════════════════
-SECTION 20 — OUTPUT CHECKLIST
-═══════════════════════════════════════════════════════
-
-When complete, output:
-
-1. List of every new file created with one-line description
-2. List of every existing file modified with what changed
-3. List of any Supabase imports that still remain 
-   (so we can clean up in next session)
-4. List of any TODO items or decisions that need review
-5. Confirmation that the app starts without errors:
-   npm run dev should show no TypeScript errors
-   All existing pages should still render
-   Login flow should work against the NestJS API
-
-═══════════════════════════════════════════════════════
-RULES
-═══════════════════════════════════════════════════════
-
-- Never use `any` in TypeScript
-- Never hardcode API URLs — always use API endpoints const
-- Never call axios directly — always use apiClient
-- Never read orgId from anywhere except the auth store
-- All forms use react-hook-form + zodResolver
-- All lists use TanStack Query — no useEffect data fetching
-- All tables use TanStack Table DataTable component
-- Keep all existing UI/CSS — only replace data layer
-- Do not break any existing page that currently works

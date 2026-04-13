@@ -15,7 +15,7 @@ type Props = {
   disabled?: boolean;
 };
 
-export function TenantAccessPanel({ organizationId, disabled }: Props) {
+export function InstitutionAccessPanel({ organizationId, disabled }: Props) {
   const { showToast } = useToast();
   const rolesQ = useAdminOrgRoles(organizationId);
   const membersQ = useAdminOrgMembers(organizationId);
@@ -94,7 +94,7 @@ export function TenantAccessPanel({ organizationId, disabled }: Props) {
         ) : rolesQ.isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => (
-              <SkeletonNotificationRow key={`tenant-roles-skeleton-${i}`} />
+              <SkeletonNotificationRow key={`inst-roles-skeleton-${i}`} />
             ))}
           </div>
         ) : !rolesQ.data?.length ? (
@@ -157,7 +157,7 @@ export function TenantAccessPanel({ organizationId, disabled }: Props) {
         ) : membersQ.isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <SkeletonNotificationRow key={`tenant-members-skeleton-${i}`} />
+              <SkeletonNotificationRow key={`inst-members-skeleton-${i}`} />
             ))}
           </div>
         ) : !membersQ.data?.length ? (

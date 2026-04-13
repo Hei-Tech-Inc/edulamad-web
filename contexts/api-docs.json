@@ -59,6 +59,678 @@
         ]
       }
     },
+    "/internal/qstash/jobs": {
+      "post": {
+        "operationId": "QstashWebhookController_handleJobs",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "QstashWebhook"
+        ]
+      }
+    },
+    "/questions": {
+      "get": {
+        "operationId": "QuestionsController_index",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Questions module health route (public)",
+        "tags": [
+          "questions"
+        ]
+      },
+      "post": {
+        "operationId": "QuestionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "courseId": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "number"
+                  },
+                  "levelData": {
+                    "type": "number"
+                  },
+                  "questionText": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create question; optional attachment → R2",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/courses/{courseId}": {
+      "get": {
+        "operationId": "QuestionsController_listByCourse",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2024,
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                100,
+                200,
+                300,
+                400
+              ],
+              "type": "number"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Question type filter. Accepts canonical values and aliases: objective->mcq, theory->essay, practical->calculation.",
+            "schema": {
+              "enum": [
+                "mcq",
+                "essay",
+                "calculation",
+                "programming",
+                "objective",
+                "theory",
+                "practical"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List past questions for a course",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/uploads/{uploadQueueId}/preview": {
+      "get": {
+        "operationId": "QuestionsController_getUploadPreview",
+        "parameters": [
+          {
+            "name": "uploadQueueId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Preview extracted questions, signed URLs for source PDF and stored JSON (if any)",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/upload-queue": {
+      "get": {
+        "operationId": "QuestionsController_listUploadQueue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List upload queue items (alias of GET /ta/upload-queue)",
+        "tags": [
+          "questions"
+        ]
+      },
+      "post": {
+        "operationId": "QuestionsController_uploadQueue",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}/solutions": {
+      "get": {
+        "operationId": "QuestionsController_listSolutions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}/source-document": {
+      "get": {
+        "operationId": "QuestionsController_getSourceDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get signed URL for original source document linked to this question",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}": {
+      "get": {
+        "description": "Requires JWT. Enforces past-question access: paid/unlimited users always allowed; free users get 3 unique questions via server-side ledger, then must use credits. This route calls `openPastQuestion` atomically before returning the question — expect 403 when access is denied (body message = reason).",
+        "operationId": "QuestionsController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Past question access denied (limit reached or no credits)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get a past question by id",
+        "tags": [
+          "questions"
+        ]
+      },
+      "delete": {
+        "operationId": "QuestionsController_softDelete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/upload": {
+      "post": {
+        "operationId": "QuestionsController_uploadForProcessing",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "courseId": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "number"
+                  },
+                  "levelData": {
+                    "type": "number"
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "ta",
+                      "student",
+                      "team"
+                    ]
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "courseId",
+                  "year",
+                  "levelData",
+                  "file"
+                ],
+                "example": {
+                  "courseId": "k57h2x3f8t0u1q4r9w6y7z8a9b0cde12",
+                  "year": 2024,
+                  "levelData": 300,
+                  "source": "team",
+                  "file": "<binary>"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload question file → R2; enqueue Bull job for extract + parse (202)",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/upload-bundle": {
+      "post": {
+        "operationId": "QuestionsController_uploadBundle",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "PDF + JSON bundle: both are stored in R2 (`.../source.pdf`, `.../extracted.json`), then questions are created from JSON with `attachmentKey` = PDF.",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "courseId": {
+                    "type": "string",
+                    "example": "k57h2x3f8t0u1q4r9w6y7z8a9b0cde12"
+                  },
+                  "year": {
+                    "type": "number",
+                    "example": 2024
+                  },
+                  "levelData": {
+                    "type": "number",
+                    "example": 300
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "ta",
+                      "student",
+                      "team"
+                    ],
+                    "example": "team"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Source PDF"
+                  },
+                  "extracted": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JSON file: array of questions or { \"questions\": [...] }"
+                  }
+                },
+                "required": [
+                  "courseId",
+                  "year",
+                  "levelData",
+                  "file",
+                  "extracted"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Store PDF + extracted JSON in R2, then apply JSON as past questions (202)",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}/verify": {
+      "patch": {
+        "operationId": "QuestionsController_verify",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{questionId}/solutions": {
+      "post": {
+        "operationId": "QuestionsController_addSolution",
+        "parameters": [
+          {
+            "name": "questionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/solutions/{solutionId}/upvote": {
+      "post": {
+        "operationId": "QuestionsController_upvote",
+        "parameters": [
+          {
+            "name": "solutionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/slides/courses/{courseId}": {
+      "get": {
+        "operationId": "SlidesController_list",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List slides for course",
+        "tags": [
+          "slides"
+        ]
+      },
+      "post": {
+        "operationId": "SlidesController_upload",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload slide to R2 and enqueue processing",
+        "tags": [
+          "slides"
+        ]
+      }
+    },
+    "/slides/{id}/outputs": {
+      "get": {
+        "operationId": "SlidesController_outputs",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "slides"
+        ]
+      }
+    },
+    "/slides/{id}": {
+      "delete": {
+        "operationId": "SlidesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "slides"
+        ]
+      }
+    },
     "/users/profile": {
       "get": {
         "description": "Get the authenticated user's profile information. Password field is excluded from response.",
@@ -215,9 +887,271 @@
         ]
       }
     },
+    "/tasks": {
+      "get": {
+        "description": "Get a paginated list of tasks for the authenticated user. Supports filtering by status and search query. Search uses Meilisearch if FEATURE_SEARCH_ENABLED=true, otherwise falls back to database search.",
+        "operationId": "TasksController_findAll",
+        "parameters": [
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Number of tasks to skip",
+            "schema": {
+              "default": 0,
+              "example": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of tasks per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search query (uses Meilisearch if FEATURE_SEARCH_ENABLED=true)",
+            "schema": {
+              "example": "project",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter tasks by status",
+            "schema": {
+              "enum": [
+                "OPEN",
+                "IN_PROGRESS",
+                "DONE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "title": "Complete project",
+                        "description": "Finish the NestJS project",
+                        "status": "IN_PROGRESS",
+                        "userId": "user-uuid",
+                        "createdAt": "2026-01-17T15:30:00.000Z"
+                      }
+                    ],
+                    "meta": {
+                      "total": 1,
+                      "limit": 20,
+                      "offset": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all tasks",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "post": {
+        "description": "Create a new task. The task will be indexed in search if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "TasksController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "title": "New task",
+                    "description": "Task description",
+                    "status": "OPEN",
+                    "userId": "user-uuid",
+                    "createdAt": "2026-01-17T15:30:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a new task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/tasks/{id}": {
+      "get": {
+        "description": "Get detailed information about a specific task. Users can only access their own tasks.",
+        "operationId": "TasksController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Task details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "title": "Complete project",
+                    "description": "Finish the NestJS project",
+                    "status": "IN_PROGRESS",
+                    "userId": "user-uuid",
+                    "createdAt": "2026-01-17T15:30:00.000Z",
+                    "updatedAt": "2026-01-17T16:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "404": {
+            "description": "Task not found or access denied"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get task by ID",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "patch": {
+        "description": "Update task details. Status transitions must follow: OPEN -> IN_PROGRESS -> DONE. Task will be re-indexed if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "TasksController_updateTask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "title": "Updated task",
+                    "description": "Updated description",
+                    "status": "DONE",
+                    "userId": "user-uuid",
+                    "updatedAt": "2026-01-17T16:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data or invalid status transition"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "404": {
+            "description": "Task not found or access denied"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update task",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "delete": {
+        "description": "Delete a task. Task will be removed from search index if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "TasksController_deleteTask",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Task deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "404": {
+            "description": "Task not found or access denied"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
     "/auth/register": {
       "post": {
-        "description": "Register a new user account. Password must be at least 8 characters. User will be indexed in search if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "description": "Register a new user account. Password must be at least 8 characters. Initializes free question credits on the backend; optional `referralCode` (e.g. EDU-XXXXX) attributes signup to a referrer. User will be indexed in search if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
         "operationId": "AuthController_register",
         "parameters": [],
         "requestBody": {
@@ -233,6 +1167,15 @@
                     "email": "user@example.com",
                     "password": "securePassword123",
                     "name": "John Doe"
+                  }
+                },
+                "withReferral": {
+                  "summary": "With referral code",
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "securePassword123",
+                    "name": "John Doe",
+                    "referralCode": "EDU-A1B2C"
                   }
                 }
               }
@@ -710,9 +1653,7 @@
                     },
                     "error": {
                       "type": "object",
-                      "example": {
-
-                      },
+                      "example": {},
                       "additionalProperties": {
                         "type": "object",
                         "required": [
@@ -1530,6 +2471,85 @@
         ]
       }
     },
+    "/students/me/referral": {
+      "get": {
+        "description": "Returns Convex referral stats plus `referralLink` built from server `FRONTEND_URL` / auth.frontendUrl (e.g. `https://app.example/signup?ref=EDU-XXXXX`).",
+        "operationId": "StudentsController_myReferral",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Referral snapshot for the current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "referralCode": "EDU-A1B2C",
+                    "totalReferrals": 2,
+                    "creditsEarnedFromReferrals": 6,
+                    "referralLink": "https://localhost:3000/signup?ref=EDU-A1B2C"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Referral code, stats, and shareable signup link",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/me/question-credits": {
+      "get": {
+        "description": "Past-question access ledger: `balance` is net from ledger (respecting credit expiry where applicable), `viewedQuestionIds` counts toward the free-tier unique-question cap server-side on `GET /questions/:id`.",
+        "operationId": "StudentsController_myQuestionCredits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Credit summary and ledger rows from Convex",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "balance": 5,
+                    "lifetimeEarned": 8,
+                    "lifetimeUsed": 3,
+                    "viewedQuestionIds": [
+                      "q1",
+                      "q2",
+                      "q3"
+                    ],
+                    "ledger": [
+                      {
+                        "_id": "ledger1",
+                        "userId": "user1",
+                        "delta": 3,
+                        "reason": "plan_base",
+                        "createdAt": 1712534400000
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Question credit balance, lifetime stats, views, ledger",
+        "tags": [
+          "students"
+        ]
+      }
+    },
     "/students/me/profile": {
       "get": {
         "operationId": "StudentsController_myProfile",
@@ -1615,6 +2635,209 @@
         ]
       }
     },
+    "/students/me/courses": {
+      "get": {
+        "description": "Returns courses in the student’s department with `questionCount` (past questions for `year` + `level`, non-deleted, same filters as `GET /questions/courses/:courseId`) and `slidesCount` (non-deleted slide decks). Supports search, material filters, and sort without N+1 client calls. If `meta.profileIncomplete` is true, complete onboarding (department) first.",
+        "operationId": "StudentsController_listMyCourses",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based page index",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 12,
+              "type": "number"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Question pool year (same as `GET /questions/courses/:courseId?year=`). Also accepts `YYYY/YYYY` academic label.",
+            "schema": {
+              "example": "2025",
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "description": "Overrides student profile level when set",
+            "schema": {
+              "type": "number",
+              "enum": [
+                100,
+                200,
+                300,
+                400
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Case-insensitive match on course code and title",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Alias of `search`",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "`completed` returns no rows until LMS enrollments exist. `not_started` / `in_progress` use material-count proxies.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "not_started",
+                "in_progress",
+                "completed"
+              ]
+            }
+          },
+          {
+            "name": "content",
+            "required": false,
+            "in": "query",
+            "description": "Filter using server-side `questionCount` / `slidesCount` for the applied year/level.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "has_questions",
+                "has_slides",
+                "has_both"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "`last_activity_desc` / `completion_desc` fall back to title order until progress fields exist.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "title_asc",
+                "title_desc",
+                "last_activity_desc",
+                "completion_desc",
+                "readiness_desc",
+                "questions_desc",
+                "slides_desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyCoursesListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "My Courses — paginated catalog with question and slide counts",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/me/courses/{courseId}": {
+      "get": {
+        "description": "Same department as the student profile; returns aggregated counts and placeholder fields for hero/lessons until CMS/LMS data exists.",
+        "operationId": "StudentsController_getMyCourseDetail",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "description": "Convex `courses` id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2025",
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "enum": [
+                100,
+                200,
+                300,
+                400
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyCourseDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "My Course detail — department-scoped course overview",
+        "tags": [
+          "students"
+        ]
+      }
+    },
     "/students/me/streak": {
       "post": {
         "operationId": "StudentsController_streak",
@@ -1647,6 +2870,35 @@
           }
         ],
         "summary": "Record daily activity for streak",
+        "tags": [
+          "students"
+        ]
+      },
+      "get": {
+        "operationId": "StudentsController_getStreak",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current streak snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "streakDays": 4,
+                    "longestStreak": 9,
+                    "lastActiveDate": "2026-04-08"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get current streak summary from student profile",
         "tags": [
           "students"
         ]
@@ -1687,351 +2939,33 @@
         "tags": [
           "students"
         ]
-      }
-    },
-    "/questions/courses/{courseId}": {
-      "get": {
-        "operationId": "QuestionsController_listByCourse",
-        "parameters": [
-          {
-            "name": "courseId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "year",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "level",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "type",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "List past questions for a course",
-        "tags": [
-          "questions"
-        ]
-      }
-    },
-    "/questions/{id}/solutions": {
-      "get": {
-        "operationId": "QuestionsController_listSolutions",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "tags": [
-          "questions"
-        ]
-      }
-    },
-    "/questions/{id}": {
-      "get": {
-        "operationId": "QuestionsController_getOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "tags": [
-          "questions"
-        ]
       },
-      "delete": {
-        "operationId": "QuestionsController_softDelete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+      "get": {
+        "operationId": "StudentsController_getXp",
+        "parameters": [],
         "responses": {
           "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "tags": [
-          "questions"
-        ]
-      }
-    },
-    "/questions/upload-queue": {
-      "post": {
-        "operationId": "QuestionsController_uploadQueue",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "tags": [
-          "questions"
-        ]
-      }
-    },
-    "/questions/upload": {
-      "post": {
-        "operationId": "QuestionsController_uploadForProcessing",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "courseId": {
-                    "type": "string"
-                  },
-                  "year": {
-                    "type": "number"
-                  },
-                  "levelData": {
-                    "type": "number"
-                  },
-                  "source": {
-                    "type": "string",
-                    "enum": [
-                      "ta",
-                      "student",
-                      "team"
-                    ]
-                  },
-                  "file": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                },
-                "required": [
-                  "courseId",
-                  "year",
-                  "levelData",
-                  "file"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "202": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "Upload question file → R2; enqueue Bull job for extract + parse (202)",
-        "tags": [
-          "questions"
-        ]
-      }
-    },
-    "/questions": {
-      "post": {
-        "operationId": "QuestionsController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "courseId": {
-                    "type": "string"
-                  },
-                  "year": {
-                    "type": "number"
-                  },
-                  "levelData": {
-                    "type": "number"
-                  },
-                  "questionText": {
-                    "type": "string"
-                  },
-                  "type": {
-                    "type": "string"
-                  },
-                  "source": {
-                    "type": "string"
-                  },
-                  "file": {
-                    "type": "string",
-                    "format": "binary"
+            "description": "Current XP snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "xpTotal": 1280,
+                    "currentLevel": 3
                   }
                 }
               }
             }
           }
         },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
         "security": [
           {
             "JWT-auth": []
           }
         ],
-        "summary": "Create question; optional attachment → R2",
+        "summary": "Get XP summary from student profile",
         "tags": [
-          "questions"
-        ]
-      }
-    },
-    "/questions/{id}/verify": {
-      "patch": {
-        "operationId": "QuestionsController_verify",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "tags": [
-          "questions"
-        ]
-      }
-    },
-    "/questions/{questionId}/solutions": {
-      "post": {
-        "operationId": "QuestionsController_addSolution",
-        "parameters": [
-          {
-            "name": "questionId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "tags": [
-          "questions"
-        ]
-      }
-    },
-    "/questions/solutions/{solutionId}/upvote": {
-      "post": {
-        "operationId": "QuestionsController_upvote",
-        "parameters": [
-          {
-            "name": "solutionId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "tags": [
-          "questions"
+          "students"
         ]
       }
     },
@@ -2143,49 +3077,40 @@
         ]
       }
     },
-    "/slides/courses/{courseId}": {
-      "get": {
-        "operationId": "SlidesController_list",
-        "parameters": [
-          {
-            "name": "courseId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
+    "/content/offerings": {
+      "post": {
+        "description": "Idempotent. Same courseId + academicYear + level + semester returns the existing offering id. Use `offeringId` in assessment uploads.",
+        "operationId": "ContentController_createOffering",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOfferingDto"
+              }
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
           }
         },
-        "security": [
-          {
-            "JWT-auth": []
-          }
-        ],
-        "summary": "List slides for course",
-        "tags": [
-          "slides"
-        ]
-      },
-      "post": {
-        "operationId": "SlidesController_upload",
-        "parameters": [
-          {
-            "name": "courseId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "201": {
-            "description": ""
+            "description": "Offering id (new or existing)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "offeringId": "…",
+                    "courseId": "…",
+                    "academicYear": "2024/2025",
+                    "level": 300,
+                    "semester": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid academicYear format"
           }
         },
         "security": [
@@ -2193,20 +3118,165 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Upload slide to R2 and enqueue processing",
+        "summary": "Get or create a course offering",
         "tags": [
-          "slides"
+          "content"
         ]
       }
     },
-    "/slides/{id}/outputs": {
+    "/content/assessments/upload": {
+      "post": {
+        "description": "Stores file in R2, creates Convex `interimAssessments` or `finalExams`, publishes QStash `process-assessment`. Admin/TA uploads set `autoApprove` so extracted questions can skip lecturer review when the pipeline allows.",
+        "operationId": "ContentController_uploadAssessment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Multipart form: `file` plus fields. Requires FEATURE_JOBS_ENABLED and QStash; enqueues `process-assessment`.",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "courseOfferingId",
+                  "documentType"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF, DOCX, JPEG, or PNG (max 50MB)"
+                  },
+                  "courseOfferingId": {
+                    "type": "string",
+                    "description": "Convex `courseOfferings` id from POST /content/offerings"
+                  },
+                  "documentType": {
+                    "type": "string",
+                    "enum": [
+                      "interim_assessment",
+                      "final_exam"
+                    ]
+                  },
+                  "assessmentNumber": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2,
+                    "description": "Required when documentType is interim_assessment"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Optional title for interim (defaults to Midsem N)"
+                  },
+                  "examSession": {
+                    "type": "string",
+                    "description": "Required when documentType is final_exam"
+                  },
+                  "totalMarks": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "durationMinutes": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Queued — returns `documentId`, `documentType`, `status: queued`, and a user-facing message"
+          },
+          "409": {
+            "description": "Duplicate assessment for this offering (same number or exam session)"
+          },
+          "503": {
+            "description": "Jobs disabled or QStash not configured (FEATURE_JOBS_ENABLED / QSTASH_CALLBACK_BASE_URL)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload an interim assessment or final exam paper",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/content/solutions/upload-key": {
+      "post": {
+        "description": "Creates a `solutionUploadJobs` row and publishes QStash `process-solution-key` to match answers to questions.",
+        "operationId": "ContentController_uploadSolutionKey",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Multipart form: `file` plus target document fields. Enqueues `process-solution-key`. Admin or TA only.",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "targetDocumentId",
+                  "targetDocumentType"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF, DOCX, or plain text (max 20MB)"
+                  },
+                  "targetDocumentId": {
+                    "type": "string",
+                    "description": "Convex id of interim or final exam document"
+                  },
+                  "targetDocumentType": {
+                    "type": "string",
+                    "enum": [
+                      "interim_assessment",
+                      "final_exam"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Queued — returns `solutionJobId`, `status: queued`, and message"
+          },
+          "403": {
+            "description": "Requires role admin or ta"
+          },
+          "503": {
+            "description": "Jobs disabled or QStash not configured"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload an answer key for an existing assessment or exam",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/content/courses/{courseId}/offerings": {
       "get": {
-        "operationId": "SlidesController_outputs",
+        "operationId": "ContentController_listOfferingsByCourse",
         "parameters": [
           {
-            "name": "id",
+            "name": "courseId",
             "required": true,
             "in": "path",
+            "description": "Convex `courses` id",
             "schema": {
               "type": "string"
             }
@@ -2222,19 +3292,21 @@
             "JWT-auth": []
           }
         ],
+        "summary": "List course offerings grouped by academic year",
         "tags": [
-          "slides"
+          "content"
         ]
       }
     },
-    "/slides/{id}": {
-      "delete": {
-        "operationId": "SlidesController_remove",
+    "/content/offerings/{offeringId}": {
+      "get": {
+        "operationId": "ContentController_getOffering",
         "parameters": [
           {
-            "name": "id",
+            "name": "offeringId",
             "required": true,
             "in": "path",
+            "description": "Convex `courseOfferings` id",
             "schema": {
               "type": "string"
             }
@@ -2250,8 +3322,320 @@
             "JWT-auth": []
           }
         ],
+        "summary": "Offering detail with slide / assessment summaries and counts",
         "tags": [
-          "slides"
+          "content"
+        ]
+      }
+    },
+    "/content/questions/pending-review": {
+      "get": {
+        "operationId": "ContentController_listPendingReview",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 20)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor from prior response",
+            "schema": {}
+          },
+          {
+            "name": "courseId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Convex course id",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Questions awaiting content review",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/content/questions/{questionId}/approve": {
+      "patch": {
+        "operationId": "ContentController_approveQuestion",
+        "parameters": [
+          {
+            "name": "questionId",
+            "required": true,
+            "in": "path",
+            "description": "Convex `pastQuestions` id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Approve a pending_review question",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/content/questions/{questionId}/reject": {
+      "patch": {
+        "operationId": "ContentController_rejectQuestion",
+        "parameters": [
+          {
+            "name": "questionId",
+            "required": true,
+            "in": "path",
+            "description": "Convex `pastQuestions` id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectQuestionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Reject a pending_review question",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/content/questions/bulk-approve": {
+      "post": {
+        "operationId": "ContentController_bulkApprove",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkApproveQuestionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Approve all pending_review questions for a source document",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/content/{documentType}/{documentId}": {
+      "get": {
+        "description": "Set includePending=true (admin/TA) to include non-approved questions. Students should omit it.",
+        "operationId": "ContentController_getDocument",
+        "parameters": [
+          {
+            "name": "documentType",
+            "required": true,
+            "in": "path",
+            "description": "`slide` — slide doc; `interim` / `final` — assessment or final exam",
+            "schema": {
+              "enum": [
+                "slide",
+                "interim",
+                "final"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "description": "Convex document id for that type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includePending",
+            "required": false,
+            "in": "query",
+            "description": "If true, include pending_review / unverified questions (admin/TA). Default false (students).",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Document not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Fetch a slide, interim assessment, or final exam with questions",
+        "tags": [
+          "content"
+        ]
+      }
+    },
+    "/quiz/topics/{courseId}": {
+      "get": {
+        "description": "Returns `{ courseId, topics: string[] }` for building quiz UI filters.",
+        "operationId": "QuizController_topics",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "description": "Convex `courses` id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Topic list for the course"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Distinct topic tags for quiz filters",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/quiz/generate": {
+      "post": {
+        "description": "Creates a practice `examSimulations` row and returns stripped question payloads (no answers). When `excludeSeen` is true, excludes question ids from prior simulations for this user and course.",
+        "operationId": "QuizController_generate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateQuizDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Returns quizId, questions[], totalQuestions, estimatedMinutes (Nest default 201 for POST)"
+          },
+          "400": {
+            "description": "Not enough questions in pool"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Build a random practice quiz from approved questions",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/quiz/{id}/submit": {
+      "post": {
+        "description": "Patches simulation answers, marks complete, returns score and per-question correctness.",
+        "operationId": "QuizController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Convex `examSimulations` id returned from POST /quiz/generate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitQuizDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Score and per-question results"
+          },
+          "403": {
+            "description": "Quiz does not belong to this user"
+          },
+          "404": {
+            "description": "Quiz not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Submit answers and score the quiz",
+        "tags": [
+          "quiz"
         ]
       }
     },
@@ -2496,6 +3880,7 @@
     },
     "/ta/upload-queue/{id}": {
       "patch": {
+        "description": "When `status` becomes `approved` for the first time, the uploader receives +2 question credits (`contribution`) in Convex.",
         "operationId": "TaController_review",
         "parameters": [
           {
@@ -2517,6 +3902,7 @@
             "JWT-auth": []
           }
         ],
+        "summary": "Review upload queue entry",
         "tags": [
           "ta"
         ]
@@ -2931,6 +4317,142 @@
         ]
       }
     },
+    "/admin/content/overview": {
+      "get": {
+        "description": "Convex admin overview merged with `aiCredits:checkBudgetStatus` for dashboard use.",
+        "operationId": "AdminController_contentOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Counts, flags, and credit status payload"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Content pipeline counts + AI credit status",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/content/manual-queue": {
+      "get": {
+        "operationId": "AdminController_manualQueue",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Upload queue rows and assessments in manual-review state"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Documents awaiting manual extraction / review",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/content/manual-queue/{documentId}/extract": {
+      "post": {
+        "description": "Loads `fileKey` from Convex and runs the same text extraction path as automated jobs.",
+        "operationId": "AdminController_extractManualDocument",
+        "parameters": [
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "description": "Convex document id (interim or final)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractManualDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Extraction result (rawText, pageCount, etc.)"
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Download from storage and extract raw text for a manual-review document",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/content/solution-mismatches": {
+      "get": {
+        "operationId": "AdminController_partialSolutionJobs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of solutionUploadJobs with status partial"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Partial solution upload jobs (needs manual match)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/content/solutions/manual-create": {
+      "post": {
+        "description": "Persists via Convex `solutions:saveSolution` for admin tooling.",
+        "operationId": "AdminController_manualCreateSolution",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualCreateSolutionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Returns `{ id }` of saved solution"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Attach or override an official/TA solution for a question",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/notifications": {
       "post": {
         "operationId": "AdminController_createNotification",
@@ -2981,6 +4503,7 @@
         ]
       },
       "post": {
+        "description": "Set `unlocksPlan` and/or `questionCredits` (>=1). At least one is required. Optional `creditExpiresAt` (Unix ms) applies to granted credits.",
         "operationId": "AdminController_createPromoCode",
         "parameters": [],
         "requestBody": {
@@ -3040,6 +4563,7 @@
     },
     "/admin/promo/codes/{id}": {
       "patch": {
+        "description": "Partial update; may include `questionCredits` and `creditExpiresAt` for credit-granting codes.",
         "operationId": "AdminController_patchPromoCode",
         "parameters": [
           {
@@ -3077,8 +4601,38 @@
         ]
       }
     },
+    "/admin/questions/{questionId}/solutions": {
+      "delete": {
+        "operationId": "AdminController_clearQuestionSolutions",
+        "parameters": [
+          {
+            "name": "questionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete all solutions for a past question (admin tooling / re-seed keys)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/promo/redeem": {
       "post": {
+        "description": "Codes may grant `unlocksPlan` (basic/pro), `questionCredits`, or both. Subscription is upserted only when the code unlocks a plan. Question credits are applied in Convex and subscription/credit caches are invalidated.",
         "operationId": "PromoController_redeem",
         "parameters": [],
         "requestBody": {
@@ -3092,8 +4646,22 @@
           }
         },
         "responses": {
-          "201": {
-            "description": ""
+          "200": {
+            "description": "Redemption succeeded. `unlocksPlan` present only for plan codes; `questionCreditsGranted` only when the code grants credits; either or both may be set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "ok": true,
+                    "unlocksPlan": "basic",
+                    "questionCreditsGranted": 10
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid code, already redeemed, expired, or misconfigured"
           }
         },
         "security": [
@@ -3101,7 +4669,7 @@
             "JWT-auth": []
           }
         ],
-        "summary": "Redeem a promo code (updates subscription + cache)",
+        "summary": "Redeem a promo code (plan unlock and/or question credits; busts subscription + credit cache)",
         "tags": [
           "promo"
         ]
@@ -3129,45 +4697,115 @@
     }
   },
   "info": {
-    "title": "NestJS Production API",
-    "description": "Production-ready NestJS backend boilerplate API documentation.\n    \n**Feature Status:**\n- Background jobs disabled\n- Email service disabled\n- Object storage disabled\n\n**Feature Toggles:**\nAll features are controlled via environment variables:\n- FEATURE_REDIS_ENABLED\n- FEATURE_JOBS_ENABLED\n- FEATURE_MAIL_ENABLED\n- FEATURE_EMAIL_VERIFICATION_ENABLED\n- FEATURE_OBJECT_STORAGE_ENABLED\n- FEATURE_SEARCH_ENABLED\n\nSet these to \"true\" or \"false\" to enable/disable features.",
-    "version": "1.0",
-    "contact": {
-
-    }
+    "title": "EDULAMAD API",
+    "description": "**EDULAMAD API** — NestJS backend with Convex, R2, and optional QStash background jobs.\n\n**Feature status (this deployment):**\n- All listed features enabled\n\n**Feature toggles (env):** `FEATURE_REDIS_ENABLED`, `FEATURE_JOBS_ENABLED`, `FEATURE_MAIL_ENABLED`, `FEATURE_EMAIL_VERIFICATION_ENABLED`, `FEATURE_OBJECT_STORAGE_ENABLED`, `FEATURE_SEARCH_ENABLED`, `FEATURE_AI_ENABLED`, `FEATURE_PAYMENTS_ENABLED` — set to `true` or `false`.\n\n**Background jobs:** Assessment and solution-key uploads enqueue QStash work when `FEATURE_JOBS_ENABLED=true` and QStash env is configured. Webhook: `POST {QSTASH_CALLBACK_BASE_URL}/internal/qstash/jobs` (signed by Upstash).",
+    "version": "1.1",
+    "contact": {}
   },
   "tags": [
     {
-      "name": "auth",
-      "description": "Authentication endpoints"
+      "name": "app",
+      "description": "Root / app metadata"
     },
     {
-      "name": "admin",
-      "description": "Admin management endpoints (organizations, roles, permissions)"
+      "name": "auth",
+      "description": "Register, login, refresh, password reset"
     },
     {
       "name": "users",
-      "description": "User management"
+      "description": "User profile and account"
     },
     {
-      "name": "tasks",
-      "description": "Task management"
+      "name": "institutions",
+      "description": "Universities, colleges, departments, courses (public reads + admin writes)"
+    },
+    {
+      "name": "students",
+      "description": "Student profiles and related actions"
+    },
+    {
+      "name": "content",
+      "description": "Course offerings, assessment uploads, solution keys, review workflow, document fetch"
+    },
+    {
+      "name": "questions",
+      "description": "Past questions and upload queue (non-content-module routes)"
+    },
+    {
+      "name": "quiz",
+      "description": "Practice quizzes built from approved questions"
+    },
+    {
+      "name": "slides",
+      "description": "Slide uploads and outputs"
+    },
+    {
+      "name": "exams",
+      "description": "Exam simulations and entrance exams"
     },
     {
       "name": "files",
-      "description": "File upload and management (requires FEATURE_OBJECT_STORAGE_ENABLED=true)"
+      "description": "Generic file APIs (requires FEATURE_OBJECT_STORAGE_ENABLED=true)"
     },
     {
       "name": "search",
-      "description": "Search endpoints (requires FEATURE_SEARCH_ENABLED=true)"
+      "description": "Search (requires FEATURE_SEARCH_ENABLED=true)"
+    },
+    {
+      "name": "ai",
+      "description": "AI chat and usage (requires FEATURE_AI_ENABLED=true)"
+    },
+    {
+      "name": "subscriptions",
+      "description": "Plans and subscriptions"
+    },
+    {
+      "name": "promo",
+      "description": "Promo codes (student-facing redeem)"
+    },
+    {
+      "name": "notifications",
+      "description": "In-app notifications"
+    },
+    {
+      "name": "gamification",
+      "description": "XP, badges, leaderboard"
+    },
+    {
+      "name": "analytics",
+      "description": "Student analytics snapshots"
+    },
+    {
+      "name": "bookmarks",
+      "description": "Bookmarks"
+    },
+    {
+      "name": "flashcards",
+      "description": "Flashcards"
+    },
+    {
+      "name": "timetables",
+      "description": "Timetables"
+    },
+    {
+      "name": "ta",
+      "description": "Teaching assistant endpoints"
+    },
+    {
+      "name": "tasks",
+      "description": "Tasks and QStash-indexed task search"
+    },
+    {
+      "name": "admin",
+      "description": "Platform admin: stats, content pipeline, promo, notifications, tooling"
     },
     {
       "name": "health",
-      "description": "Health check endpoints"
+      "description": "Liveness and dependency checks"
     },
     {
       "name": "metrics",
-      "description": "Metrics endpoints"
+      "description": "Prometheus metrics"
     }
   ],
   "servers": [],
@@ -3334,6 +4972,77 @@
           }
         }
       },
+      "CreateTaskLabelDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Label name",
+            "example": "urgent",
+            "minLength": 1
+          },
+          "color": {
+            "type": "string",
+            "description": "Label color (hex code)",
+            "example": "#ff0000"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateTaskDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Task title",
+            "example": "Complete project documentation",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Task description",
+            "example": "Write comprehensive documentation for the NestJS project including API endpoints and setup instructions"
+          },
+          "status": {
+            "type": "string",
+            "description": "Task status",
+            "enum": [
+              "OPEN",
+              "IN_PROGRESS",
+              "DONE"
+            ],
+            "example": "OPEN"
+          },
+          "labels": {
+            "description": "Optional task labels",
+            "example": [
+              {
+                "name": "urgent",
+                "color": "#ff0000"
+              },
+              {
+                "name": "documentation",
+                "color": "#0000ff"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateTaskLabelDto"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "status"
+        ]
+      },
+      "UpdateTaskDto": {
+        "type": "object",
+        "properties": {}
+      },
       "RegisterDto": {
         "type": "object",
         "properties": {
@@ -3353,6 +5062,11 @@
             "type": "string",
             "description": "User full name",
             "example": "John Doe"
+          },
+          "referralCode": {
+            "type": "string",
+            "description": "Optional referral code (e.g. EDU-XXXXX) for the referrer to earn credits when verified",
+            "example": "EDU-A1B2C"
           }
         },
         "required": [
@@ -3509,6 +5223,292 @@
           }
         }
       },
+      "MyCourseInstructorDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "object",
+            "nullable": true,
+            "description": "Public avatar URL when available"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "MyCourseRowDto": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "description": "Convex `courses` document id"
+          },
+          "code": {
+            "type": "object",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string"
+          },
+          "departmentName": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "object",
+            "nullable": true
+          },
+          "instructor": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MyCourseInstructorDto"
+              }
+            ]
+          },
+          "questionCount": {
+            "type": "number",
+            "description": "Non-deleted past questions for course + year + level"
+          },
+          "slidesCount": {
+            "type": "number",
+            "description": "Non-deleted slide decks for the course"
+          },
+          "enrollmentStatus": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "not_started",
+              "in_progress",
+              "completed"
+            ]
+          },
+          "completionPercentage": {
+            "type": "object",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "completedSteps": {
+            "type": "object",
+            "nullable": true
+          },
+          "totalSteps": {
+            "type": "object",
+            "nullable": true
+          },
+          "lastActivityAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "isFreeSampler": {
+            "type": "boolean"
+          },
+          "statusMessage": {
+            "type": "object",
+            "nullable": true
+          },
+          "isDecommissioned": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "courseId",
+          "name",
+          "departmentId",
+          "departmentName",
+          "questionCount",
+          "slidesCount"
+        ]
+      },
+      "MyCoursesListMetaDto": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "Rows matching filters (all pages)"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "applied": {
+            "type": "object",
+            "description": "Echo of effective year/level used for question counts",
+            "example": {
+              "year": "2025",
+              "level": 300
+            }
+          },
+          "profileIncomplete": {
+            "type": "boolean",
+            "description": "True when the user has no student profile or no department — list is empty"
+          }
+        },
+        "required": [
+          "page",
+          "limit",
+          "totalCount",
+          "hasMore",
+          "applied"
+        ]
+      },
+      "MyCoursesListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyCourseRowDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MyCoursesListMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "MyCourseLessonDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "isCompleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "order",
+          "isCompleted"
+        ]
+      },
+      "MyCourseDetailIncludesDto": {
+        "type": "object",
+        "properties": {
+          "lessonCount": {
+            "type": "number"
+          },
+          "instructorLabel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lessonCount",
+          "instructorLabel"
+        ]
+      },
+      "MyCourseDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "object",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string"
+          },
+          "departmentName": {
+            "type": "string"
+          },
+          "descriptionShort": {
+            "type": "object",
+            "nullable": true
+          },
+          "descriptionHtml": {
+            "type": "object",
+            "nullable": true
+          },
+          "thumbnailUrl": {
+            "type": "object",
+            "nullable": true
+          },
+          "instructor": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MyCourseInstructorDto"
+              }
+            ]
+          },
+          "questionCount": {
+            "type": "number"
+          },
+          "slidesCount": {
+            "type": "number"
+          },
+          "lessons": {
+            "description": "Empty until lesson entities exist",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyCourseLessonDto"
+            }
+          },
+          "courseIncludes": {
+            "$ref": "#/components/schemas/MyCourseDetailIncludesDto"
+          },
+          "enrollmentStatus": {
+            "type": "object",
+            "nullable": true
+          },
+          "completionPercentage": {
+            "type": "object",
+            "nullable": true
+          },
+          "lastActivityAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "isDecommissioned": {
+            "type": "boolean"
+          },
+          "statusMessage": {
+            "type": "object",
+            "nullable": true
+          },
+          "applied": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "courseId",
+          "name",
+          "departmentId",
+          "departmentName",
+          "questionCount",
+          "slidesCount",
+          "lessons",
+          "courseIncludes",
+          "applied"
+        ]
+      },
       "UpsertStudentProfileDto": {
         "type": "object",
         "properties": {
@@ -3543,12 +5543,20 @@
           },
           "levelData": {
             "type": "number",
-            "enum": [100, 200, 300, 400],
+            "enum": [
+              100,
+              200,
+              300,
+              400
+            ],
             "example": 300
           },
           "semesterData": {
             "type": "number",
-            "enum": [1, 2],
+            "enum": [
+              1,
+              2
+            ],
             "example": 1
           },
           "avatarKey": {
@@ -3588,6 +5596,134 @@
         },
         "required": [
           "amount"
+        ]
+      },
+      "CreateOfferingDto": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "example": "<convex course id>",
+            "description": "Convex `courses` document id"
+          },
+          "academicYear": {
+            "type": "string",
+            "example": "2024/2025",
+            "description": "Academic year in YYYY/YYYY format (end year = start year + 1)"
+          },
+          "level": {
+            "type": "number",
+            "enum": [
+              100,
+              200,
+              300,
+              400,
+              500
+            ]
+          },
+          "semester": {
+            "type": "number",
+            "enum": [
+              1,
+              2
+            ]
+          }
+        },
+        "required": [
+          "courseId",
+          "academicYear",
+          "level",
+          "semester"
+        ]
+      },
+      "RejectQuestionDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "BulkApproveQuestionsDto": {
+        "type": "object",
+        "properties": {
+          "sourceDocumentId": {
+            "type": "string",
+            "description": "Convex source document id (IA, final, or slide id)"
+          }
+        },
+        "required": [
+          "sourceDocumentId"
+        ]
+      },
+      "GenerateQuizDto": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string"
+          },
+          "questionCount": {
+            "type": "number",
+            "minimum": 5,
+            "maximum": 50
+          },
+          "academicYears": {
+            "description": "Academic years e.g. 2024/2025",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sourceTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "interim_assessment",
+                "final_exam",
+                "slide_generated"
+              ]
+            }
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "medium",
+              "hard",
+              "mixed"
+            ]
+          },
+          "topicFilter": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excludeSeen": {
+            "type": "boolean",
+            "description": "If true, exclude question ids the user has already seen in prior practice simulations for this course (server-backed)."
+          }
+        },
+        "required": [
+          "courseId",
+          "questionCount"
+        ]
+      },
+      "SubmitQuizDto": {
+        "type": "object",
+        "properties": {
+          "answers": {
+            "type": "object",
+            "description": "Map of questionId → user answer text",
+            "example": {
+              "j575": "B",
+              "j576": "x = 2"
+            }
+          }
+        },
+        "required": [
+          "answers"
         ]
       },
       "CreateBookmarkDto": {
@@ -3698,6 +5834,50 @@
           }
         }
       },
+      "ExtractManualDocumentDto": {
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "type": "string",
+            "enum": [
+              "interim_assessment",
+              "final_exam"
+            ]
+          }
+        },
+        "required": [
+          "documentType"
+        ]
+      },
+      "ManualCreateSolutionDto": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string"
+          },
+          "correctAnswer": {
+            "type": "string"
+          },
+          "modelAnswer": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "official",
+              "ta"
+            ]
+          },
+          "isVerified": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "questionId",
+          "source"
+        ]
+      },
       "CreateAdminNotificationDto": {
         "type": "object",
         "properties": {
@@ -3746,7 +5926,16 @@
             "enum": [
               "basic",
               "pro"
-            ]
+            ],
+            "description": "Optional if questionCredits is set"
+          },
+          "questionCredits": {
+            "type": "number",
+            "description": "Question credits granted per redemption (>=1 if used)"
+          },
+          "creditExpiresAt": {
+            "type": "number",
+            "description": "Unix ms when granted credits expire"
           },
           "maxRedemptions": {
             "type": "number",
@@ -3762,7 +5951,6 @@
         },
         "required": [
           "code",
-          "unlocksPlan",
           "maxRedemptions"
         ]
       },
@@ -3778,6 +5966,14 @@
           },
           "active": {
             "type": "boolean"
+          },
+          "questionCredits": {
+            "type": "number",
+            "description": "Question credits per redemption"
+          },
+          "creditExpiresAt": {
+            "type": "number",
+            "description": "Unix ms when granted credits expire"
           }
         }
       },

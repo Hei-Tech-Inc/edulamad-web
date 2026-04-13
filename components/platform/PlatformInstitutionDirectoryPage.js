@@ -10,7 +10,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { queryKeys } from '@/api/query-keys'
 
-export default function PlatformTenantDirectoryPage() {
+export default function PlatformInstitutionDirectoryPage() {
   const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const [page, setPage] = useState(1)
@@ -35,7 +35,7 @@ export default function PlatformTenantDirectoryPage() {
     return (
       <div className="space-y-3 py-8">
         {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonNotificationRow key={`tenant-dir-auth-skeleton-${i}`} />
+          <SkeletonNotificationRow key={`inst-dir-auth-skeleton-${i}`} />
         ))}
       </div>
     )
@@ -58,20 +58,20 @@ export default function PlatformTenantDirectoryPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Tenant directory
+          Institution directory
         </h1>
         <p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
           These requests use{' '}
           <code className="rounded bg-slate-200 px-1 font-mono text-xs dark:bg-slate-800">
             GET /platform/organisations
           </code>{' '}
-          only — no act-as header. To operate workspace sites and units as the tenant owner,
-          open an organisation and choose &quot;Work in tenant&quot;; the app then
+          only — no act-as header. To operate as that organisation&apos;s admin,
+          open an organisation and choose &quot;Work as institution&quot;; the app then
           sends{' '}
           <code className="rounded bg-slate-200 px-1 font-mono text-xs dark:bg-slate-800">
             X-Act-As-Org-Id
           </code>{' '}
-          on tenant routes (never on{' '}
+          on org-scoped routes (never on{' '}
           <code className="rounded bg-slate-200 px-1 font-mono text-xs dark:bg-slate-800">
             /platform/*
           </code>
@@ -143,7 +143,7 @@ export default function PlatformTenantDirectoryPage() {
                   >
                     <div className="space-y-2">
                       {Array.from({ length: 4 }).map((_, i) => (
-                        <SkeletonNotificationRow key={`tenant-dir-list-skeleton-${i}`} />
+                        <SkeletonNotificationRow key={`inst-dir-list-skeleton-${i}`} />
                       ))}
                     </div>
                   </td>
@@ -155,8 +155,8 @@ export default function PlatformTenantDirectoryPage() {
                     className="px-4 py-12 text-center text-slate-500 dark:text-slate-400"
                   >
                     <EmptyState
-                      title="No tenants found"
-                      subtitle="Try a different search query or create a new tenant."
+                      title="No institutions found"
+                      subtitle="Try a different search query or create a new institution."
                     />
                   </td>
                 </tr>

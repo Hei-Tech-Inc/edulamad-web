@@ -12,6 +12,10 @@ const API = {
     verifyEmail: '/verify-email',
   },
   metrics: '/metrics',
+  /** Qstash / background jobs (internal; rarely called from browser). */
+  internal: {
+    qstashJobs: '/internal/qstash/jobs',
+  },
   users: {
     profile: '/users/profile',
     profilePhoto: '/users/profile/photo',
@@ -24,6 +28,9 @@ const API = {
       code: (id: string) => `/admin/promo/codes/${id}`,
       deactivate: (id: string) => `/admin/promo/codes/${id}/deactivate`,
     },
+    /** Admin: delete all solutions for a question (see OpenAPI). */
+    questionSolutions: (questionId: string) =>
+      `/admin/questions/${questionId}/solutions`,
     organizations: {
       list: '/admin/organizations',
       detail: (id: string) => `/admin/organizations/${id}`,
@@ -32,6 +39,14 @@ const API = {
         `/admin/organizations/${orgId}/members/${userId}/role`,
       member: (orgId: string, userId: string) =>
         `/admin/organizations/${orgId}/members/${userId}`,
+    },
+    content: {
+      manualQueue: '/admin/content/manual-queue',
+      manualQueueExtract: (documentId: string) =>
+        `/admin/content/manual-queue/${documentId}/extract`,
+      overview: '/admin/content/overview',
+      solutionMismatches: '/admin/content/solution-mismatches',
+      solutionsManualCreate: '/admin/content/solutions/manual-create',
     },
   },
   promo: {
@@ -70,6 +85,56 @@ const API = {
     organisation: (orgId: string) => `/platform/organisations/${orgId}`,
   },
   health: '/health',
+  /**
+   * Preferred solution APIs (subscription-gated via `SolutionAccessGuard` on the API).
+   * Legacy list: `API.questions.solutions` / `API.questions.solutionUpvote`.
+   */
+  solutions: {
+    byQuestion: (questionId: string) => `/solutions/question/${questionId}`,
+    bestByQuestion: (questionId: string) => `/solutions/question/${questionId}/best`,
+    vote: (solutionId: string) => `/solutions/${solutionId}/vote`,
+  },
+  /** Question-scoped AI / chat threads (JWT + solution access rules on the API). */
+  discussions: {
+    messages: '/discussions/messages',
+    threads: (questionId: string) => `/discussions/threads/${questionId}`,
+    context: (questionId: string) => `/discussions/context/${questionId}`,
+    recent: '/discussions/recent',
+  },
+  /**
+   * Content pipeline (offerings, assessments, documents, TA solution keys).
+   * Align with OpenAPI `content` tag when pulled from `/api-json`.
+   */
+  content: {
+    offerings: '/content/offerings',
+    assessmentsUpload: '/content/assessments/upload',
+    finalDocument: (documentId: string) => `/content/final/${documentId}`,
+    interimDocument: (documentId: string) => `/content/interim/${documentId}`,
+    solutionsUploadKey: '/content/solutions/upload-key',
+    questionsPendingReview: '/content/questions/pending-review',
+    courseOfferings: (courseId: string) => `/content/courses/${courseId}/offerings`,
+    offering: (offeringId: string) => `/content/offerings/${offeringId}`,
+    questionsBulkApprove: '/content/questions/bulk-approve',
+    questionApprove: (questionId: string) => `/content/questions/${questionId}/approve`,
+    questionReject: (questionId: string) => `/content/questions/${questionId}/reject`,
+    validateCourse: '/content/validate-course',
+    solutionsBulkSave: '/content/solutions/bulk-save',
+    assessmentsExtractedContent: '/content/assessments/extracted-content',
+    slidesBundle: '/content/slides/bundle',
+    slidesBundleDetail: (slideId: string) => `/content/slides/bundle/${slideId}`,
+    slidesBundleFile: (slideId: string) => `/content/slides/bundle/${slideId}/file`,
+    slidesBundleExtractedContent: (slideId: string) =>
+      `/content/slides/bundle/${slideId}/extracted-content`,
+    slidesBundleSummaryInline: (slideId: string) =>
+      `/content/slides/bundle/${slideId}/summary-inline`,
+    slidesBundlePublish: (slideId: string) => `/content/slides/bundle/${slideId}/publish`,
+  },
+  /** Practice quiz (OpenAPI `quiz` tag). */
+  quiz: {
+    topics: (courseId: string) => `/quiz/topics/${courseId}`,
+    generate: '/quiz/generate',
+    submit: (id: string) => `/quiz/${id}/submit`,
+  },
   files: {
     upload: '/files/upload',
     signedUrl: (key: string) => `/files/${key}/signed-url`,
@@ -79,6 +144,11 @@ const API = {
     tasks: '/search/tasks',
     users: '/search/users',
     global: '/search/global',
+  },
+  /** Task CRUD (OpenAPI `tasks` tag). */
+  tasks: {
+    list: '/tasks',
+    detail: (id: string) => `/tasks/${id}`,
   },
   institutions: {
     universities: {
@@ -112,16 +182,22 @@ const API = {
     meXp: '/students/me/xp',
     meReferral: '/students/me/referral',
     meQuestionCredits: '/students/me/question-credits',
+    /** Paginated department catalog + material counts (OpenAPI `MyCoursesListResponseDto`). */
+    meCourses: '/students/me/courses',
+    meCourse: (courseId: string) => `/students/me/courses/${courseId}`,
   },
   questions: {
     list: '/questions',
     create: '/questions',
     uploadQueue: '/questions/upload-queue',
+    uploadPreview: (uploadQueueId: string) =>
+      `/questions/uploads/${uploadQueueId}/preview`,
     upload: '/questions/upload',
     /** PDF + extracted JSON multipart (backend bundle pipeline). */
     uploadBundle: '/questions/upload-bundle',
     byCourse: (courseId: string) => `/questions/courses/${courseId}`,
     detail: (id: string) => `/questions/${id}`,
+    sourceDocument: (id: string) => `/questions/${id}/source-document`,
     verify: (id: string) => `/questions/${id}/verify`,
     solutions: (questionId: string) => `/questions/${questionId}/solutions`,
     solutionUpvote: (solutionId: string) =>
@@ -150,6 +226,7 @@ const API = {
     paystackWebhook: '/subscriptions/webhooks/paystack',
   },
   gamification: {
+    me: '/gamification/me',
     leaderboard: '/gamification/leaderboard',
     badgesMe: '/gamification/badges/me',
     walletMe: '/gamification/wallet/me',
@@ -170,10 +247,42 @@ const API = {
     list: '/bookmarks',
     detail: (id: string) => `/bookmarks/${id}`,
   },
+  /** Legacy single-card CRUD (OpenAPI). Prefer `flashcardDecks` for student study flows. */
   flashcards: {
     me: '/flashcards/me',
     list: '/flashcards',
     detail: (id: string) => `/flashcards/${id}`,
+  },
+  /** Deck-based flashcards (Edulamad API — see backend integration guide). */
+  flashcardDecks: {
+    byCourse: (courseId: string) => `/flashcards/courses/${courseId}`,
+    deck: (deckId: string) => `/flashcards/decks/${deckId}`,
+    due: (deckId: string) => `/flashcards/decks/${deckId}/due`,
+    weak: (deckId: string) => `/flashcards/decks/${deckId}/weak`,
+    progress: (deckId: string) => `/flashcards/decks/${deckId}/progress`,
+    uploadJson: '/flashcards/decks/upload-json',
+    create: '/flashcards/decks',
+  },
+  flashcardSessions: {
+    root: '/flashcards/sessions',
+    complete: (sessionId: string) => `/flashcards/sessions/${sessionId}/complete`,
+  },
+  flashcardCards: {
+    review: (cardId: string) => `/flashcards/cards/${cardId}/review`,
+  },
+  mnemonics: {
+    byCourse: (courseId: string) => `/mnemonics/courses/${courseId}`,
+    root: '/mnemonics',
+    upvote: (id: string) => `/mnemonics/${id}/upvote`,
+    verify: (id: string) => `/mnemonics/${id}/verify`,
+  },
+  conceptMaps: {
+    byCourse: (courseId: string) => `/concept-maps/courses/${courseId}`,
+    topic: (courseId: string, topic: string) =>
+      `/concept-maps/courses/${courseId}/topics/${encodeURIComponent(topic)}`,
+  },
+  examCountdown: {
+    byCourse: (courseId: string) => `/exam-countdown/courses/${courseId}`,
   },
   timetables: {
     me: '/timetables/me',

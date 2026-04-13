@@ -11,19 +11,19 @@ const KNOWN_TOP_LEVEL = new Set([
   'audit_logs',
 ]);
 
-export interface NormalizedPlatformTenantDetail {
+export interface NormalizedPlatformInstitutionDetail {
   organisation: Record<string, unknown> | null;
   users: unknown[];
-  /** Normalised from API `farms`, `sites`, or similar tenant-scoped lists. */
+  /** Normalised from API `farms`, `sites`, or other org-scoped lists. */
   linkedSites: unknown[];
   auditLogs: unknown[];
   /** Any other top-level keys from the API (full capture). */
   extraTopLevel: Record<string, unknown>;
 }
 
-export function normalizePlatformTenantDetailPayload(
+export function normalizePlatformInstitutionDetailPayload(
   raw: PlatformOrganisationDetailBody | Record<string, unknown>,
-): NormalizedPlatformTenantDetail {
+): NormalizedPlatformInstitutionDetail {
   const data =
     raw && typeof raw === 'object'
       ? (raw as Record<string, unknown>)
@@ -54,7 +54,7 @@ export function normalizePlatformTenantDetailPayload(
 }
 
 /**
- * Merges list row (partial tenant) into detail organisation for display fallbacks.
+ * Merges list row (partial org) into detail organisation for display fallbacks.
  */
 export function mergeOrganisationProfile(
   organisation: Record<string, unknown> | null,

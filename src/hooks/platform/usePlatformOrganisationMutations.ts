@@ -8,7 +8,7 @@ import type {
 } from '@/api/types/platform-organisation.dto';
 
 /**
- * Platform tenant CRUD: `/platform/organisations*` for super-admins (avoids `organization:*` JWT on `/admin/organizations`).
+ * Platform organisation CRUD: `/platform/organisations*` for super-admins (avoids `organization:*` JWT on `/admin/organizations`).
  */
 
 function stripEmptyStrings<T extends Record<string, unknown>>(body: T): T {

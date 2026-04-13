@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Copy, Gift, Link2, Ticket } from 'lucide-react'
+import { Copy, Gift, Link2, Loader2, Ticket } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

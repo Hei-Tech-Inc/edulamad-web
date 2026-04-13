@@ -1,0 +1,4543 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get API information",
+        "tags": [
+          "app"
+        ]
+      }
+    },
+    "/verify-email": {
+      "get": {
+        "operationId": "AuthRedirectController_verifyEmail",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "description": "Email verification token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified successfully"
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          }
+        },
+        "summary": "Verify email address (for email links without /auth prefix)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "operationId": "MetricsController_getMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Prometheus metrics in text format"
+          }
+        },
+        "summary": "Prometheus metrics endpoint",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/internal/qstash/jobs": {
+      "post": {
+        "operationId": "QstashWebhookController_handleJobs",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "QstashWebhook"
+        ]
+      }
+    },
+    "/questions/courses/{courseId}": {
+      "get": {
+        "operationId": "QuestionsController_listByCourse",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2024,
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [100, 200, 300, 400],
+              "type": "number"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Question type filter. Accepts canonical values and aliases: objective-\u003Emcq, theory-\u003Eessay, practical-\u003Ecalculation.",
+            "schema": {
+              "enum": [
+                "mcq",
+                "essay",
+                "calculation",
+                "programming",
+                "objective",
+                "theory",
+                "practical"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List past questions for a course",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/uploads/{uploadQueueId}/preview": {
+      "get": {
+        "operationId": "QuestionsController_getUploadPreview",
+        "parameters": [
+          {
+            "name": "uploadQueueId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Preview extracted questions, signed URLs for source PDF and stored JSON (if any)",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/upload-queue": {
+      "get": {
+        "operationId": "QuestionsController_listUploadQueue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List upload queue items (alias of GET /ta/upload-queue)",
+        "tags": [
+          "questions"
+        ]
+      },
+      "post": {
+        "operationId": "QuestionsController_uploadQueue",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}/solutions": {
+      "get": {
+        "operationId": "QuestionsController_listSolutions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}/source-document": {
+      "get": {
+        "operationId": "QuestionsController_getSourceDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get signed URL for original source document linked to this question",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}": {
+      "get": {
+        "description": "Requires JWT. Enforces past-question access: paid/unlimited users always allowed; free users get 3 unique questions via server-side ledger, then must use credits. This route calls `openPastQuestion` atomically before returning the question — expect 403 when access is denied (body message = reason).",
+        "operationId": "QuestionsController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Past question access denied (limit reached or no credits)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get a past question by id",
+        "tags": [
+          "questions"
+        ]
+      },
+      "delete": {
+        "operationId": "QuestionsController_softDelete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/upload": {
+      "post": {
+        "operationId": "QuestionsController_uploadForProcessing",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "courseId": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "number"
+                  },
+                  "levelData": {
+                    "type": "number"
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "ta",
+                      "student",
+                      "team"
+                    ]
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "courseId",
+                  "year",
+                  "levelData",
+                  "file"
+                ],
+                "example": {
+                  "courseId": "k57h2x3f8t0u1q4r9w6y7z8a9b0cde12",
+                  "year": 2024,
+                  "levelData": 300,
+                  "source": "team",
+                  "file": "\u003Cbinary\u003E"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload question file → R2; enqueue Bull job for extract + parse (202)",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/upload-bundle": {
+      "post": {
+        "operationId": "QuestionsController_uploadBundle",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "PDF + JSON bundle: both are stored in R2 (`.../source.pdf`, `.../extracted.json`), then questions are created from JSON with `attachmentKey` = PDF.",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "courseId": {
+                    "type": "string",
+                    "example": "k57h2x3f8t0u1q4r9w6y7z8a9b0cde12"
+                  },
+                  "year": {
+                    "type": "number",
+                    "example": 2024
+                  },
+                  "levelData": {
+                    "type": "number",
+                    "example": 300
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "ta",
+                      "student",
+                      "team"
+                    ],
+                    "example": "team"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Source PDF"
+                  },
+                  "extracted": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JSON file: array of questions or { \"questions\": [...] }"
+                  }
+                },
+                "required": [
+                  "courseId",
+                  "year",
+                  "levelData",
+                  "file",
+                  "extracted"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Store PDF + extracted JSON in R2, then apply JSON as past questions (202)",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions": {
+      "post": {
+        "operationId": "QuestionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "courseId": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "number"
+                  },
+                  "levelData": {
+                    "type": "number"
+                  },
+                  "questionText": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create question; optional attachment → R2",
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{id}/verify": {
+      "patch": {
+        "operationId": "QuestionsController_verify",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/{questionId}/solutions": {
+      "post": {
+        "operationId": "QuestionsController_addSolution",
+        "parameters": [
+          {
+            "name": "questionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/questions/solutions/{solutionId}/upvote": {
+      "post": {
+        "operationId": "QuestionsController_upvote",
+        "parameters": [
+          {
+            "name": "solutionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "questions"
+        ]
+      }
+    },
+    "/slides/courses/{courseId}": {
+      "get": {
+        "operationId": "SlidesController_list",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List slides for course",
+        "tags": [
+          "slides"
+        ]
+      },
+      "post": {
+        "operationId": "SlidesController_upload",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload slide to R2 and enqueue processing",
+        "tags": [
+          "slides"
+        ]
+      }
+    },
+    "/slides/{id}/outputs": {
+      "get": {
+        "operationId": "SlidesController_outputs",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "slides"
+        ]
+      }
+    },
+    "/slides/{id}": {
+      "delete": {
+        "operationId": "SlidesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "slides"
+        ]
+      }
+    },
+    "/users/profile": {
+      "get": {
+        "description": "Get the authenticated user's profile information. Password field is excluded from response.",
+        "operationId": "UsersController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "email": "user@example.com",
+                    "name": "John Doe",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "emailVerified": true,
+                    "isActive": true,
+                    "profilePhoto": "https://cdn.example.com/public/photo.jpg",
+                    "createdAt": "2026-01-17T15:30:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get current user profile",
+        "tags": [
+          "users"
+        ]
+      },
+      "patch": {
+        "description": "Update the authenticated user's profile information. User will be re-indexed in search if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "UsersController_updateProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "email": "user@example.com",
+                    "name": "John Doe Updated",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "emailVerified": true,
+                    "isActive": true,
+                    "updatedAt": "2026-01-17T16:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update user profile",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/profile/photo": {
+      "patch": {
+        "description": "Upload a profile photo. **Requires FEATURE_OBJECT_STORAGE_ENABLED=true**. When disabled, this endpoint will return an error. Only image files are accepted.",
+        "operationId": "UsersController_uploadProfilePhoto",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file (JPEG, PNG, GIF, etc.)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile photo uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "key": "public/1705492800000-profile.jpg",
+                    "url": "https://cdn.example.com/public/1705492800000-profile.jpg",
+                    "message": "Profile photo uploaded successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No file provided or file is not an image"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "503": {
+            "description": "Object storage not available (FEATURE_OBJECT_STORAGE_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload profile photo",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/tasks": {
+      "get": {
+        "description": "Get a paginated list of tasks for the authenticated user. Supports filtering by status and search query. Search uses Meilisearch if FEATURE_SEARCH_ENABLED=true, otherwise falls back to database search.",
+        "operationId": "TasksController_findAll",
+        "parameters": [
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Number of tasks to skip",
+            "schema": {
+              "default": 0,
+              "example": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of tasks per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search query (uses Meilisearch if FEATURE_SEARCH_ENABLED=true)",
+            "schema": {
+              "example": "project",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter tasks by status",
+            "schema": {
+              "enum": [
+                "OPEN",
+                "IN_PROGRESS",
+                "DONE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "title": "Complete project",
+                        "description": "Finish the NestJS project",
+                        "status": "IN_PROGRESS",
+                        "userId": "user-uuid",
+                        "createdAt": "2026-01-17T15:30:00.000Z"
+                      }
+                    ],
+                    "meta": {
+                      "total": 1,
+                      "limit": 20,
+                      "offset": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get all tasks",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "post": {
+        "description": "Create a new task. The task will be indexed in search if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "TasksController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "title": "New task",
+                    "description": "Task description",
+                    "status": "OPEN",
+                    "userId": "user-uuid",
+                    "createdAt": "2026-01-17T15:30:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a new task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/tasks/{id}": {
+      "get": {
+        "description": "Get detailed information about a specific task. Users can only access their own tasks.",
+        "operationId": "TasksController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Task details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "title": "Complete project",
+                    "description": "Finish the NestJS project",
+                    "status": "IN_PROGRESS",
+                    "userId": "user-uuid",
+                    "createdAt": "2026-01-17T15:30:00.000Z",
+                    "updatedAt": "2026-01-17T16:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "404": {
+            "description": "Task not found or access denied"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get task by ID",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "patch": {
+        "description": "Update task details. Status transitions must follow: OPEN -\u003E IN_PROGRESS -\u003E DONE. Task will be re-indexed if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "TasksController_updateTask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "title": "Updated task",
+                    "description": "Updated description",
+                    "status": "DONE",
+                    "userId": "user-uuid",
+                    "updatedAt": "2026-01-17T16:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data or invalid status transition"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "404": {
+            "description": "Task not found or access denied"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update task",
+        "tags": [
+          "tasks"
+        ]
+      },
+      "delete": {
+        "description": "Delete a task. Task will be removed from search index if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "TasksController_deleteTask",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Task deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "404": {
+            "description": "Task not found or access denied"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "description": "Register a new user account. Password must be at least 8 characters. Initializes free question credits on the backend; optional `referralCode` (e.g. EDU-XXXXX) attributes signup to a referrer. User will be indexed in search if FEATURE_SEARCH_ENABLED=true and FEATURE_JOBS_ENABLED=true.",
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "securePassword123",
+                    "name": "John Doe"
+                  }
+                },
+                "withReferral": {
+                  "summary": "With referral code",
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "securePassword123",
+                    "name": "John Doe",
+                    "referralCode": "EDU-A1B2C"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User successfully registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "user": {
+                      "id": "123e4567-e89b-12d3-a456-426614174000",
+                      "email": "user@example.com",
+                      "name": "John Doe",
+                      "emailVerified": false,
+                      "isActive": true,
+                      "createdAt": "2026-01-16T10:00:00.000Z"
+                    },
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+                    "refreshToken": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data"
+          },
+          "409": {
+            "description": "User with this email already exists"
+          },
+          "429": {
+            "description": "Too many requests - rate limited"
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "description": "Authenticate user and receive access and refresh tokens. Access tokens expire in 15 minutes, refresh tokens in 7 days.",
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "email": "user@example.com",
+                    "password": "securePassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User successfully logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "user": {
+                      "id": "123e4567-e89b-12d3-a456-426614174000",
+                      "email": "user@example.com",
+                      "name": "John Doe",
+                      "emailVerified": true,
+                      "isActive": true,
+                      "createdAt": "2026-01-16T10:00:00.000Z"
+                    },
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+                    "refreshToken": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "429": {
+            "description": "Too many requests - rate limited"
+          }
+        },
+        "summary": "Login user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "description": "Obtain a new access token using a valid refresh token. Refresh tokens are valid for 7 days by default.",
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "refreshToken": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refreshToken": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          }
+        },
+        "summary": "Refresh access token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "User logged out successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Logout user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "description": "Verify email address using verification token. Requires FEATURE_MAIL_ENABLED=true and FEATURE_EMAIL_VERIFICATION_ENABLED=true",
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Email verified successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Verify email address (POST)",
+        "tags": [
+          "auth"
+        ]
+      },
+      "get": {
+        "description": "Verify email address via GET request (typically used in email links). Requires FEATURE_MAIL_ENABLED=true and FEATURE_EMAIL_VERIFICATION_ENABLED=true",
+        "operationId": "AuthController_verifyEmailGet",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "description": "Email verification token",
+            "schema": {
+              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Email verified successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Verify email address (GET - for email links)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/resend-verification": {
+      "post": {
+        "description": "Resend email verification link. Requires FEATURE_MAIL_ENABLED=true and FEATURE_EMAIL_VERIFICATION_ENABLED=true",
+        "operationId": "AuthController_resendVerification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@example.com"
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification email sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Verification email sent"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email already verified or invalid email"
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Resend verification email",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "description": "Request a password reset email. Requires FEATURE_MAIL_ENABLED=true",
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "email": "user@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "If the email exists, a password reset link has been sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "If the email exists, a password reset link has been sent"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Request password reset",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "description": "Reset password using reset token from email. Requires FEATURE_MAIL_ENABLED=true",
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              },
+              "examples": {
+                "example": {
+                  "value": {
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
+                    "password": "newSecurePassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Password reset successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          },
+          "503": {
+            "description": "Email service not available (FEATURE_MAIL_ENABLED=false)"
+          }
+        },
+        "summary": "Reset password",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "description": "Returns the user from Convex by JWT `sub`. If you get 401 after deploys or migrations, sign in again so `sub` matches a Convex user id.",
+        "operationId": "AuthController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current user information"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get current user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The Health Check is successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The Health Check is not successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "info": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "example": {
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      },
+                      "nullable": true
+                    },
+                    "details": {
+                      "type": "object",
+                      "example": {
+                        "database": {
+                          "status": "up"
+                        },
+                        "redis": {
+                          "status": "down",
+                          "message": "Could not connect"
+                        }
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Health check endpoint",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/files/upload": {
+      "post": {
+        "description": "Upload a file to object storage. **Requires FEATURE_OBJECT_STORAGE_ENABLED=true**. When disabled, this endpoint will return an error.",
+        "operationId": "FilesController_uploadFile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File to upload (any file type)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "key": "public/1705492800000-document.pdf",
+                    "url": "https://cdn.example.com/public/1705492800000-document.pdf",
+                    "filename": "document.pdf",
+                    "mimetype": "application/pdf",
+                    "size": 102400
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No file provided or invalid file"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "503": {
+            "description": "Object storage not available (FEATURE_OBJECT_STORAGE_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Upload a file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/{key}/signed-url": {
+      "get": {
+        "description": "Generate a time-limited signed URL for accessing a private file. **Requires FEATURE_OBJECT_STORAGE_ENABLED=true**.",
+        "operationId": "FilesController_getSignedUrl",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed URL generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "url": "https://s3.amazonaws.com/bucket/private/1705492800000-secret.pdf?X-Amz-Algorithm=...&X-Amz-Expires=3600"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "403": {
+            "description": "Access denied - user does not own this file"
+          },
+          "404": {
+            "description": "File not found"
+          },
+          "503": {
+            "description": "Object storage not available (FEATURE_OBJECT_STORAGE_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get signed URL for private file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/{key}": {
+      "delete": {
+        "description": "Delete a file from object storage. **Requires FEATURE_OBJECT_STORAGE_ENABLED=true**.",
+        "operationId": "FilesController_deleteFile",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "File deleted successfully"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "403": {
+            "description": "Access denied - user does not own this file"
+          },
+          "404": {
+            "description": "File not found"
+          },
+          "503": {
+            "description": "Object storage not available (FEATURE_OBJECT_STORAGE_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/search/tasks": {
+      "get": {
+        "description": "Returns no tasks. Task search depended on PostgreSQL/TypeORM, which Convex MVP replaced.",
+        "operationId": "SearchController_searchTasks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Empty task results"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Search tasks (removed — tasks module retired for EDULAMAD MVP)",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/search/users": {
+      "get": {
+        "description": "Search users by query string. **Requires FEATURE_SEARCH_ENABLED=true**.",
+        "operationId": "SearchController_searchUsers",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "example": "john",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Offset for pagination",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "example": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          },
+          "503": {
+            "description": "Search service not available (FEATURE_SEARCH_ENABLED=false)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Search users using Meilisearch",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/search/global": {
+      "get": {
+        "description": "Task search is disabled without the legacy tasks datastore.",
+        "operationId": "SearchController_globalSearch",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "example": "learn",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per type",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results"
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Global search (users only for EDULAMAD MVP)",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/institutions/universities": {
+      "get": {
+        "operationId": "InstitutionsController_listUniversities",
+        "parameters": [
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List universities (cached)",
+        "tags": [
+          "institutions"
+        ]
+      },
+      "post": {
+        "operationId": "InstitutionsController_createUniversity",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUniversityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create university (admin)",
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/universities/{id}": {
+      "get": {
+        "operationId": "InstitutionsController_getUniversity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get university by id",
+        "tags": [
+          "institutions"
+        ]
+      },
+      "patch": {
+        "operationId": "InstitutionsController_updateUniversity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUniversityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update university (admin)",
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/universities/{universityId}/colleges": {
+      "get": {
+        "operationId": "InstitutionsController_listColleges",
+        "parameters": [
+          {
+            "name": "universityId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/colleges": {
+      "post": {
+        "operationId": "InstitutionsController_createCollege",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/colleges/{id}": {
+      "patch": {
+        "operationId": "InstitutionsController_updateCollege",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/colleges/{collegeId}/departments": {
+      "get": {
+        "operationId": "InstitutionsController_listDepartments",
+        "parameters": [
+          {
+            "name": "collegeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/departments": {
+      "post": {
+        "operationId": "InstitutionsController_createDepartment",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/departments/{id}": {
+      "patch": {
+        "operationId": "InstitutionsController_updateDepartment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/departments/{deptId}/courses": {
+      "get": {
+        "operationId": "InstitutionsController_listCourses",
+        "parameters": [
+          {
+            "name": "deptId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/courses/by-code/{code}": {
+      "get": {
+        "operationId": "InstitutionsController_getCourseByCode",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/courses/{id}": {
+      "get": {
+        "operationId": "InstitutionsController_getCourse",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "institutions"
+        ]
+      },
+      "patch": {
+        "operationId": "InstitutionsController_updateCourse",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/institutions/courses": {
+      "post": {
+        "operationId": "InstitutionsController_createCourse",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "institutions"
+        ]
+      }
+    },
+    "/students/me/referral": {
+      "get": {
+        "description": "Returns Convex referral stats plus `referralLink` built from server `FRONTEND_URL` / auth.frontendUrl (e.g. `https://app.example/signup?ref=EDU-XXXXX`).",
+        "operationId": "StudentsController_myReferral",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Referral snapshot for the current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "referralCode": "EDU-A1B2C",
+                    "totalReferrals": 2,
+                    "creditsEarnedFromReferrals": 6,
+                    "referralLink": "https://localhost:3000/signup?ref=EDU-A1B2C"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Referral code, stats, and shareable signup link",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/me/question-credits": {
+      "get": {
+        "description": "Past-question access ledger: `balance` is net from ledger (respecting credit expiry where applicable), `viewedQuestionIds` counts toward the free-tier unique-question cap server-side on `GET /questions/:id`.",
+        "operationId": "StudentsController_myQuestionCredits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Credit summary and ledger rows from Convex",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "balance": 5,
+                    "lifetimeEarned": 8,
+                    "lifetimeUsed": 3,
+                    "viewedQuestionIds": [
+                      "q1",
+                      "q2",
+                      "q3"
+                    ],
+                    "ledger": [
+                      {
+                        "_id": "ledger1",
+                        "userId": "user1",
+                        "delta": 3,
+                        "reason": "plan_base",
+                        "createdAt": 1712534400000
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Question credit balance, lifetime stats, views, ledger",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/me/profile": {
+      "get": {
+        "operationId": "StudentsController_myProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Current student profile (Convex studentProfiles)",
+        "tags": [
+          "students"
+        ]
+      },
+      "post": {
+        "operationId": "StudentsController_upsertProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertStudentProfileDto"
+              },
+              "examples": {
+                "regular": {
+                  "summary": "Regular student",
+                  "value": {
+                    "indexNumber": "UEB/CS/22/001",
+                    "studentCategory": "regular",
+                    "universityId": "k17abc...",
+                    "deptId": "d93xyz...",
+                    "levelData": 300,
+                    "semesterData": 1,
+                    "avatarKey": "avatars/students/u123.png"
+                  }
+                },
+                "distanceEducation": {
+                  "summary": "Distance education student",
+                  "value": {
+                    "indexNumber": "UEB/DE/21/101",
+                    "studentCategory": "distance_education",
+                    "universityId": "k17abc...",
+                    "deptId": "d93xyz...",
+                    "levelData": 200,
+                    "semesterData": 2
+                  }
+                },
+                "other": {
+                  "summary": "Other category student",
+                  "value": {
+                    "indexNumber": "UEB/OT/20/010",
+                    "studentCategory": "other",
+                    "otherStudentCategory": "Part-time modular professional stream",
+                    "universityId": "k17abc...",
+                    "deptId": "d93xyz...",
+                    "levelData": 400,
+                    "semesterData": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create or update student profile with study category",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/me/streak": {
+      "post": {
+        "operationId": "StudentsController_streak",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordStreakDto"
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "activeDate": "2026-04-08"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Record daily activity for streak",
+        "tags": [
+          "students"
+        ]
+      },
+      "get": {
+        "operationId": "StudentsController_getStreak",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current streak snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "streakDays": 4,
+                    "longestStreak": 9,
+                    "lastActiveDate": "2026-04-08"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get current streak summary from student profile",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/students/me/xp": {
+      "post": {
+        "operationId": "StudentsController_xp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AwardXpDto"
+              },
+              "examples": {
+                "default": {
+                  "value": {
+                    "amount": 120
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Award XP (internal / gamification use)",
+        "tags": [
+          "students"
+        ]
+      },
+      "get": {
+        "operationId": "StudentsController_getXp",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current XP snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "xpTotal": 1280,
+                    "currentLevel": 3
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get XP summary from student profile",
+        "tags": [
+          "students"
+        ]
+      }
+    },
+    "/ai/chat": {
+      "post": {
+        "operationId": "AiController_chat",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Chat completion (OpenAI + Convex session + usage log)",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/ai/complete": {
+      "post": {
+        "operationId": "AiController_complete",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "One-shot completion",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/subscriptions/plans": {
+      "get": {
+        "operationId": "SubscriptionsController_plans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List subscription plans",
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/subscriptions/me": {
+      "get": {
+        "operationId": "SubscriptionsController_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/subscriptions/pay/upload-fee": {
+      "post": {
+        "operationId": "SubscriptionsController_payUploadFee",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/subscriptions/webhooks/paystack": {
+      "post": {
+        "operationId": "SubscriptionsController_paystackWebhook",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Paystack webhook (requires raw body + x-paystack-signature in production)",
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/exams/simulations": {
+      "post": {
+        "operationId": "ExamsController_start",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Start exam simulation",
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/exams/simulations/{id}": {
+      "get": {
+        "operationId": "ExamsController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/exams/simulations/{id}/answers": {
+      "patch": {
+        "operationId": "ExamsController_answers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/exams/simulations/{id}/complete": {
+      "post": {
+        "operationId": "ExamsController_complete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/exams/simulations/{id}/abandon": {
+      "post": {
+        "operationId": "ExamsController_abandon",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "exams"
+        ]
+      }
+    },
+    "/gamification/leaderboard": {
+      "get": {
+        "operationId": "GamificationController_leaderboard",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Leaderboard (cached)",
+        "tags": [
+          "gamification"
+        ]
+      }
+    },
+    "/gamification/badges/me": {
+      "get": {
+        "operationId": "GamificationController_myBadges",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "gamification"
+        ]
+      }
+    },
+    "/gamification/wallet/me": {
+      "get": {
+        "operationId": "GamificationController_wallet",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "tags": [
+          "gamification"
+        ]
+      }
+    },
+    "/ta/upload-queue": {
+      "get": {
+        "operationId": "TaController_queue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List upload queue items",
+        "tags": [
+          "ta"
+        ]
+      }
+    },
+    "/ta/upload-queue/{id}": {
+      "patch": {
+        "description": "When `status` becomes `approved` for the first time, the uploader receives +2 question credits (`contribution`) in Convex.",
+        "operationId": "TaController_review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Review upload queue entry",
+        "tags": [
+          "ta"
+        ]
+      }
+    },
+    "/notifications/me": {
+      "get": {
+        "operationId": "NotificationsController_myNotifications",
+        "parameters": [
+          {
+            "name": "unreadOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "In-app notifications for the current user (Convex users id)",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/notifications/{id}/read": {
+      "patch": {
+        "operationId": "NotificationsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mark a notification as read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/analytics/me": {
+      "get": {
+        "operationId": "AnalyticsController_mySnapshots",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Learning analytics snapshots for the current user",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/bookmarks/me": {
+      "get": {
+        "operationId": "BookmarksController_myBookmarks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List bookmarks for current user",
+        "tags": [
+          "bookmarks"
+        ]
+      }
+    },
+    "/bookmarks": {
+      "post": {
+        "operationId": "BookmarksController_add",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookmarkDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Add a bookmark (idempotent per ref)",
+        "tags": [
+          "bookmarks"
+        ]
+      }
+    },
+    "/bookmarks/{id}": {
+      "delete": {
+        "operationId": "BookmarksController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Remove a bookmark",
+        "tags": [
+          "bookmarks"
+        ]
+      }
+    },
+    "/flashcards/me": {
+      "get": {
+        "operationId": "FlashcardsController_myFlashcards",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List flashcards for current user",
+        "tags": [
+          "flashcards"
+        ]
+      }
+    },
+    "/flashcards": {
+      "post": {
+        "operationId": "FlashcardsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFlashcardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a flashcard",
+        "tags": [
+          "flashcards"
+        ]
+      }
+    },
+    "/flashcards/{id}": {
+      "patch": {
+        "operationId": "FlashcardsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFlashcardDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update a flashcard",
+        "tags": [
+          "flashcards"
+        ]
+      },
+      "delete": {
+        "operationId": "FlashcardsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a flashcard",
+        "tags": [
+          "flashcards"
+        ]
+      }
+    },
+    "/timetables/me": {
+      "get": {
+        "operationId": "TimetablesController_myTimetables",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List exam timetable entries for current user",
+        "tags": [
+          "timetables"
+        ]
+      }
+    },
+    "/timetables": {
+      "post": {
+        "operationId": "TimetablesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTimetableDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create a timetable entry",
+        "tags": [
+          "timetables"
+        ]
+      }
+    },
+    "/timetables/{id}": {
+      "patch": {
+        "operationId": "TimetablesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTimetableDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update a timetable entry",
+        "tags": [
+          "timetables"
+        ]
+      },
+      "delete": {
+        "operationId": "TimetablesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete a timetable entry",
+        "tags": [
+          "timetables"
+        ]
+      }
+    },
+    "/admin/stats": {
+      "get": {
+        "operationId": "AdminController_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Aggregated stats (cached)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/notifications": {
+      "post": {
+        "operationId": "AdminController_createNotification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminNotificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create an in-app / push / email notification for a user",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/promo/codes": {
+      "get": {
+        "operationId": "AdminController_listPromoCodes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List promo codes",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "description": "Set `unlocksPlan` and/or `questionCredits` (\u003E=1). At least one is required. Optional `creditExpiresAt` (Unix ms) applies to granted credits.",
+        "operationId": "AdminController_createPromoCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePromoCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Create promo code",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/promo/codes/{id}/deactivate": {
+      "post": {
+        "operationId": "AdminController_deactivatePromoCode",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Deactivate promo code",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/promo/codes/{id}": {
+      "patch": {
+        "description": "Partial update; may include `questionCredits` and `creditExpiresAt` for credit-granting codes.",
+        "operationId": "AdminController_patchPromoCode",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchPromoCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Patch promo code",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/questions/{questionId}/solutions": {
+      "delete": {
+        "operationId": "AdminController_clearQuestionSolutions",
+        "parameters": [
+          {
+            "name": "questionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Delete all solutions for a past question (admin tooling / re-seed keys)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/promo/redeem": {
+      "post": {
+        "description": "Codes may grant `unlocksPlan` (basic/pro), `questionCredits`, or both. Subscription is upserted only when the code unlocks a plan. Question credits are applied in Convex and subscription/credit caches are invalidated.",
+        "operationId": "PromoController_redeem",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedeemPromoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Redemption succeeded. `unlocksPlan` present only for plan codes; `questionCreditsGranted` only when the code grants credits; either or both may be set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "ok": true,
+                    "unlocksPlan": "basic",
+                    "questionCreditsGranted": 10
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid code, already redeemed, expired, or misconfigured"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Redeem a promo code (plan unlock and/or question credits; busts subscription + credit cache)",
+        "tags": [
+          "promo"
+        ]
+      }
+    },
+    "/promo/my-active": {
+      "get": {
+        "operationId": "PromoController_myActive",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "List your promo redemptions (active codes only)",
+        "tags": [
+          "promo"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "NestJS Production API",
+    "description": "Production-ready NestJS backend boilerplate API documentation.\n    \n**Feature Status:**\n- All features enabled\n\n**Feature Toggles:**\nAll features are controlled via environment variables:\n- FEATURE_REDIS_ENABLED\n- FEATURE_JOBS_ENABLED\n- FEATURE_MAIL_ENABLED\n- FEATURE_EMAIL_VERIFICATION_ENABLED\n- FEATURE_OBJECT_STORAGE_ENABLED\n- FEATURE_SEARCH_ENABLED\n\nSet these to \"true\" or \"false\" to enable/disable features.",
+    "version": "1.0",
+    "contact": {
+
+    }
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authentication endpoints"
+    },
+    {
+      "name": "admin",
+      "description": "Admin management endpoints (organizations, roles, permissions)"
+    },
+    {
+      "name": "users",
+      "description": "User management"
+    },
+    {
+      "name": "tasks",
+      "description": "Task management"
+    },
+    {
+      "name": "files",
+      "description": "File upload and management (requires FEATURE_OBJECT_STORAGE_ENABLED=true)"
+    },
+    {
+      "name": "search",
+      "description": "Search endpoints (requires FEATURE_SEARCH_ENABLED=true)"
+    },
+    {
+      "name": "health",
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "metrics",
+      "description": "Metrics endpoints"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "JWT-auth": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "name": "JWT",
+        "description": "Enter JWT token",
+        "in": "header"
+      }
+    },
+    "schemas": {
+      "UserPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "description": "UI theme preference",
+            "enum": [
+              "light",
+              "dark",
+              "auto"
+            ],
+            "example": "dark"
+          },
+          "language": {
+            "type": "string",
+            "description": "Language preference (ISO 639-1 code)",
+            "example": "en"
+          },
+          "notifications": {
+            "type": "object",
+            "description": "Notification preferences",
+            "example": {
+              "email": true,
+              "push": false,
+              "sms": false
+            }
+          }
+        }
+      },
+      "SocialLinksDto": {
+        "type": "object",
+        "properties": {
+          "twitter": {
+            "type": "string",
+            "description": "Twitter profile URL",
+            "example": "https://twitter.com/username",
+            "format": "uri"
+          },
+          "linkedin": {
+            "type": "string",
+            "description": "LinkedIn profile URL",
+            "example": "https://linkedin.com/in/username",
+            "format": "uri"
+          },
+          "github": {
+            "type": "string",
+            "description": "GitHub profile URL",
+            "example": "https://github.com/username",
+            "format": "uri"
+          },
+          "facebook": {
+            "type": "string",
+            "description": "Facebook profile URL",
+            "example": "https://facebook.com/username",
+            "format": "uri"
+          }
+        }
+      },
+      "UpdateUserProfileDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "First name",
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Last name",
+            "example": "Doe"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number",
+            "example": "+1234567890"
+          },
+          "bio": {
+            "type": "string",
+            "description": "User bio",
+            "example": "Software engineer passionate about NestJS and TypeScript"
+          },
+          "profilePhoto": {
+            "type": "string",
+            "description": "Profile photo URL or S3 key",
+            "example": "public/1705492800000-profile.jpg"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth (ISO 8601 format)",
+            "example": "1990-01-01",
+            "format": "date"
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address",
+            "example": "123 Main St"
+          },
+          "city": {
+            "type": "string",
+            "description": "City",
+            "example": "San Francisco"
+          },
+          "state": {
+            "type": "string",
+            "description": "State or province",
+            "example": "CA"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country",
+            "example": "USA"
+          },
+          "zipCode": {
+            "type": "string",
+            "description": "ZIP or postal code",
+            "example": "94102"
+          },
+          "website": {
+            "type": "string",
+            "description": "Personal website URL",
+            "example": "https://johndoe.com",
+            "format": "uri"
+          },
+          "company": {
+            "type": "string",
+            "description": "Company name",
+            "example": "Acme Corporation"
+          },
+          "jobTitle": {
+            "type": "string",
+            "description": "Job title",
+            "example": "Senior Software Engineer"
+          },
+          "preferences": {
+            "description": "User preferences",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserPreferencesDto"
+              }
+            ]
+          },
+          "socialLinks": {
+            "description": "Social media links",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SocialLinksDto"
+              }
+            ]
+          }
+        }
+      },
+      "CreateTaskLabelDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Label name",
+            "example": "urgent",
+            "minLength": 1
+          },
+          "color": {
+            "type": "string",
+            "description": "Label color (hex code)",
+            "example": "#ff0000"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateTaskDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Task title",
+            "example": "Complete project documentation",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Task description",
+            "example": "Write comprehensive documentation for the NestJS project including API endpoints and setup instructions"
+          },
+          "status": {
+            "type": "string",
+            "description": "Task status",
+            "enum": [
+              "OPEN",
+              "IN_PROGRESS",
+              "DONE"
+            ],
+            "example": "OPEN"
+          },
+          "labels": {
+            "description": "Optional task labels",
+            "example": [
+              {
+                "name": "urgent",
+                "color": "#ff0000"
+              },
+              {
+                "name": "documentation",
+                "color": "#0000ff"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateTaskLabelDto"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "status"
+        ]
+      },
+      "UpdateTaskDto": {
+        "type": "object",
+        "properties": {
+
+        }
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password (minimum 8 characters)",
+            "example": "password123",
+            "minLength": 8
+          },
+          "name": {
+            "type": "string",
+            "description": "User full name",
+            "example": "John Doe"
+          },
+          "referralCode": {
+            "type": "string",
+            "description": "Optional referral code (e.g. EDU-XXXXX) for the referrer to earn credits when verified",
+            "example": "EDU-A1B2C"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "name"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "example": "user@example.com",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "example": "password123"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token received from login or register",
+            "example": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "VerifyEmailDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Email verification token sent to user email",
+            "example": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address to send password reset link",
+            "example": "user@example.com",
+            "format": "email"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Password reset token received via email",
+            "example": "abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+          },
+          "password": {
+            "type": "string",
+            "description": "New password (minimum 8 characters)",
+            "example": "newpassword123",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ]
+      },
+      "CreateUniversityDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "acronym": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "logoKey": {
+            "type": "string"
+          },
+          "websiteUrl": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "name",
+          "acronym",
+          "location",
+          "type",
+          "isActive"
+        ]
+      },
+      "UpdateUniversityDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "acronym": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "logoKey": {
+            "type": "string"
+          },
+          "websiteUrl": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpsertStudentProfileDto": {
+        "type": "object",
+        "properties": {
+          "indexNumber": {
+            "type": "string",
+            "example": "UEB/CS/22/001"
+          },
+          "studentCategory": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "distance_education",
+              "sandwich",
+              "evening_weekend",
+              "other"
+            ],
+            "example": "regular",
+            "description": "Student program category in Ghanaian university context"
+          },
+          "otherStudentCategory": {
+            "type": "string",
+            "example": "Part-time modular professional stream",
+            "description": "Required when studentCategory is \"other\""
+          },
+          "universityId": {
+            "type": "string",
+            "description": "Convex universities table id"
+          },
+          "deptId": {
+            "type": "string",
+            "description": "Convex departments table id"
+          },
+          "levelData": {
+            "type": "number",
+            "enum": [100, 200, 300, 400],
+            "example": 300
+          },
+          "semesterData": {
+            "type": "number",
+            "enum": [1, 2],
+            "example": 1
+          },
+          "avatarKey": {
+            "type": "string",
+            "example": "avatars/students/u123.png"
+          }
+        },
+        "required": [
+          "studentCategory",
+          "universityId",
+          "deptId",
+          "levelData",
+          "semesterData"
+        ]
+      },
+      "RecordStreakDto": {
+        "type": "object",
+        "properties": {
+          "activeDate": {
+            "type": "string",
+            "example": "2026-04-08",
+            "description": "Active date in YYYY-MM-DD format"
+          }
+        },
+        "required": [
+          "activeDate"
+        ]
+      },
+      "AwardXpDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "example": 120,
+            "description": "XP points to add"
+          }
+        },
+        "required": [
+          "amount"
+        ]
+      },
+      "CreateBookmarkDto": {
+        "type": "object",
+        "properties": {
+          "refType": {
+            "type": "string",
+            "enum": [
+              "question",
+              "solution",
+              "slide"
+            ]
+          },
+          "refId": {
+            "type": "string",
+            "description": "Target document id (Convex string id)"
+          }
+        },
+        "required": [
+          "refType",
+          "refId"
+        ]
+      },
+      "CreateFlashcardDto": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "description": "Convex courses table id"
+          },
+          "front": {
+            "type": "string"
+          },
+          "back": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "manual"
+            ]
+          }
+        },
+        "required": [
+          "courseId",
+          "front",
+          "back",
+          "source"
+        ]
+      },
+      "UpdateFlashcardDto": {
+        "type": "object",
+        "properties": {
+          "front": {
+            "type": "string"
+          },
+          "back": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "manual"
+            ]
+          }
+        }
+      },
+      "CreateTimetableDto": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "description": "Convex courses table id"
+          },
+          "examDate": {
+            "type": "string",
+            "example": "2026-05-12"
+          },
+          "remindAt": {
+            "type": "number",
+            "description": "Unix ms when to remind"
+          },
+          "notified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "courseId",
+          "examDate",
+          "remindAt",
+          "notified"
+        ]
+      },
+      "UpdateTimetableDto": {
+        "type": "object",
+        "properties": {
+          "examDate": {
+            "type": "string",
+            "example": "2026-05-12"
+          },
+          "remindAt": {
+            "type": "number"
+          },
+          "notified": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateAdminNotificationDto": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "string",
+            "description": "Convex users table id of the recipient"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "push",
+              "email",
+              "in_app"
+            ]
+          },
+          "ctaUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "studentId",
+          "type",
+          "title",
+          "body",
+          "channel"
+        ]
+      },
+      "CreatePromoCodeDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "WELCOME2026"
+          },
+          "unlocksPlan": {
+            "type": "string",
+            "enum": [
+              "basic",
+              "pro"
+            ],
+            "description": "Optional if questionCredits is set"
+          },
+          "questionCredits": {
+            "type": "number",
+            "description": "Question credits granted per redemption (\u003E=1 if used)"
+          },
+          "creditExpiresAt": {
+            "type": "number",
+            "description": "Unix ms when granted credits expire"
+          },
+          "maxRedemptions": {
+            "type": "number",
+            "example": 100
+          },
+          "expiresAt": {
+            "type": "number",
+            "description": "Unix ms expiry"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "maxRedemptions"
+        ]
+      },
+      "PatchPromoCodeDto": {
+        "type": "object",
+        "properties": {
+          "maxRedemptions": {
+            "type": "number"
+          },
+          "expiresAt": {
+            "type": "number",
+            "description": "Unix ms expiry"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "questionCredits": {
+            "type": "number",
+            "description": "Question credits per redemption"
+          },
+          "creditExpiresAt": {
+            "type": "number",
+            "description": "Unix ms when granted credits expire"
+          }
+        }
+      },
+      "RedeemPromoDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "WELCOME2026"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      }
+    }
+  }
+}

@@ -18,7 +18,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>{BRAND} — Past questions &amp; exam prep for Ghanaian universities</title>
+        <title>{`${BRAND} — Past questions & exam prep for Ghanaian universities`}</title>
         <meta name="application-name" content={BRAND} />
         <meta
           name="description"

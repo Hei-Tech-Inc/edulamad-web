@@ -1,4 +1,4 @@
-// pages/admin/companies.js
+// pages/admin/admin.js — organisation management (legacy route name)
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
@@ -7,29 +7,29 @@ import ProtectedRoute from '../../components/ProtectedRoute'
 import Layout from '../../components/Layout'
 import DataTable from '../../components/DataTable'
 import { useAuth } from '../../contexts/AuthContext'
-import companyService from '../../lib/companyService'
+import organizationService from '../../lib/organizationService'
 import { useToast } from '../../components/Toast'
 
-export default function CompaniesPage() {
+export default function AdminOrganizationsPage() {
   return (
     <ProtectedRoute>
       <Layout title="Admin dashboard">
-        <CompaniesList />
+        <OrganizationsList />
       </Layout>
     </ProtectedRoute>
   )
 }
 
-function CompaniesList() {
+function OrganizationsList() {
   const router = useRouter()
   const { user, hasRole } = useAuth()
   const { showToast } = useToast()
 
-  const [companies, setCompanies] = useState([])
+  const [organizations, setOrganizations] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [companyToDelete, setCompanyToDelete] = useState(null)
+  const [orgToDelete, setOrgToDelete] = useState(null)
 
   // Check if user has super_admin role
   useEffect(() => {
@@ -38,54 +38,53 @@ function CompaniesList() {
     }
   }, [user, hasRole, router])
 
-  // Fetch companies
   useEffect(() => {
-    async function fetchCompanies() {
+    async function fetchOrganizations() {
       setLoading(true)
       try {
-        const { data, error } = await companyService.getAllCompanies()
+        const { data, error } = await organizationService.listOrganizations()
 
         if (error) throw error
 
-        setCompanies(data || [])
+        setOrganizations(data || [])
       } catch (error) {
-        console.error('Error fetching companies:', error)
-        setError('Failed to load companies')
-        showToast('Failed to load companies', 'error')
+        console.error('Error fetching organizations:', error)
+        setError('Failed to load institutions')
+        showToast('Failed to load institutions', 'error')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchCompanies()
+    fetchOrganizations()
   }, [showToast])
 
-  const handleDeleteCompany = (company) => {
-    setCompanyToDelete(company)
+  const handleDeleteOrganization = (row) => {
+    setOrgToDelete(row)
     setShowDeleteModal(true)
   }
 
   const confirmDelete = async () => {
-    if (!companyToDelete) return
+    if (!orgToDelete) return
 
     try {
-      const { error } = await companyService.deleteCompany(companyToDelete.id)
+      const { error } = await organizationService.deleteOrganization(orgToDelete.id)
 
       if (error) throw error
 
-      showToast('Company deleted successfully', 'success')
-      setCompanies(companies.filter((c) => c.id !== companyToDelete.id))
+      showToast('Institution removed successfully', 'success')
+      setOrganizations(organizations.filter((c) => c.id !== orgToDelete.id))
       setShowDeleteModal(false)
-      setCompanyToDelete(null)
+      setOrgToDelete(null)
     } catch (error) {
-      console.error('Error deleting company:', error)
-      showToast('Failed to delete company: ' + error.message, 'error')
+      console.error('Error deleting organization:', error)
+      showToast('Failed to delete institution: ' + error.message, 'error')
     }
   }
 
   const columns = [
     {
-      header: 'Company Name',
+      header: 'Name',
       accessor: 'name',
       sortable: true,
       searchable: true,
@@ -124,7 +123,7 @@ function CompaniesList() {
   const tableActions = {
     view: (row) => router.push(`/admin/companies/${row.id}`),
     edit: (row) => router.push(`/admin/companies/${row.id}/edit`),
-    delete: (row) => handleDeleteCompany(row),
+    delete: (row) => handleDeleteOrganization(row),
   }
 
   return (
@@ -139,28 +138,28 @@ function CompaniesList() {
               Back to Dashboard
             </Link>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
-              Company Management
+              Institution management
             </h1>
           </div>
 
           <Link href="/admin/companies/create">
             <button className="inline-flex items-center rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700">
               <Plus className="w-4 h-4 mr-2" />
-              Add Company
+              Add institution
             </button>
           </Link>
         </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] dark:border-neutral-800 dark:bg-neutral-950/80">
           <DataTable
-            data={companies}
+            data={organizations}
             columns={columns}
             loading={loading}
             pagination={true}
             actions={tableActions}
             searchable={true}
             sortable={true}
-            emptyMessage="No companies found."
+            emptyMessage="No institutions found."
           />
       </div>
 
@@ -176,9 +175,9 @@ function CompaniesList() {
               Confirm Deletion
             </h3>
             <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
-              Are you sure you want to delete {companyToDelete?.name}? This
+              Are you sure you want to delete {orgToDelete?.name}? This
               action cannot be undone and will remove ALL data associated with
-              this company.
+              this institution.
             </p>
             <div className="flex justify-end space-x-3">
               <button

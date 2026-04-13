@@ -8,6 +8,7 @@ import {
   useTransform,
 } from 'framer-motion'
 import { getMarketingBrandName } from '@/lib/landing-brand'
+import { useTheme } from '../../contexts/ThemeContext'
 import {
   ArrowRight,
   Building2,
@@ -20,7 +21,6 @@ import {
   Sparkles,
   ChevronRight,
   Calendar,
-  Infinity,
   Menu,
   X,
   ChevronDown,
@@ -32,6 +32,7 @@ import {
   Check,
   Eye,
   EyeOff,
+  Orbit,
 } from 'lucide-react'
 
 const BRAND = getMarketingBrandName()
@@ -116,9 +117,7 @@ function LandingMarquee() {
   }
 
   return (
-    <div className="relative border-y border-white/[0.08] bg-black/20 py-3.5 backdrop-blur-md">
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#050505] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#050505] to-transparent" />
+    <div className="ticker-mask relative border-t border-white/[0.08] bg-black/20 py-3.5 backdrop-blur-md">
       <div
         className="landing-marquee-track landing-marquee-animate"
         aria-hidden
@@ -253,29 +252,14 @@ const statStrip = [
     label: 'Depth',
     value: '24/7',
     hint: 'Practice when the library is closed',
-    icon: Infinity,
+    icon: Orbit,
   },
 ]
 
 const previewRows = [
-  {
-    courseCode: 'FIN 201',
-    status: '98% ready',
-    session: '4.5h',
-    tone: 'text-emerald-400/90',
-  },
-  {
-    courseCode: 'CS 205',
-    status: 'Review weak',
-    session: '2.1h',
-    tone: 'text-amber-400/90',
-  },
-  {
-    courseCode: 'MATH 152',
-    status: 'Sim due',
-    session: '45m',
-    tone: 'text-orange-400/90',
-  },
+  { courseCode: 'FIN 201',  status: '98% ready',   session: '4.5h', pill: 'pill-green'  },
+  { courseCode: 'CS 205',   status: 'Review weak',  session: '2.1h', pill: 'pill-amber'  },
+  { courseCode: 'MATH 152', status: 'Sim due',      session: '45m',  pill: 'pill-orange' },
 ]
 
 function SectionHeading({
@@ -310,9 +294,9 @@ function HeroShowcase({ reducedMotion }) {
       initial={reducedMotion ? false : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="relative mx-auto w-full max-w-md lg:mx-0 lg:max-w-lg"
+      className="relative mx-auto w-full max-w-md lg:mx-0 lg:max-w-lg dashboard-card"
     >
-      <div className="overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0a0a0a]/95 shadow-[0_32px_80px_rgba(0,0,0,0.5)] ring-1 ring-white/[0.05]">
+      <div className="overflow-hidden rounded-2xl bg-[#0a0a0a]/95 shadow-[0_32px_80px_rgba(0,0,0,0.5)] ring-1 ring-white/[0.05]">
         <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex shrink-0 gap-1.5" aria-hidden>
@@ -325,7 +309,8 @@ function HeroShowcase({ reducedMotion }) {
               <p className="text-[10px] text-slate-500">Exam prep · dashboard</p>
             </div>
           </div>
-          <span className="shrink-0 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400/95">
+          <span className="shrink-0 inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400/95">
+            <span className="live-dot" aria-hidden />
             Live
           </span>
         </div>
@@ -338,7 +323,7 @@ function HeroShowcase({ reducedMotion }) {
             ].map((cell) => (
               <div
                 key={cell.k}
-                className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-2 py-2.5 text-center"
+                className="animated-border-inner animated-border-inner-dim rounded-xl bg-white/[0.03] px-2 py-2.5 text-center"
               >
                 <p className="text-lg font-semibold tabular-nums text-white">
                   {cell.v}
@@ -353,7 +338,7 @@ function HeroShowcase({ reducedMotion }) {
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
               Focus courses
             </p>
-            <div className="overflow-hidden rounded-xl border border-white/[0.08]">
+            <div className="animated-border-inner animated-border-inner-dim overflow-hidden rounded-xl">
               <div className="grid grid-cols-[1fr_auto_auto] gap-1 border-b border-white/[0.06] bg-white/[0.03] px-3 py-2 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
                 <span>Course</span>
                 <span className="text-right">Status</span>
@@ -364,10 +349,10 @@ function HeroShowcase({ reducedMotion }) {
                   key={row.courseCode}
                   className="grid grid-cols-[1fr_auto_auto] gap-1 border-b border-white/[0.05] px-3 py-2 text-[11px] last:border-b-0"
                 >
-                  <span className="font-medium text-slate-200">
+                  <span className="font-bold text-slate-200">
                     {row.courseCode}
                   </span>
-                  <span className={`text-right ${row.tone}`}>{row.status}</span>
+                  <span className={`text-right ${row.pill}`}>{row.status}</span>
                   <span className="text-right tabular-nums text-slate-400">
                     {row.session}
                   </span>
@@ -389,7 +374,7 @@ function HeroShowcase({ reducedMotion }) {
                   delay: reducedMotion ? 0 : 0.3,
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
+                className="shimmer-bar h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
               />
             </div>
           </div>
@@ -555,6 +540,8 @@ function ClockShowcase({ reducedMotion }) {
 }
 
 export default function LandingPage() {
+  const { theme } = useTheme()
+  const isDarkFaq = theme === 'dark'
   const reduceMotion = useReducedMotion()
   const [mounted, setMounted] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -627,9 +614,7 @@ export default function LandingPage() {
       className="relative min-h-screen overflow-x-hidden font-sans text-neutral-100 antialiased"
     >
         <Head>
-          <title>
-            {BRAND} — Past questions &amp; exam prep for Ghanaian universities
-          </title>
+          <title>{`${BRAND} — Past questions & exam prep for Ghanaian universities`}</title>
           <meta name="application-name" content={BRAND} />
           <meta
             name="description"
@@ -681,7 +666,7 @@ export default function LandingPage() {
               </span>
             </Link>
             <nav
-              className="hidden items-center gap-7 text-sm font-medium text-slate-400 lg:gap-9 md:flex"
+              className="landing-header-desktop-only hidden items-center gap-7 text-sm font-medium text-slate-400 lg:gap-9 md:flex"
               aria-label="Primary"
             >
               {[
@@ -702,7 +687,7 @@ export default function LandingPage() {
                 </a>
               ))}
             </nav>
-            <div className="hidden items-center gap-2 md:flex sm:gap-3">
+            <div className="landing-header-desktop-ctas hidden items-center gap-2 md:flex sm:gap-3">
               <Link
                 href="/login"
                 className={`landing-glass-chip rounded-lg px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-white/15 hover:bg-white/[0.08] hover:text-white sm:px-4 ${landingFocus}`}
@@ -711,7 +696,7 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/register"
-                className={`inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-gradient-to-r from-orange-400 to-amber-400 px-3 py-2 text-sm font-semibold text-slate-950 shadow-[0_8px_28px_rgba(34,211,238,0.28),inset_0_1px_0_0_rgba(255,255,255,0.35)] transition hover:brightness-110 sm:px-4 ${landingFocus}`}
+                className={`btn-primary-sweep inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-gradient-to-r from-orange-400 to-amber-400 px-3 py-2 text-sm font-semibold text-slate-950 shadow-[0_8px_28px_rgba(34,211,238,0.28),inset_0_1px_0_0_rgba(255,255,255,0.35)] transition hover:brightness-110 sm:px-4 ${landingFocus}`}
               >
                 Get started
                 <ArrowRight className="h-4 w-4" aria-hidden />
@@ -719,7 +704,7 @@ export default function LandingPage() {
             </div>
             <button
               type="button"
-              className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/[0.06] text-white transition hover:border-orange-400/35 hover:bg-white/[0.1] md:hidden ${landingFocus}`}
+              className={`landing-header-mobile-only inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/[0.06] text-white transition hover:border-orange-400/35 hover:bg-white/[0.1] md:hidden ${landingFocus}`}
               aria-expanded={mobileNavOpen}
               aria-controls="landing-mobile-nav"
               aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
@@ -734,7 +719,8 @@ export default function LandingPage() {
           </div>
           <div
             id="landing-mobile-nav"
-            className={`border-t border-white/10 bg-[#050a12]/95 backdrop-blur-xl transition-[opacity,visibility] duration-200 md:hidden ${
+            data-open={mobileNavOpen ? 'true' : 'false'}
+            className={`landing-header-mobile-panel border-t border-white/10 bg-[#050a12]/95 backdrop-blur-xl transition-[opacity,visibility] duration-200 md:hidden ${
               mobileNavOpen
                 ? 'visible max-h-[min(70vh,520px)] opacity-100'
                 : 'pointer-events-none invisible max-h-0 overflow-hidden opacity-0'
@@ -791,7 +777,7 @@ export default function LandingPage() {
           {/* Hero */}
           <section
             ref={heroSectionRef}
-            className="relative overflow-hidden pb-4 pt-8 sm:pt-12 sm:pb-6 lg:pt-16 lg:pb-8"
+            className="hero-grain relative overflow-hidden pb-4 pt-8 sm:pt-12 sm:pb-6 lg:pt-16 lg:pb-8"
             aria-labelledby="hero-heading"
           >
             <motion.div
@@ -846,14 +832,14 @@ export default function LandingPage() {
                   <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                     <Link
                       href="/register"
-                      className={`group inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white px-6 py-3.5 text-sm font-semibold text-black shadow-[0_20px_50px_rgba(255,92,0,0.2),inset_0_1px_0_0_rgba(255,255,255,0.9)] transition duration-200 hover:bg-neutral-200 sm:px-7 sm:text-base ${landingFocus}`}
+                      className={`btn-primary-sweep group inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white px-6 py-3.5 text-sm font-semibold text-black shadow-[0_20px_50px_rgba(255,92,0,0.2),inset_0_1px_0_0_rgba(255,255,255,0.9)] transition duration-200 hover:bg-neutral-200 sm:px-7 sm:text-base ${landingFocus}`}
                     >
                       Get started free
                       <ArrowRight className="h-4 w-4 transition duration-200 group-hover:translate-x-0.5 sm:h-5 sm:w-5" />
                     </Link>
                     <Link
                       href="/login"
-                      className={`inline-flex cursor-pointer items-center justify-center rounded-xl border border-orange-500/55 bg-transparent px-6 py-3.5 text-sm font-semibold text-orange-300 transition duration-200 hover:border-orange-400 hover:bg-orange-500/10 sm:px-7 sm:text-base ${landingFocus}`}
+                      className={`btn-secondary-sweep inline-flex cursor-pointer items-center justify-center rounded-xl border border-orange-500/55 bg-transparent px-6 py-3.5 text-sm font-semibold text-orange-300 transition duration-200 hover:border-orange-400 hover:bg-orange-500/10 sm:px-7 sm:text-base ${landingFocus}`}
                     >
                       Sign in
                     </Link>
@@ -1159,7 +1145,7 @@ export default function LandingPage() {
                 />
                 <Link
                   href="/register"
-                  className={`group inline-flex shrink-0 cursor-pointer items-center gap-2 self-start rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_44px_rgba(255,92,0,0.2)] transition duration-200 hover:brightness-110 lg:mb-0.5 ${landingFocus}`}
+                  className={`btn-primary-sweep group inline-flex shrink-0 cursor-pointer items-center gap-2 self-start rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_44px_rgba(255,92,0,0.2)] transition duration-200 hover:brightness-110 lg:mb-0.5 ${landingFocus}`}
                 >
                   <Users className="h-4 w-4" strokeWidth={2} />
                   Get started
@@ -1202,18 +1188,30 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* FAQ — light Q&A layout (exam-prep style reference) */}
+          {/* FAQ — theme-aware (matches landing orange/slate; light + dark) */}
           <section
             id="faq"
-            className="scroll-mt-24 border-t border-gray-200/80 bg-[#f3f4f6] py-16 sm:py-20 lg:py-24"
+            className={
+              isDarkFaq
+                ? 'scroll-mt-24 border-t border-white/[0.08] bg-[#070a12] py-16 sm:py-20 lg:py-24'
+                : 'scroll-mt-24 border-t border-slate-200/90 bg-gradient-to-b from-slate-50 via-white to-slate-50/80 py-16 sm:py-20 lg:py-24'
+            }
             aria-labelledby="faq-heading"
           >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
               <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
                 <div className="lg:col-span-4 lg:pt-1">
-                  <div className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">
+                  <div
+                    className={
+                      isDarkFaq
+                        ? 'mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-400/95'
+                        : 'mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700'
+                    }
+                  >
                     <HelpCircle
-                      className="h-4 w-4 text-teal-700"
+                      className={
+                        isDarkFaq ? 'h-4 w-4 text-orange-400' : 'h-4 w-4 text-orange-600'
+                      }
                       strokeWidth={2}
                       aria-hidden
                     />
@@ -1221,29 +1219,65 @@ export default function LandingPage() {
                   </div>
                   <h2
                     id="faq-heading"
-                    className="text-balance font-[Outfit,system-ui,sans-serif] text-2xl font-bold leading-tight tracking-tight text-gray-900 sm:text-3xl"
+                    className={
+                      isDarkFaq
+                        ? 'text-balance font-[Outfit,system-ui,sans-serif] text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl'
+                        : 'text-balance font-[Outfit,system-ui,sans-serif] text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl'
+                    }
                   >
                     Questions &amp; answers
                   </h2>
-                  <p className="mt-3 max-w-sm text-pretty text-sm leading-relaxed text-gray-600 sm:text-[0.9375rem]">
+                  <p
+                    className={
+                      isDarkFaq
+                        ? 'mt-3 max-w-sm text-pretty text-sm leading-relaxed text-slate-400 sm:text-[0.9375rem]'
+                        : 'mt-3 max-w-sm text-pretty text-sm leading-relaxed text-slate-600 sm:text-[0.9375rem]'
+                    }
+                  >
                     Straight answers to what students and course reps ask before
                     they rely on a new prep tool.
                   </p>
-                  <div className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                  <div
+                    className={
+                      isDarkFaq
+                        ? 'mt-8 rounded-xl border border-white/[0.1] bg-white/[0.04] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-sm'
+                        : 'mt-8 rounded-xl border border-slate-200/90 bg-white p-5 shadow-sm'
+                    }
+                  >
+                    <p
+                      className={
+                        isDarkFaq
+                          ? 'text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500'
+                          : 'text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500'
+                      }
+                    >
                       More on {BRAND}
                     </p>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                    <p
+                      className={
+                        isDarkFaq
+                          ? 'mt-2 text-sm leading-relaxed text-slate-300'
+                          : 'mt-2 text-sm leading-relaxed text-slate-600'
+                      }
+                    >
                       <a
                         href="#platform"
-                        className="font-medium text-teal-800 underline decoration-teal-800/30 underline-offset-2 transition hover:text-teal-900"
+                        className={
+                          isDarkFaq
+                            ? 'font-medium text-orange-300 underline decoration-orange-400/35 underline-offset-2 transition hover:text-orange-200'
+                            : 'font-medium text-orange-700 underline decoration-orange-600/30 underline-offset-2 transition hover:text-orange-800'
+                        }
                       >
                         Platform &amp; governance
                       </a>
                       {' · '}
                       <a
                         href="#onboarding"
-                        className="font-medium text-teal-800 underline decoration-teal-800/30 underline-offset-2 transition hover:text-teal-900"
+                        className={
+                          isDarkFaq
+                            ? 'font-medium text-orange-300 underline decoration-orange-400/35 underline-offset-2 transition hover:text-orange-200'
+                            : 'font-medium text-orange-700 underline decoration-orange-600/30 underline-offset-2 transition hover:text-orange-800'
+                        }
                       >
                         Onboarding
                       </a>
@@ -1252,25 +1286,54 @@ export default function LandingPage() {
                 </div>
 
                 <div className="lg:col-span-8">
-                  <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.04)] sm:rounded-2xl">
-                    <div className="border-b border-gray-100 px-5 py-4 sm:px-6 sm:py-5">
+                  <div
+                    className={
+                      isDarkFaq
+                        ? 'overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0c1018] shadow-[0_24px_64px_rgba(0,0,0,0.45)] sm:rounded-2xl'
+                        : 'overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06),0_12px_40px_rgba(15,23,42,0.06)] sm:rounded-2xl'
+                    }
+                  >
+                    <div
+                      className={
+                        isDarkFaq
+                          ? 'border-b border-white/[0.08] bg-gradient-to-r from-orange-500/[0.06] to-transparent px-5 py-4 sm:px-6 sm:py-5'
+                          : 'border-b border-slate-100 bg-gradient-to-r from-orange-50/80 to-transparent px-5 py-4 sm:px-6 sm:py-5'
+                      }
+                    >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <p className="font-[Outfit,system-ui,sans-serif] text-lg font-bold text-gray-900 sm:text-xl">
+                          <p
+                            className={
+                              isDarkFaq
+                                ? 'font-[Outfit,system-ui,sans-serif] text-lg font-bold text-white sm:text-xl'
+                                : 'font-[Outfit,system-ui,sans-serif] text-lg font-bold text-slate-900 sm:text-xl'
+                            }
+                          >
                             Common questions
                           </p>
-                          <p className="mt-0.5 text-sm text-gray-500">
+                          <p
+                            className={
+                              isDarkFaq
+                                ? 'mt-0.5 text-sm text-slate-500'
+                                : 'mt-0.5 text-sm text-slate-500'
+                            }
+                          >
                             {BRAND} · help · {faqItems.length}{' '}
                             {faqItems.length === 1 ? 'topic' : 'topics'}
                           </p>
                         </div>
-                        <span className="inline-flex w-fit items-center rounded-full bg-teal-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm">
+                        <span className="inline-flex w-fit items-center rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(234,88,12,0.35)]">
                           Help center
                         </span>
                       </div>
                     </div>
 
-                    <ul className="divide-y divide-gray-100" role="list">
+                    <ul
+                      className={
+                        isDarkFaq ? 'divide-y divide-white/[0.08]' : 'divide-y divide-slate-100'
+                      }
+                      role="list"
+                    >
                       {faqItems.map(({ q, a }, i) => {
                         const isOpen = Boolean(openFaq[i])
                         const panelId = `faq-panel-${i}`
@@ -1284,7 +1347,11 @@ export default function LandingPage() {
                           <li key={q} className="px-5 py-5 sm:px-6 sm:py-6">
                             <div className="flex gap-3 sm:gap-4">
                               <span
-                                className="shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-gray-400"
+                                className={
+                                  isDarkFaq
+                                    ? 'shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-slate-600'
+                                    : 'shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-slate-400'
+                                }
                                 aria-hidden
                               >
                                 {i + 1}.
@@ -1292,7 +1359,11 @@ export default function LandingPage() {
                               <div className="min-w-0 flex-1">
                                 <p
                                   id={`faq-q-${i}`}
-                                  className="text-[0.9375rem] font-medium leading-snug text-gray-900 sm:text-base"
+                                  className={
+                                    isDarkFaq
+                                      ? 'text-[0.9375rem] font-medium leading-snug text-slate-100 sm:text-base'
+                                      : 'text-[0.9375rem] font-medium leading-snug text-slate-900 sm:text-base'
+                                  }
                                 >
                                   {q}
                                 </p>
@@ -1302,17 +1373,29 @@ export default function LandingPage() {
                                   aria-expanded={isOpen}
                                   aria-controls={panelId}
                                   onClick={toggle}
-                                  className={`mt-3 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 ${reduceMotion ? '' : 'active:scale-[0.99]'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/45 focus-visible:ring-offset-2 focus-visible:ring-offset-white`}
+                                  className={
+                                    isDarkFaq
+                                      ? `mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.14] bg-white/[0.06] px-3.5 py-2 text-sm font-medium text-slate-200 shadow-sm transition hover:border-orange-500/35 hover:bg-white/[0.1] ${reduceMotion ? '' : 'active:scale-[0.99]'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c1018]`
+                                      : `mt-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 ${reduceMotion ? '' : 'active:scale-[0.99]'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/45 focus-visible:ring-offset-2 focus-visible:ring-offset-white`
+                                  }
                                 >
                                   {isOpen ? (
                                     <EyeOff
-                                      className="h-4 w-4 text-gray-500"
+                                      className={
+                                        isDarkFaq
+                                          ? 'h-4 w-4 text-slate-400'
+                                          : 'h-4 w-4 text-slate-500'
+                                      }
                                       strokeWidth={2}
                                       aria-hidden
                                     />
                                   ) : (
                                     <Eye
-                                      className="h-4 w-4 text-gray-500"
+                                      className={
+                                        isDarkFaq
+                                          ? 'h-4 w-4 text-slate-400'
+                                          : 'h-4 w-4 text-slate-500'
+                                      }
                                       strokeWidth={2}
                                       aria-hidden
                                     />
@@ -1328,11 +1411,29 @@ export default function LandingPage() {
                                   }`}
                                 >
                                   <div className="min-h-0">
-                                    <div className="mt-4 rounded-xl border border-gray-200 bg-[#fafafa] px-4 py-3.5 sm:px-5 sm:py-4">
-                                      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                                    <div
+                                      className={
+                                        isDarkFaq
+                                          ? 'mt-4 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-3.5 sm:px-5 sm:py-4'
+                                          : 'mt-4 rounded-xl border border-slate-200 bg-slate-50/90 px-4 py-3.5 sm:px-5 sm:py-4'
+                                      }
+                                    >
+                                      <p
+                                        className={
+                                          isDarkFaq
+                                            ? 'text-[11px] font-semibold uppercase tracking-wider text-slate-500'
+                                            : 'text-[11px] font-semibold uppercase tracking-wider text-slate-500'
+                                        }
+                                      >
                                         Answer
                                       </p>
-                                      <p className="mt-2 text-sm leading-relaxed text-gray-700 sm:text-[0.9375rem]">
+                                      <p
+                                        className={
+                                          isDarkFaq
+                                            ? 'mt-2 text-sm leading-relaxed text-slate-300 sm:text-[0.9375rem]'
+                                            : 'mt-2 text-sm leading-relaxed text-slate-700 sm:text-[0.9375rem]'
+                                        }
+                                      >
                                         {a}
                                       </p>
                                     </div>

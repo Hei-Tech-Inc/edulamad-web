@@ -13,7 +13,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   /**
-   * Platform super-admin: `X-Act-As-Org-Id` for tenant routes only (not `/platform/*`).
+   * Platform super-admin: `X-Act-As-Org-Id` for org-scoped routes only (not `/platform/*`).
    * Session-only (excluded from persist).
    */
   actAsOrgId: string | null;

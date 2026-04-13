@@ -26,6 +26,7 @@ import {
   Upload,
   FilePlus2,
   Inbox,
+  Layers,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthStore } from '@/stores/auth.store'
@@ -140,8 +141,13 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
           },
           {
             title: 'Quiz mode',
-            path: '/practice',
+            path: '/quiz/new',
             icon: ListOrdered,
+          },
+          {
+            title: 'Flashcards',
+            path: '/flashcards',
+            icon: Layers,
           },
         ],
       },
@@ -180,56 +186,52 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
         ],
       },
     }
-    const adminNavItems = isAdmin
-      ? [
-          {
-            title: 'Admin overview',
-            path: '/dashboard#admin-panel-tabs',
-            icon: LayoutDashboard,
-          },
-          {
-            title: 'Catalog & institutions',
-            path: '/dashboard?admin=catalog#admin-catalog',
-            icon: Building2,
-          },
-          {
-            title: 'Promo codes (list)',
-            path: '/dashboard?admin=catalog#admin-promo-list',
-            icon: Ticket,
-          },
-          {
-            title: 'Question upload queue',
-            path: '/dashboard?admin=catalog#admin-upload-queue',
-            icon: Inbox,
-          },
-          {
-            title: 'Create question',
-            path: '/dashboard?admin=create#admin-create-question',
-            icon: FilePlus2,
-          },
-          {
-            title: 'Create flashcard',
-            path: '/dashboard?admin=create#admin-create-flashcard',
-            icon: Sparkles,
-          },
-          {
-            title: 'Create promo code',
-            path: '/dashboard?admin=create#admin-create-promo',
-            icon: Ticket,
-          },
-          {
-            title: 'Upload question bundle',
-            path: '/dashboard?admin=create#admin-upload-bundle',
-            icon: Upload,
-          },
-        ]
-      : [
-          {
-            kind: 'hint',
-            key: 'admin-access',
-            body: 'Promo codes, uploads, and catalogue tools need an organisation admin or manager role (or platform super-admin). Ask your org owner to change your role if you should have access.',
-          },
-        ]
+    if (!isAdmin) {
+      return base
+    }
+
+    const adminNavItems = [
+      {
+        title: 'Admin overview',
+        path: '/dashboard#admin-panel-tabs',
+        icon: LayoutDashboard,
+      },
+      {
+        title: 'Catalog & institutions',
+        path: '/dashboard?admin=catalog#admin-catalog',
+        icon: Building2,
+      },
+      {
+        title: 'Promo codes (list)',
+        path: '/dashboard?admin=catalog#admin-promo-list',
+        icon: Ticket,
+      },
+      {
+        title: 'Question upload queue',
+        path: '/dashboard?admin=catalog#admin-upload-queue',
+        icon: Inbox,
+      },
+      {
+        title: 'Create question',
+        path: '/dashboard?admin=create#admin-create-question',
+        icon: FilePlus2,
+      },
+      {
+        title: 'Create flashcard',
+        path: '/dashboard?admin=create#admin-create-flashcard',
+        icon: Sparkles,
+      },
+      {
+        title: 'Create promo code',
+        path: '/dashboard?admin=create#admin-create-promo',
+        icon: Ticket,
+      },
+      {
+        title: 'Upload question bundle',
+        path: '/dashboard?admin=create#admin-upload-bundle',
+        icon: Upload,
+      },
+    ]
 
     return {
       ...base,

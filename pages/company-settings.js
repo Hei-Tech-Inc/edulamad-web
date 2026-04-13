@@ -16,27 +16,27 @@ import {
 import ProtectedRoute from '../components/ProtectedRoute'
 import Layout from '../components/Layout'
 import { useAuth } from '../contexts/AuthContext'
-import companyService from '../lib/companyService'
+import organizationService from '../lib/organizationService'
 import { useToast } from '../components/Toast'
 import { AppApiError } from '@/lib/api-error'
 
-export default function CompanySettingsPage() {
+export default function OrganizationSettingsPage() {
   return (
     <ProtectedRoute>
       <Layout title="Institution settings">
-        <CompanySettings />
+        <OrganizationSettings />
       </Layout>
     </ProtectedRoute>
   )
 }
 
-function CompanySettings() {
+function OrganizationSettings() {
   const router = useRouter()
   const { user } = useAuth()
   const { showToast } = useToast()
   const fileInputRef = useRef(null)
 
-  const [company, setCompany] = useState(null)
+  const [organization, setOrganization] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -50,15 +50,15 @@ function CompanySettings() {
     contact_phone: '',
   })
 
-  const fetchCompanyData = useCallback(async () => {
+  const fetchOrganizationData = useCallback(async () => {
     setLoading(true)
     try {
-      const { data, error } = await companyService.getCompanyDetails()
+      const { data, error } = await organizationService.getOrganizationDetails()
 
       if (error && !data) throw error
 
-      console.log('Fetched company data:', data)
-      setCompany(data || { id: 'local-org', name: '', logo_url: null, settings: {} })
+      console.log('Fetched organization data:', data)
+      setOrganization(data || { id: 'local-org', name: '', logo_url: null, settings: {} })
       setFormData({
         name: data?.name || '',
         abbreviation: data?.abbreviation || '',
@@ -70,18 +70,17 @@ function CompanySettings() {
         setReadOnlyNotice(error.message)
       }
     } catch (error) {
-      console.error('Error fetching company data:', error.message)
-      setError('Failed to load company data. Please try again.')
-      showToast('Failed to load company data', 'error')
+      console.error('Error fetching organization data:', error.message)
+      setError('Failed to load institution data. Please try again.')
+      showToast('Failed to load institution data', 'error')
     } finally {
       setLoading(false)
     }
   }, [showToast])
 
-  // Fetch company data on mount
   useEffect(() => {
-    void fetchCompanyData()
-  }, [fetchCompanyData])
+    void fetchOrganizationData()
+  }, [fetchOrganizationData])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -99,30 +98,29 @@ function CompanySettings() {
     try {
       // Validate form
       if (!formData.name) {
-        throw new Error('Company name is required')
+        throw new Error('Institution name is required')
       }
 
-      // Update company
-      const { data, error } = await companyService.updateCompany(company.id, {
+      const { data, error } = await organizationService.updateOrganization(organization.id, {
         ...formData,
-        logo_url: company.logo_url, // Preserve existing logo URL
-        settings: company.settings, // Preserve existing settings
+        logo_url: organization.logo_url,
+        settings: organization.settings,
       })
 
       if (error instanceof AppApiError) {
         setReadOnlyNotice(error.message)
       }
       if (data) {
-        setCompany(data)
+        setOrganization(data)
       }
 
       if (!error) {
-        showToast('Company settings updated successfully', 'success')
+        showToast('Institution settings updated successfully', 'success')
       } else {
         showToast(error.message, 'error')
       }
     } catch (error) {
-      console.error('Error updating company:', error.message)
+      console.error('Error updating organization:', error.message)
       setError(error.message)
       showToast(error.message, 'error')
     } finally {
@@ -158,12 +156,12 @@ function CompanySettings() {
     setError('')
 
     try {
-      const { data, error } = await companyService.uploadLogo(company.id, file)
+      const { data, error } = await organizationService.uploadLogo(organization.id, file)
 
       if (error) throw error
 
       showToast('Logo uploaded successfully', 'success')
-      setCompany(data)
+      setOrganization(data)
     } catch (error) {
       console.error('Error uploading logo:', error.message)
       setError('Failed to upload logo: ' + error.message)
@@ -176,9 +174,9 @@ function CompanySettings() {
   }
 
   const handleDeleteLogo = async () => {
-    if (!company.logo_url) return
+    if (!organization.logo_url) return
 
-    if (!confirm('Are you sure you want to delete the company logo?')) {
+    if (!confirm('Are you sure you want to delete the institution logo?')) {
       return
     }
 
@@ -186,15 +184,15 @@ function CompanySettings() {
     setError('')
 
     try {
-      const { data, error } = await companyService.deleteLogo(
-        company.id,
-        company.logo_url,
+      const { data, error } = await organizationService.deleteLogo(
+        organization.id,
+        organization.logo_url,
       )
 
       if (error) throw error
 
       showToast('Logo removed successfully', 'success')
-      setCompany(data)
+      setOrganization(data)
     } catch (error) {
       console.error('Error deleting logo:', error.message)
       setError('Failed to delete logo: ' + error.message)
@@ -214,7 +212,7 @@ function CompanySettings() {
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back to Dashboard
         </Link>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Company Settings</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Institution settings</h1>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] dark:border-neutral-800 dark:bg-neutral-950/80">
@@ -239,7 +237,7 @@ function CompanySettings() {
                 {/* Logo Section */}
                 <div className="md:col-span-1 flex flex-col items-center">
                   <div className="text-sm font-medium text-gray-700 mb-2">
-                    Company Logo
+                    Institution logo
                   </div>
 
                   <div
@@ -250,11 +248,11 @@ function CompanySettings() {
                       <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
                       </div>
-                    ) : company.logo_url ? (
+                    ) : organization.logo_url ? (
                       <div className="h-full w-full relative">
                         <Image
-                          src={company.logo_url}
-                          alt={company.name}
+                          src={organization.logo_url}
+                          alt={organization.name}
                           layout="fill"
                           objectFit="contain"
                         />
@@ -280,7 +278,7 @@ function CompanySettings() {
                     />
                   </div>
 
-                  {company.logo_url && (
+                  {organization.logo_url && (
                     <button
                       type="button"
                       onClick={handleDeleteLogo}
@@ -293,13 +291,13 @@ function CompanySettings() {
                   )}
                 </div>
 
-                {/* Company Details Form */}
+                {/* Institution details */}
                 <div className="md:col-span-2">
                   <form onSubmit={handleSubmit}>
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Company Name <span className="text-red-500">*</span>
+                          Institution name <span className="text-red-500">*</span>
                         </label>
                         <div className="relative rounded-md shadow-sm">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -311,7 +309,7 @@ function CompanySettings() {
                             value={formData.name}
                             onChange={handleChange}
                             className="block w-full rounded-xl border-slate-200 py-2 pl-10 pr-3 text-sm shadow-sm focus:border-orange-300 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
-                            placeholder="Company Name"
+                            placeholder="Institution name"
                             required
                           />
                         </div>
@@ -331,12 +329,12 @@ function CompanySettings() {
                             value={formData.abbreviation}
                             onChange={handleChange}
                             className="block w-full rounded-xl border-slate-200 py-2 pl-10 pr-3 text-sm shadow-sm focus:border-orange-300 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
-                            placeholder="Company Abbreviation"
+                            placeholder="Short code"
                             maxLength={5}
                           />
                         </div>
                         <p className="mt-1 text-xs text-gray-500">
-                          Short code for the company (1-5 characters). Used for
+                          Short code for the institution (1-5 characters). Used for
                           feed types, etc.
                         </p>
                       </div>
@@ -351,7 +349,7 @@ function CompanySettings() {
                           onChange={handleChange}
                           rows="3"
                           className="block w-full rounded-xl border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-orange-300 focus:ring-orange-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:focus:border-orange-700 dark:focus:ring-orange-900/40"
-                          placeholder="Company Address"
+                          placeholder="Address"
                         ></textarea>
                       </div>
 

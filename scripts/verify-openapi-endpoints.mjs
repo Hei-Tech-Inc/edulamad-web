@@ -12,12 +12,23 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
 const docPath = path.join(root, 'contexts', 'api-docs.json');
+const stubPath = path.join(root, 'contexts', 'api-path-stubs.json');
 const endpointsPath = path.join(root, 'src', 'api', 'endpoints.ts');
 
 const doc = JSON.parse(fs.readFileSync(docPath, 'utf8'));
 const endpointsSrc = fs.readFileSync(endpointsPath, 'utf8');
 
-const openApiPaths = Object.keys(doc.paths || {}).sort();
+let stubPaths = [];
+try {
+  if (fs.existsSync(stubPath)) {
+    const stubDoc = JSON.parse(fs.readFileSync(stubPath, 'utf8'));
+    stubPaths = Object.keys(stubDoc.paths || {});
+  }
+} catch {
+  /* ignore malformed stub file */
+}
+
+const openApiPaths = [...new Set([...Object.keys(doc.paths || {}), ...stubPaths])].sort();
 
 function coversOpenApiTemplate(template, src) {
   if (template === '/') {

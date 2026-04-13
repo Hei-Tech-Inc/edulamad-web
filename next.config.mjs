@@ -51,6 +51,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/platform/tenants',
+        destination: '/platform/institutions',
+        permanent: false,
+      },
+      {
         source: '/register-company',
         destination: '/register',
         permanent: true,

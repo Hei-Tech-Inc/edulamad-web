@@ -159,6 +159,53 @@ body {
     52px 52px;
 }
 
+/*
+ * Landing header: mirror Tailwind `md` (48rem) without relying on utilities alone.
+ * If the CSS chunk fails or utilities are missing, `hidden` / `md:flex` / `md:hidden`
+ * stop working and desktop + mobile nav both render (duplicated links).
+ */
+@media (max-width: 47.9875rem) {
+  .landing-header-desktop-only,
+  .landing-header-desktop-ctas {
+    display: none !important;
+  }
+
+  .landing-header-mobile-only {
+    display: inline-flex !important;
+  }
+
+  /* Mirror closed/open drawer without relying on Tailwind alone (keeps height/opacity transitions working) */
+  .landing-header-mobile-panel[data-open='false'] {
+    max-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .landing-header-mobile-panel[data-open='true'] {
+    max-height: min(70vh, 520px) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+}
+
+@media (min-width: 48rem) {
+  .landing-header-desktop-only {
+    display: flex !important;
+  }
+
+  .landing-header-desktop-ctas {
+    display: flex !important;
+  }
+
+  .landing-header-mobile-only,
+  .landing-header-mobile-panel {
+    display: none !important;
+  }
+}
+
 ::selection {
   background-color: rgba(255, 92, 0, 0.22);
   color: inherit;
@@ -180,9 +227,18 @@ body {
   gap: 2.5rem;
 }
 
+/* Keep each marquee chip spaced even if Tailwind classes on the child spans are missing */
+.landing-marquee-track > span {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .landing-marquee-animate {
-    animation: landing-marquee 55s linear infinite;
+    animation: landing-marquee 66s linear infinite;
   }
 }
 
@@ -338,5 +394,280 @@ textarea:focus {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* ============================================================
+   Edulamad visual revamp — design tokens + animated borders
+   ============================================================ */
+
+/* Animatable CSS custom property for conic-gradient rotation */
+@property --border-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+:root {
+  --brand-orange: #F97316;
+  --brand-orange-dim: rgba(249, 115, 22, 0.12);
+  --brand-orange-glow: rgba(249, 115, 22, 0.25);
+  --brand-amber: #FBBF24;
+  --surface-0: #0a0a0a;
+  --surface-1: #111111;
+  --surface-2: #1a1a1a;
+  --surface-3: #242424;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-emphasis: rgba(255, 255, 255, 0.18);
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-muted: rgba(255, 255, 255, 0.35);
+  --status-green: #22c55e;
+  --status-green-dim: rgba(34, 197, 94, 0.12);
+  --status-amber: #FBBF24;
+  --status-amber-dim: rgba(251, 191, 36, 0.12);
+  --status-orange: #F97316;
+  --status-orange-dim: rgba(249, 115, 22, 0.12);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Keyframes --- */
+@keyframes border-spin {
+  to { --border-angle: 360deg; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes shimmer {
+  0%   { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* --- Dashboard hero card (outer technique — wrapper must have opaque bg) --- */
+.dashboard-card {
+  position: relative;
+  border-radius: 16px;
+  background: #090909;
+}
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 60%,
+    #F97316 75%,
+    #FBBF24 80%,
+    #FF6B00 85%,
+    transparent 100%
+  );
+  animation: border-spin 4s linear infinite;
+  z-index: -1;
+}
+.dashboard-card::after {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  border-radius: 30px;
+  background: radial-gradient(ellipse at center, rgba(249, 115, 22, 0.12) 0%, transparent 70%);
+  z-index: -2;
+}
+
+/* --- Animated border — mask technique (safe inside overflow:hidden) --- */
+/* Bright version (feature boxes, stat mini-cards) */
+.animated-border-inner {
+  position: relative;
+}
+.animated-border-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 70%,
+    #F97316 82%,
+    #FBBF24 86%,
+    #F97316 90%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-spin 2s linear infinite;
+}
+
+/* Dim version — stat mini-boxes and stat cards */
+.animated-border-inner-dim::before {
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 78%,
+    rgba(249, 115, 22, 0.45) 86%,
+    rgba(251, 191, 36, 0.35) 88%,
+    rgba(249, 115, 22, 0.45) 92%,
+    transparent 100%
+  );
+  animation: border-spin 2.5s linear infinite;
+}
+
+/* --- Button sweep animations (mask technique — no overflow:hidden needed) --- */
+.btn-primary-sweep {
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.3s ease;
+}
+.btn-primary-sweep::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--border-angle), #F97316, #FBBF24, #FF6B00, #F97316);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-spin 2s linear infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.btn-primary-sweep:hover::before { opacity: 1; }
+.btn-primary-sweep:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(249, 115, 22, 0.35);
+}
+.btn-primary-sweep:active { transform: translateY(0); }
+
+.btn-secondary-sweep {
+  position: relative;
+}
+.btn-secondary-sweep::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 75%,
+    rgba(255, 255, 255, 0.55) 85%,
+    rgba(249, 115, 22, 0.8) 90%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-spin 3s linear infinite;
+}
+.btn-secondary-sweep:hover {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
+}
+
+/* --- Hero grain overlay --- */
+.hero-grain {
+  position: relative;
+}
+.hero-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+}
+
+/* --- University ticker — CSS mask fade edges --- */
+.ticker-mask {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+}
+
+/* --- Live badge pulsing dot --- */
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* --- Shimmer progress bar --- */
+.shimmer-bar {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+/* --- Status pills --- */
+.pill-green  { display: inline-flex; align-items: center; border-radius: 9999px; padding: 0.1rem 0.45rem; font-size: 0.6875rem; font-weight: 600; background: rgba(34,  197, 94,  0.12); color: #22c55e; }
+.pill-amber  { display: inline-flex; align-items: center; border-radius: 9999px; padding: 0.1rem 0.45rem; font-size: 0.6875rem; font-weight: 600; background: rgba(251, 191, 36,  0.12); color: #FBBF24; }
+.pill-orange { display: inline-flex; align-items: center; border-radius: 9999px; padding: 0.1rem 0.45rem; font-size: 0.6875rem; font-weight: 600; background: rgba(249, 115, 22,  0.12); color: #F97316; }
+
+/* Suppress static border when conic-gradient (animated border) is supported */
+@supports (background: conic-gradient(red, blue)) {
+  .animated-border-inner {
+    border-color: transparent !important;
+  }
+}
+
+/* --- Keyboard focus ring --- */
+:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 3px;
+}
+
+/* --- Browser fallback for no conic-gradient support --- */
+@supports not (background: conic-gradient(red, blue)) {
+  .animated-border-inner::before,
+  .dashboard-card::before,
+  .dashboard-card::after,
+  .btn-primary-sweep::before,
+  .btn-secondary-sweep::before { display: none; }
+  .animated-border-inner { border: 1px solid rgba(249, 115, 22, 0.4); }
+  .dashboard-card { border: 1px solid rgba(249, 115, 22, 0.35); }
+}
+
+/* --- Reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

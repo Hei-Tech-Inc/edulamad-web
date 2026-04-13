@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { useQuery } from '@tanstack/react-query'
 import {
   Bookmark,
+  Flag,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -13,14 +15,21 @@ import {
   Lightbulb,
   Link2,
   Loader2,
+  MessageSquare,
+  Send,
   Share2,
+  Sparkles,
+  ThumbsUp,
   Trash2,
 } from 'lucide-react'
-import { apiClient } from '@/api/client'
-import API from '@/api/endpoints'
 import { useCourseQuestions } from '@/hooks/questions/useCourseQuestions'
 import { useQuestionSolutions } from '@/hooks/questions/useQuestionSolutions'
 import { useQuizSolutionRows } from '@/hooks/questions/useQuizSolutionRows'
+import {
+  useAddQuestionSolution,
+  useQuestionSolutionsFeed,
+  useUpvoteSolution,
+} from '@/hooks/questions/useQuestionSolutionsFeed'
 import { pickQuizSubset } from '@/lib/quiz/seededShuffle'
 import { officialAnswerDisplay, resolveMcqCorrectIndex } from '@/lib/quiz/question-solutions'
 import {
@@ -33,10 +42,17 @@ import {
   quizDraftStorageKey,
   saveQuizDraft,
 } from '@/lib/quiz/quiz-draft-storage'
+import {
+  fetchFileSignedUrl,
+  fetchQuestionSourceDocumentUrl,
+} from '@/lib/api/resolve-signed-urls'
 import { useToast } from '../Toast'
 import { SkeletonQuestionCard } from '@/components/ui/skeleton'
 import ErrorState from '@/components/ui/ErrorState'
 import EmptyState from '@/components/ui/EmptyState'
+import Breadcrumb from '@/components/ui/Breadcrumb'
+import { apiClient } from '@/api/client'
+import API from '@/api/endpoints'
 
 function optionLetter(index) {
   if (index < 0 || index > 25) return String(index + 1)
@@ -55,16 +71,50 @@ function parseQuery(router) {
   const seedRaw = parseInt(s('seed'), 10)
   const minsRaw = s('mins')
   const minsParsed = minsRaw === '' || minsRaw === undefined ? NaN : parseInt(minsRaw, 10)
+  const encodedQuizId = s('id').trim()
+  let fromEncoded = null
+  if (encodedQuizId) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(encodedQuizId))
+      if (parsed && typeof parsed === 'object') fromEncoded = parsed
+    } catch {
+      /* ignore encoded payload parse errors */
+    }
+  }
+  const fromValue = (key, fallback = '') => {
+    if (fromEncoded && typeof fromEncoded[key] === 'string') return fromEncoded[key].trim()
+    if (fromEncoded && typeof fromEncoded[key] === 'number') return String(fromEncoded[key])
+    return fallback
+  }
+  const modeFromPayload = fromValue('mode')
+  const countFromPayload = Number.parseInt(fromValue('count'), 10)
+  const seedFromPayload = Number.parseInt(fromValue('seed'), 10)
+  const minsFromPayload = Number.parseInt(fromValue('mins'), 10)
+
   return {
-    courseId: s('courseId').trim(),
-    year: s('year').trim(),
-    level: s('level').trim(),
-    type: s('type').trim() || 'all',
-    courseName: s('courseName').trim(),
-    mode: s('mode') === 'quiz' ? 'quiz' : 'review',
-    count: Number.isFinite(countRaw) ? countRaw : NaN,
-    seed: Number.isFinite(seedRaw) ? seedRaw : NaN,
-    mins: Number.isFinite(minsParsed) ? minsParsed : 15,
+    courseId: s('courseId').trim() || fromValue('courseId'),
+    year: s('year').trim() || fromValue('year'),
+    level: s('level').trim() || fromValue('level'),
+    type: s('type').trim() || fromValue('type') || 'all',
+    courseName: s('courseName').trim() || fromValue('courseName'),
+    offeringId: s('offeringId').trim() || fromValue('offeringId'),
+    sourceLabel: s('sourceLabel').trim() || fromValue('sourceLabel'),
+    mode: (s('mode') || modeFromPayload) === 'quiz' ? 'quiz' : 'review',
+    count: Number.isFinite(countRaw)
+      ? countRaw
+      : Number.isFinite(countFromPayload)
+        ? countFromPayload
+        : NaN,
+    seed: Number.isFinite(seedRaw)
+      ? seedRaw
+      : Number.isFinite(seedFromPayload)
+        ? seedFromPayload
+        : NaN,
+    mins: Number.isFinite(minsParsed)
+      ? minsParsed
+      : Number.isFinite(minsFromPayload)
+        ? minsFromPayload
+        : 15,
   }
 }
 
@@ -77,6 +127,7 @@ function formatCountdown(totalSec) {
 function getGridCellClasses({
   isCurrent,
   answered,
+  flagged,
   quizModeSubmitted,
   question,
   solutionRows,
@@ -106,6 +157,11 @@ function getGridCellClasses({
       : 'border-2 border-amber-300 bg-amber-50 text-amber-900'
   }
 
+  if (flagged) {
+    return isCurrent
+      ? 'bg-amber-500 text-white shadow ring-2 ring-amber-100'
+      : 'border border-amber-300 bg-amber-50 text-amber-900'
+  }
   if (isCurrent) return 'bg-teal-700 text-white shadow'
   if (answered) return 'border border-sky-200 bg-sky-50 text-sky-900'
   return 'border border-slate-200 bg-white text-slate-800 hover:border-slate-300'
@@ -125,7 +181,7 @@ function pdfPreviewIframeSrc(rawUrl) {
 }
 
 /** Slim header bar + optional preview deck — preview iframe is sandboxed (no downloads token) + print guard. */
-function QuizSourceMaterialBar({ attachmentKey, questionNum, questionTotal }) {
+function QuizSourceMaterialBar({ attachmentKey, questionId, questionNum, questionTotal }) {
   const reduceMotion = useReducedMotion()
   const [loading, setLoading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState(null)
@@ -133,14 +189,14 @@ function QuizSourceMaterialBar({ attachmentKey, questionNum, questionTotal }) {
   const [showPreview, setShowPreview] = useState(false)
 
   const resolveSignedUrl = useCallback(async () => {
-    if (!attachmentKey) return null
-    const path = API.files.signedUrl(encodeURIComponent(attachmentKey))
-    const { data } = await apiClient.get(path)
-    const rec = data && typeof data === 'object' ? data : null
-    const url =
-      rec && typeof rec.url === 'string' ? rec.url : typeof data === 'string' ? data : null
-    return url
-  }, [attachmentKey])
+    if (attachmentKey) {
+      return fetchFileSignedUrl(attachmentKey)
+    }
+    if (questionId) {
+      return fetchQuestionSourceDocumentUrl(questionId)
+    }
+    return null
+  }, [attachmentKey, questionId])
 
   const openInNewTab = useCallback(async () => {
     setError('')
@@ -186,7 +242,7 @@ function QuizSourceMaterialBar({ attachmentKey, questionNum, questionTotal }) {
     setPreviewUrl(null)
     setShowPreview(false)
     setError('')
-  }, [attachmentKey])
+  }, [attachmentKey, questionId])
 
   useEffect(() => {
     if (!showPreview) return
@@ -200,13 +256,13 @@ function QuizSourceMaterialBar({ attachmentKey, questionNum, questionTotal }) {
     return () => window.removeEventListener('keydown', blockPrintShortcut, true)
   }, [showPreview])
 
-  if (!attachmentKey) return null
+  if (!attachmentKey && !questionId) return null
 
   return (
     <>
       <motion.div
         layout
-        key={attachmentKey}
+        key={attachmentKey || questionId}
         initial={reduceMotion ? false : { opacity: 0.85, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={
@@ -337,7 +393,19 @@ export default function CourseQuizPractice() {
   const { showToast } = useToast()
   const ready = router.isReady
   const q0 = parseQuery(router)
-  const { courseId, year, level, type, courseName, mode, count: urlCount, seed: urlSeed, mins: urlMins } = q0
+  const {
+    courseId,
+    year,
+    level,
+    type,
+    courseName,
+    offeringId,
+    sourceLabel,
+    mode,
+    count: urlCount,
+    seed: urlSeed,
+    mins: urlMins,
+  } = q0
 
   const questionsQ = useCourseQuestions({
     courseId: courseId || null,
@@ -385,6 +453,15 @@ export default function CourseQuizPractice() {
   const [setupMins, setSetupMins] = useState(15)
   const [bookmarkTick, setBookmarkTick] = useState(0)
   const [savedOpen, setSavedOpen] = useState(false)
+  const [flagged, setFlagged] = useState(() => ({}))
+  const [showSolutions, setShowSolutions] = useState(() => ({}))
+  const [addingSolution, setAddingSolution] = useState('')
+  const [discussionOpen, setDiscussionOpen] = useState(() => ({}))
+  const [discussionInput, setDiscussionInput] = useState('')
+  const [discussionByQuestion, setDiscussionByQuestion] = useState(() => ({}))
+  const [discussionSessionByQuestion, setDiscussionSessionByQuestion] = useState(() => ({}))
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [generatedAiByQuestion, setGeneratedAiByQuestion] = useState(() => ({}))
   const [timeLeftSec, setTimeLeftSec] = useState(null)
   const [frozenTimerSec, setFrozenTimerSec] = useState(null)
   const timerUpFired = useRef(false)
@@ -392,6 +469,38 @@ export default function CourseQuizPractice() {
   const draftReadyRef = useRef(false)
 
   const bookmarks = useMemo(() => loadQuizBookmarks(), [bookmarkTick])
+
+  useEffect(() => {
+    try {
+      const rawSessions = window.localStorage.getItem('quiz.discussion.sessions')
+      const rawMessages = window.localStorage.getItem('quiz.discussion.messages')
+      if (rawSessions) {
+        const parsed = JSON.parse(rawSessions)
+        if (parsed && typeof parsed === 'object') setDiscussionSessionByQuestion(parsed)
+      }
+      if (rawMessages) {
+        const parsed = JSON.parse(rawMessages)
+        if (parsed && typeof parsed === 'object') setDiscussionByQuestion(parsed)
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        'quiz.discussion.sessions',
+        JSON.stringify(discussionSessionByQuestion),
+      )
+      window.localStorage.setItem(
+        'quiz.discussion.messages',
+        JSON.stringify(discussionByQuestion),
+      )
+    } catch {
+      /* ignore */
+    }
+  }, [discussionSessionByQuestion, discussionByQuestion])
 
   useEffect(() => {
     timeLeftRef.current = timeLeftSec
@@ -553,12 +662,42 @@ export default function CourseQuizPractice() {
   }, [activeQuestions, mcqAnswers, essayDraft])
 
   const current = activeQuestions[currentIndex]
+  const currentSolutionsExpanded = current
+    ? mode === 'review'
+      ? showSolutions[current.id] !== false
+      : Boolean(showSolutions[current.id])
+    : false
+  const currentAnswered = current
+    ? current.options?.length
+      ? mcqAnswers[current.id] !== undefined
+      : (essayDraft[current.id] || '').trim().length > 0
+    : false
+
+  const solutionsFeedQ = useQuestionSolutionsFeed(current?.id, Boolean(current?.id))
+  const upvoteSolutionM = useUpvoteSolution(current?.id)
+  const addSolutionM = useAddQuestionSolution(current?.id)
+  const subscriptionQ = useQuery({
+    queryKey: ['subscriptions', 'me'],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get(API.subscriptions.me, { signal })
+      return data && typeof data === 'object' ? data : {}
+    },
+  })
+  const isProUser = Boolean(
+    subscriptionQ.data?.plan === 'pro' ||
+      subscriptionQ.data?.tier === 'pro' ||
+      subscriptionQ.data?.isPro === true,
+  )
   const currentSolutionRows = current ? (solutionById[current.id] ?? []) : []
   const currentCorrectIdx =
     current?.options?.length && quizSubmitted && !solutionsLoading
       ? resolveMcqCorrectIndex(current.options, currentSolutionRows)
       : null
   const progressPct = total ? Math.round((answeredCount / total) * 100) : 0
+  const flaggedCount = useMemo(
+    () => Object.values(flagged).filter(Boolean).length,
+    [flagged],
+  )
 
   const setMcq = useCallback(
     (questionId, optionIndex) => {
@@ -586,65 +725,122 @@ export default function CourseQuizPractice() {
     [activeQuestions, mcqAnswers, essayDraft],
   )
 
+  const toggleFlag = useCallback((questionId) => {
+    setFlagged((prev) => ({ ...prev, [questionId]: !prev[questionId] }))
+  }, [])
+
+  const sendDiscussion = useCallback(async () => {
+    const q = current
+    if (!q || !discussionInput.trim()) return
+    const questionId = q.id
+    const userMessage = discussionInput.trim()
+    setDiscussionInput('')
+    setDiscussionByQuestion((prev) => ({
+      ...prev,
+      [questionId]: [...(prev[questionId] || []), { role: 'user', text: userMessage }],
+    }))
+    try {
+      const sessionId = discussionSessionByQuestion[questionId]
+      const firstMessagePrefix =
+        (discussionByQuestion[questionId] || []).length === 0
+          ? `I'm looking at this question: ${q.questionText}. `
+          : ''
+      const { data } = await apiClient.post(API.ai.chat, {
+        message: `${firstMessagePrefix}${userMessage}`,
+        courseId,
+        ...(sessionId ? { sessionId } : {}),
+      })
+      const reply =
+        data?.reply || data?.message || data?.text || data?.output || 'AI response received.'
+      const nextSession = data?.sessionId || data?.session?.id || sessionId
+      if (nextSession) {
+        setDiscussionSessionByQuestion((prev) => ({ ...prev, [questionId]: nextSession }))
+      }
+      setDiscussionByQuestion((prev) => ({
+        ...prev,
+        [questionId]: [...(prev[questionId] || []), { role: 'assistant', text: String(reply) }],
+      }))
+    } catch (error) {
+      setDiscussionByQuestion((prev) => ({
+        ...prev,
+        [questionId]: [
+          ...(prev[questionId] || []),
+          {
+            role: 'assistant',
+            text: error instanceof Error ? error.message : 'Could not send discussion message.',
+          },
+        ],
+      }))
+    }
+  }, [current, discussionInput, discussionSessionByQuestion, discussionByQuestion, courseId])
+
+  const replaceQuizRoute = useCallback(
+    (nextState) => {
+      const id = encodeURIComponent(JSON.stringify(nextState))
+      router.replace(`/quiz/${id}`)
+    },
+    [router],
+  )
+
   const startQuiz = useCallback(() => {
     const n = Number(setupCount)
     const c = Math.min(Math.max(1, Number.isFinite(n) ? n : 1), poolTotal)
     const newSeed = Math.floor(Math.random() * 2147483647)
-    router.replace(
-      {
-        pathname: '/practice',
-        query: {
-          courseId,
-          year,
-          level,
-          type,
-          ...(courseName ? { courseName } : {}),
-          mode: 'quiz',
-          count: String(c),
-          seed: String(newSeed),
-          mins: String(setupMins),
-        },
-      },
-      undefined,
-      { shallow: true },
-    )
-  }, [router, courseId, year, level, type, courseName, setupCount, setupMins, poolTotal])
+    const nextState = {
+      courseId,
+      year,
+      level,
+      type,
+      ...(offeringId ? { offeringId } : {}),
+      ...(sourceLabel ? { sourceLabel } : {}),
+      ...(courseName ? { courseName } : {}),
+      mode: 'quiz',
+      count: String(c),
+      seed: String(newSeed),
+      mins: String(setupMins),
+    }
+    replaceQuizRoute(nextState)
+  }, [
+    replaceQuizRoute,
+    courseId,
+    year,
+    level,
+    type,
+    offeringId,
+    sourceLabel,
+    courseName,
+    setupCount,
+    setupMins,
+    poolTotal,
+  ])
 
   const setModeReview = useCallback(() => {
-    router.replace(
-      {
-        pathname: '/practice',
-        query: {
-          courseId,
-          year,
-          level,
-          type,
-          ...(courseName ? { courseName } : {}),
-          mode: 'review',
-        },
-      },
-      undefined,
-      { shallow: true },
-    )
-  }, [router, courseId, year, level, type, courseName])
+    const nextState = {
+      courseId,
+      year,
+      level,
+      type,
+      ...(offeringId ? { offeringId } : {}),
+      ...(sourceLabel ? { sourceLabel } : {}),
+      ...(courseName ? { courseName } : {}),
+      mode: 'review',
+    }
+    replaceQuizRoute(nextState)
+  }, [replaceQuizRoute, courseId, year, level, type, offeringId, sourceLabel, courseName])
 
   const setModeQuizSetup = useCallback(() => {
-    router.replace(
-      {
-        pathname: '/practice',
-        query: {
-          courseId,
-          year,
-          level,
-          type,
-          ...(courseName ? { courseName } : {}),
-          mode: 'quiz',
-        },
-      },
-      undefined,
-      { shallow: true },
-    )
-  }, [router, courseId, year, level, type, courseName])
+    const nextState = {
+      courseId,
+      year,
+      level,
+      type,
+      ...(offeringId ? { offeringId } : {}),
+      ...(sourceLabel ? { sourceLabel } : {}),
+      ...(courseName ? { courseName } : {}),
+      mode: 'quiz',
+    }
+    replaceQuizRoute(nextState)
+  }, [replaceQuizRoute, courseId, year, level, type, offeringId, sourceLabel, courseName])
 
   const copyShareLink = useCallback(async () => {
     try {
@@ -675,6 +871,55 @@ export default function CourseQuizPractice() {
     },
     [showToast],
   )
+
+  const displayTitle = courseName || 'Past questions'
+
+  const goToResults = useCallback(() => {
+    const questionBreakdown = activeQuestions.map((q, idx) => {
+      const selectedIndex = mcqAnswers[q.id]
+      const rows = solutionById[q.id] ?? []
+      const correctIndex = q.options?.length ? resolveMcqCorrectIndex(q.options, rows) : null
+      return {
+        id: q.id,
+        index: idx + 1,
+        text: q.questionText,
+        selectedIndex: selectedIndex ?? null,
+        selectedText:
+          q.options?.length && selectedIndex !== undefined ? q.options[selectedIndex] : essayDraft[q.id] || '',
+        correctIndex,
+        correctText:
+          q.options?.length && correctIndex !== null ? q.options[correctIndex] : officialAnswerDisplay(rows, q.options) || '',
+        flagged: Boolean(flagged[q.id]),
+      }
+    })
+    const incorrect = questionBreakdown.filter(
+      (q) => q.correctIndex !== null && q.selectedIndex !== null && q.selectedIndex !== q.correctIndex,
+    ).length
+    const flaggedTotal = questionBreakdown.filter((q) => q.flagged).length
+    const payload = {
+      total,
+      correct: scoreSummary?.mcqCorrect ?? 0,
+      incorrect,
+      flagged: flaggedTotal,
+      courseLabel: displayTitle,
+      sessionLabel: `${year ? `Year ${year}` : ''}${level ? ` · Level ${level}` : ''}`,
+      questionBreakdown,
+    }
+    const id = encodeURIComponent(JSON.stringify(payload))
+    router.push(`/quiz/${id}/results`)
+  }, [
+    router,
+    total,
+    scoreSummary?.mcqCorrect,
+    displayTitle,
+    year,
+    level,
+    activeQuestions,
+    mcqAnswers,
+    solutionById,
+    essayDraft,
+    flagged,
+  ])
 
   if (!ready) {
     return (
@@ -739,8 +984,8 @@ export default function CourseQuizPractice() {
     )
   }
 
-  const displayTitle = courseName || 'Past questions'
   const metaBits = [
+    sourceLabel || null,
     year ? `Year ${year}` : null,
     level ? `Level ${level}` : null,
     mode === 'quiz' && hasQuizParams
@@ -749,6 +994,12 @@ export default function CourseQuizPractice() {
   ].filter(Boolean)
 
   const showQuizSetup = mode === 'quiz' && !hasQuizParams
+  const breadcrumbItems = [
+    { label: 'My Courses', href: '/courses' },
+    { label: displayTitle, href: courseId ? `/courses/${courseId}` : '/courses' },
+    { label: year ? `${year}/${Number(year) + 1}` : 'Session' },
+    { label: mode === 'quiz' ? (sourceLabel ? `Quiz · ${sourceLabel}` : 'Quiz') : 'Review' },
+  ]
 
   if (showQuizSetup) {
     return (
@@ -832,6 +1083,7 @@ export default function CourseQuizPractice() {
       <div className="mx-auto max-w-3xl space-y-5">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
+            <Breadcrumb items={breadcrumbItems} />
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">Quiz mode</h1>
               <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-700">
@@ -909,9 +1161,10 @@ export default function CourseQuizPractice() {
           ) : null}
         </header>
 
-        {current?.attachmentKey ? (
+        {current?.attachmentKey || current?.id ? (
           <QuizSourceMaterialBar
-            attachmentKey={current.attachmentKey}
+            attachmentKey={current?.attachmentKey}
+            questionId={current?.id}
             questionNum={total > 0 ? currentIndex + 1 : null}
             questionTotal={total > 0 ? total : null}
           />
@@ -934,6 +1187,9 @@ export default function CourseQuizPractice() {
               aria-valuemax={total}
             />
           </div>
+          <p className="mt-3 text-xs text-slate-500">
+            {answeredCount} answered · {flaggedCount} flagged · {Math.max(0, total - answeredCount)} remaining
+          </p>
         </section>
 
         {isQuizSession ? (
@@ -944,16 +1200,25 @@ export default function CourseQuizPractice() {
                 {solutionsLoading ? (
                   <p className="text-sm text-slate-600">Loading official answer key…</p>
                 ) : (
-                  <p className="text-sm text-emerald-900">
-                    <span className="font-semibold">Submitted.</span>{' '}
-                    {(scoreSummary?.mcqGradable ?? 0) > 0 ? (
-                      <>
-                        {scoreSummary.mcqCorrect} of {scoreSummary.mcqGradable} multiple-choice correct.
-                      </>
-                    ) : (
-                      <>Compare your responses to the official key below (no auto-graded MCQ matches detected).</>
-                    )}
-                  </p>
+                  <>
+                    <p className="text-sm text-emerald-900">
+                      <span className="font-semibold">Submitted.</span>{' '}
+                      {(scoreSummary?.mcqGradable ?? 0) > 0 ? (
+                        <>
+                          {scoreSummary.mcqCorrect} of {scoreSummary.mcqGradable} multiple-choice correct.
+                        </>
+                      ) : (
+                        <>Compare your responses to the official key below (no auto-graded MCQ matches detected).</>
+                      )}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={goToResults}
+                      className="mt-2 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700"
+                    >
+                      View results
+                    </button>
+                  </>
                 )}
               </div>
             ) : (
@@ -999,10 +1264,12 @@ export default function CourseQuizPractice() {
                   const num = idx + 1
                   const isCurrent = idx === currentIndex
                   const answered = isAnsweredAt(idx)
+                  const isFlagged = Boolean(flagged[qu.id])
                   const rows = solutionById[qu.id] ?? []
                   const cell = getGridCellClasses({
                     isCurrent,
                     answered,
+                    flagged: isFlagged,
                     quizModeSubmitted: isQuizSession && quizSubmitted,
                     question: qu,
                     solutionRows: rows,
@@ -1042,6 +1309,10 @@ export default function CourseQuizPractice() {
                   <span className="h-2.5 w-2.5 rounded-sm bg-teal-700" />
                   Current
                 </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-amber-400" />
+                  Flagged
+                </span>
                 {!(isQuizSession && quizSubmitted) ? (
                   <>
                     <span className="inline-flex items-center gap-1.5">
@@ -1064,6 +1335,20 @@ export default function CourseQuizPractice() {
             <p className="text-sm font-semibold text-slate-500">
               Question {currentIndex + 1} of {total}
             </p>
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => toggleFlag(current.id)}
+                className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium ${
+                  flagged[current.id]
+                    ? 'border-amber-300 bg-amber-50 text-amber-900'
+                    : 'border-slate-200 bg-white text-slate-700'
+                }`}
+              >
+                <Flag className="h-3.5 w-3.5" />
+                {flagged[current.id] ? 'Flagged' : 'Flag'}
+              </button>
+            </div>
             <AnimatePresence mode="wait">
               <motion.div
                 key={current.id}
@@ -1174,6 +1459,168 @@ export default function CourseQuizPractice() {
                   )
                 ) : null}
 
+                <div className="mt-6 border-t border-slate-100 pt-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Solutions ({(solutionsFeedQ.data || []).length + (generatedAiByQuestion[current.id] ? 1 : 0)})
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowSolutions((prev) => ({ ...prev, [current.id]: !prev[current.id] }))
+                      }
+                      className="text-xs font-medium text-teal-700 hover:text-teal-800"
+                    >
+                      {currentSolutionsExpanded ? 'Collapse' : 'Expand'}
+                    </button>
+                  </div>
+                  {currentSolutionsExpanded && (mode === 'review' || currentAnswered) ? (
+                    <div className="mt-3 space-y-2">
+                      {(solutionsFeedQ.data || []).map((sol) => (
+                        <div key={sol.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            {sol.source}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-800">{sol.text}</p>
+                          <button
+                            type="button"
+                            onClick={() => upvoteSolutionM.mutate(sol.id)}
+                            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900"
+                          >
+                            <ThumbsUp className="h-3.5 w-3.5" />
+                            {sol.upvotes} upvotes
+                          </button>
+                        </div>
+                      ))}
+                      {generatedAiByQuestion[current.id] ? (
+                        <div className="rounded-xl border border-violet-200 bg-violet-50 p-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+                            AI generated
+                          </p>
+                          <p className="mt-1 text-sm text-violet-900">
+                            {generatedAiByQuestion[current.id]}
+                          </p>
+                        </div>
+                      ) : null}
+                      <div className="flex flex-wrap gap-2">
+                        <input
+                          value={addingSolution}
+                          onChange={(e) => setAddingSolution(e.target.value)}
+                          placeholder="Add your solution..."
+                          className="h-9 min-w-[240px] flex-1 rounded-md border border-slate-300 px-2 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!addingSolution.trim()) return
+                            try {
+                              await addSolutionM.mutateAsync(addingSolution.trim())
+                              setAddingSolution('')
+                            } catch {
+                              /* no-op */
+                            }
+                          }}
+                          className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                        >
+                          Add your solution
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!isProUser || aiGenerating}
+                          onClick={async () => {
+                            if (!current) return
+                            if (!isProUser) {
+                              showToast('Upgrade to Pro for AI solutions', 'error')
+                              return
+                            }
+                            setAiGenerating(true)
+                            try {
+                              const { data } = await apiClient.post(API.ai.complete, {
+                                prompt: `Provide a concise solution for this exam question: ${current.questionText}`,
+                                questionId: current.id,
+                              })
+                              const text =
+                                data?.text || data?.output || data?.message || 'AI solution generated.'
+                              setGeneratedAiByQuestion((prev) => ({
+                                ...prev,
+                                [current.id]: String(text),
+                              }))
+                            } catch (error) {
+                              if (error?.status === 503) {
+                                showToast('AI is temporarily unavailable', 'error')
+                              } else {
+                                showToast('Could not generate AI solution', 'error')
+                              }
+                            } finally {
+                              setAiGenerating(false)
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                        >
+                          {aiGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                          Generate AI solution
+                        </button>
+                      </div>
+                    </div>
+                  ) : mode === 'quiz' && !currentAnswered ? (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Solutions are hidden in quiz mode until you answer this question.
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-6 border-t border-slate-100 pt-4">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDiscussionOpen((prev) => ({ ...prev, [current.id]: !prev[current.id] }))
+                    }
+                    className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500"
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    Discussion
+                  </button>
+                  {discussionOpen[current.id] ? (
+                    <div className="mt-3 rounded-xl border border-slate-200 p-3">
+                      <div className="max-h-48 space-y-2 overflow-y-auto">
+                        {(discussionByQuestion[current.id] || []).map((m, idx) => (
+                          <div
+                            key={`${m.role}-${idx}`}
+                            className={`rounded-md px-2.5 py-2 text-sm ${
+                              m.role === 'user' ? 'bg-slate-100 text-slate-800' : 'bg-teal-50 text-teal-900'
+                            }`}
+                          >
+                            {m.text}
+                          </div>
+                        ))}
+                        {(discussionByQuestion[current.id] || []).length === 0 ? (
+                          <p className="text-xs text-slate-500">Ask about this question...</p>
+                        ) : null}
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          value={discussionInput}
+                          onChange={(e) => setDiscussionInput(e.target.value)}
+                          placeholder="Ask about this question..."
+                          className="h-9 flex-1 rounded-md border border-slate-300 px-2 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void sendDiscussion()}
+                          className="inline-flex items-center gap-1 rounded-md bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          Send
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Join the conversation about this question...
+                    </p>
+                  )}
+                </div>
+
                 <QuestionHint
                   questionId={current.id}
                   inlineHint={current.hint}
@@ -1225,6 +1672,48 @@ export default function CourseQuizPractice() {
           </Link>
         </p>
       </div>
+      {current ? (
+        <div className="fixed bottom-4 left-1/2 z-20 w-[min(720px,calc(100%-2rem))] -translate-x-1/2 rounded-xl border border-slate-200 bg-white/95 px-4 py-2 shadow-lg backdrop-blur">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              disabled={currentIndex <= 0}
+              onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+              className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <span className="text-xs font-medium text-slate-600">
+              Question {currentIndex + 1}/{total}
+            </span>
+            <button
+              type="button"
+              onClick={() => toggleFlag(current.id)}
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium ${
+                flagged[current.id]
+                  ? 'border-amber-300 bg-amber-50 text-amber-900'
+                  : 'border-slate-200 text-slate-700'
+              }`}
+            >
+              Flag
+            </button>
+            <button
+              type="button"
+              disabled={currentIndex >= total - 1 && !(isQuizSession && !quizSubmitted)}
+              onClick={() => {
+                if (currentIndex === total - 1 && isQuizSession && !quizSubmitted) {
+                  submitQuiz()
+                  return
+                }
+                setCurrentIndex((i) => Math.min(total - 1, i + 1))
+              }}
+              className="rounded-md bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            >
+              {currentIndex === total - 1 && isQuizSession && !quizSubmitted ? 'Submit quiz' : 'Next'}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

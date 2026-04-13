@@ -1,70 +1,121 @@
-import { useState } from 'react';
-import Link from 'next/link';
-import Head from 'next/head';
-import MarketingShell from '../components/marketing/MarketingShell';
-import { useForgotPassword } from '@/hooks/auth/useAuthRecovery';
-import { AppApiError } from '@/lib/api-error';
+import { useEffect, useState } from 'react'
+import Head from 'next/head'
+import Link from 'next/link'
+import { ArrowLeft, CheckCircle2, GraduationCap, Mail } from 'lucide-react'
+import { useForgotPassword } from '@/hooks/auth/useAuthRecovery'
+import { AppApiError } from '@/lib/api-error'
+import { getMarketingBrandName } from '@/lib/landing-brand'
+
+const BRAND = getMarketingBrandName()
 
 function toMessage(err, fallback) {
-  if (err instanceof AppApiError) return err.message;
-  if (err instanceof Error && err.message) return err.message;
-  return fallback;
+  if (err instanceof AppApiError) return err.message
+  if (err instanceof Error && err.message) return err.message
+  return fallback
 }
 
 export default function ForgotPasswordPage() {
-  const forgotM = useForgotPassword();
-  const [email, setEmail] = useState('');
-  const [msg, setMsg] = useState('');
-  const [err, setErr] = useState('');
+  const forgotM = useForgotPassword()
+  const [email, setEmail] = useState('')
+  const [sentTo, setSentTo] = useState('')
+  const [err, setErr] = useState('')
+  const [cooldown, setCooldown] = useState(0)
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setErr('');
-    setMsg('');
+  useEffect(() => {
+    if (cooldown <= 0) return undefined
+    const timer = window.setInterval(() => setCooldown((s) => Math.max(0, s - 1)), 1000)
+    return () => window.clearInterval(timer)
+  }, [cooldown])
+
+  const send = async () => {
+    setErr('')
     try {
-      await forgotM.mutateAsync(email.trim());
-      setMsg('If the email exists, a reset link has been sent.');
+      const target = email.trim()
+      await forgotM.mutateAsync(target)
+      setSentTo(target)
+      setCooldown(30)
     } catch (error) {
-      setErr(toMessage(error, 'Could not request password reset.'));
+      setErr(toMessage(error, 'Could not request password reset.'))
     }
-  };
+  }
 
   return (
     <>
       <Head>
-        <title>Forgot Password</title>
+        <title>{`Reset your password — ${BRAND}`}</title>
       </Head>
-      <MarketingShell maxWidthClass="max-w-md" headerMode="auth">
-        <div className="rounded-lg border border-slate-800 bg-slate-900 p-6">
-          <h1 className="text-xl font-semibold text-white">Forgot password</h1>
-          <p className="mt-2 text-sm text-slate-400">Request a reset link via `/auth/forgot-password`.</p>
+      <main className="hero-grain min-h-screen bg-[#0a0a0a] text-white">
+        <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-4 py-10">
+          <section className="w-full max-w-[420px]">
+            <div className="animated-border-inner rounded-2xl bg-[#111111] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.45)] sm:p-10">
+              <Link href="/login" className="mb-6 inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white">
+                <ArrowLeft className="h-4 w-4" /> Back to login
+              </Link>
 
-          {msg ? <div className="mt-4 rounded bg-emerald-950/40 p-3 text-sm text-emerald-200">{msg}</div> : null}
-          {err ? <div className="mt-4 rounded bg-rose-950/40 p-3 text-sm text-rose-200">{err}</div> : null}
+              <div className="mb-5 text-center">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
+                  <GraduationCap className="h-4 w-4" />
+                </span>
+                <h1 className="mt-4 text-2xl font-semibold">Reset your password</h1>
+                <p className="mt-1 text-sm text-slate-400">
+                  Enter your email and we&apos;ll send you a reset link.
+                </p>
+              </div>
 
-          <form onSubmit={onSubmit} className="mt-5 space-y-4">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="h-10 w-full rounded border border-slate-700 bg-slate-950 px-3 text-sm text-white"
-            />
-            <button
-              type="submit"
-              disabled={forgotM.isPending}
-              className="w-full rounded bg-orange-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {forgotM.isPending ? 'Sending…' : 'Send reset link'}
-            </button>
-          </form>
-
-          <p className="mt-4 text-sm text-slate-400">
-            Back to <Link href="/login" className="text-orange-400">Sign in</Link>
-          </p>
+              {!sentTo ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    void send()
+                  }}
+                  className="space-y-4"
+                >
+                  <label className="block">
+                    <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Email</span>
+                    <span className="flex h-12 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3">
+                      <Mail className="h-4 w-4 text-slate-500" />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="h-full w-full bg-transparent text-sm placeholder:text-white/35 focus:outline-none"
+                      />
+                    </span>
+                  </label>
+                  {err ? <p className="text-sm text-red-300">{err}</p> : null}
+                  <button
+                    type="submit"
+                    disabled={forgotM.isPending}
+                    className="btn-primary-sweep w-full rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white disabled:opacity-60"
+                  >
+                    {forgotM.isPending ? 'Sending...' : 'Send reset link'}
+                  </button>
+                </form>
+              ) : (
+                <div className="space-y-4 text-center">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-lg font-semibold">Check your email</h2>
+                  <p className="text-sm text-slate-400">
+                    We sent a reset link to <span className="font-medium text-slate-200">{sentTo}</span>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void send()}
+                    disabled={cooldown > 0 || forgotM.isPending}
+                    className="text-sm font-medium text-orange-300 disabled:opacity-60"
+                  >
+                    {cooldown > 0 ? `Resend in ${cooldown}s` : "Didn't get it? Resend →"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
-      </MarketingShell>
+      </main>
     </>
-  );
+  )
 }
