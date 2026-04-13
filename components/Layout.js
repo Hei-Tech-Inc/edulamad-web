@@ -63,7 +63,7 @@ const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
         <Header title={title} />
         {showPrimaryTabs ? <AppTabBar /> : null}
         <main
-          className={`settings-light mx-auto min-h-[calc(100vh-4rem)] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 ${isInstitutionConsole ? 'max-w-none' : 'max-w-[1520px]'}`}
+          className={`settings-light mx-auto min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-6 text-slate-900 antialiased sm:px-6 lg:px-8 lg:py-8 ${isInstitutionConsole ? 'max-w-none' : 'max-w-[1520px]'}`}
         >
           {children}
         </main>

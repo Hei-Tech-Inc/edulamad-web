@@ -130,7 +130,7 @@ function CourseDetailContent() {
             { label: courseName || 'Course' },
           ]}
         />
-        <Link href="/courses" className="text-sm font-medium text-orange-700 hover:text-orange-800">
+        <Link href="/courses" className="text-sm font-semibold text-orange-600 underline-offset-2 hover:text-orange-700 hover:underline">
           Back to My Courses
         </Link>
         {loading ? (
@@ -141,11 +141,11 @@ function CourseDetailContent() {
             Could not load this course. It may be outside your department or unavailable.
           </p>
         ) : null}
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
           {code ? `${code} — ` : ''}
           {courseName || 'Course'}
         </h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-slate-700">
           Level {level} · Semester 1
           {detail?.departmentName ? ` · ${detail.departmentName}` : ''}
         </p>

@@ -51,15 +51,15 @@ export default function DashboardFlashcardsStrip() {
   if (!courseIds.length) return null
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/15 text-orange-200">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
             <Layers className="h-4 w-4" aria-hidden />
           </span>
           <div>
-            <p className="text-sm font-semibold text-slate-100">Flashcards</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-semibold text-slate-900">Flashcards</p>
+            <p className="text-xs text-slate-600">
               {dueQ.isLoading
                 ? 'Checking due cards…'
                 : `${dueQ.data?.totalDue ?? 0} card${(dueQ.data?.totalDue ?? 0) === 1 ? '' : 's'} due across your courses`}
@@ -79,7 +79,7 @@ export default function DashboardFlashcardsStrip() {
           ) : null}
           <Link
             href="/flashcards"
-            className="rounded-lg border border-white/15 px-4 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
           >
             Open hub
           </Link>

@@ -973,7 +973,7 @@ export default function CourseQuizPractice() {
 
   if (poolTotal === 0) {
     return (
-      <div className="mx-auto max-w-lg rounded-2xl bg-white p-8 text-center shadow-sm">
+      <div className="mx-auto max-w-lg px-2 py-4 text-center sm:px-4">
         <EmptyState
           title="No questions here yet"
           subtitle="Try different filters or upload question content for this course."

@@ -89,7 +89,7 @@ function DeckRow({ deck, courseId }) {
 function CourseBlock({ courseId, code, name }) {
   const decksQ = useFlashcardDecksForCourse(courseId, Boolean(courseId))
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Course</p>
@@ -100,7 +100,7 @@ function CourseBlock({ courseId, code, name }) {
         </div>
         <Link
           href={`/courses/${courseId}`}
-          className="text-xs font-semibold text-orange-700 hover:underline"
+          className="text-xs font-semibold text-orange-600 hover:text-orange-700 hover:underline"
         >
           Course home
         </Link>
@@ -117,7 +117,7 @@ function CourseBlock({ courseId, code, name }) {
         </ul>
       ) : null}
       {!decksQ.isLoading && !decksQ.data?.length ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm leading-relaxed text-slate-700">
           No published decks yet. Teaching assistants upload decks from the content tools when they are
           ready.
         </p>
@@ -159,7 +159,7 @@ function FlashcardsHubInner() {
             Spaced repetition
           </div>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Flashcards</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-700">
             Review decks for your courses. Ratings update your next review date (SM‑2).
           </p>
         </div>
@@ -184,7 +184,7 @@ function FlashcardsHubInner() {
           )}
         </div>
       ) : (
-        <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-700">
+        <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-800 shadow-sm">
           {dueOverview.isLoading
             ? 'Calculating due cards…'
             : 'No due cards right now — pick a deck to get ahead.'}

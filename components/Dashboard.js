@@ -1009,7 +1009,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 text-slate-100">
+    <div className="space-y-6">
       <motion.section
         {...sectionMotion}
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-[#111827] via-[#0f172a] to-[#111827] p-6 text-white shadow-[0_20px_55px_rgba(15,23,42,0.3)]"

@@ -339,6 +339,7 @@ export default function DeveloperApiKeysPage({ previewMode = false }) {
             ) : keys.length === 0 ? (
               <div className="px-5 py-8">
                 <EmptyState
+                  variant="dark"
                   title={previewMode ? 'No keys in preview mode' : 'No API keys yet'}
                   subtitle={
                     previewMode
