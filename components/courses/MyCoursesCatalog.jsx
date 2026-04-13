@@ -10,6 +10,7 @@ import {
 import MyCourseCard from './MyCourseCard'
 import { useMyCoursesInfinite } from '@/hooks/students/useMyCourses'
 import { normalizeStudentLevel } from '@/lib/courses/normalize-student-level'
+import { usePersonalisationStore } from '@/stores/personalisation.store'
 
 function mapContentFilter(id) {
   if (id === 'questions') return 'has_questions'
@@ -63,6 +64,14 @@ export default function MyCoursesCatalog({ selectedYear, selectedLevel, departme
     () => myCoursesQ.data?.pages.flatMap((p) => p.data) ?? [],
     [myCoursesQ.data],
   )
+
+  const setCurrentSemesterCourses = usePersonalisationStore((s) => s.setCurrentSemesterCourses)
+
+  useEffect(() => {
+    if (myCoursesQ.status !== 'success') return
+    const ids = rows.map((r) => r.courseId).filter(Boolean)
+    setCurrentSemesterCourses(ids)
+  }, [myCoursesQ.status, rows, setCurrentSemesterCourses])
 
   const metaFirst = myCoursesQ.data?.pages[0]?.meta
   const profileIncomplete = Boolean(metaFirst?.profileIncomplete)

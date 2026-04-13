@@ -21,6 +21,7 @@ import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 import { getAcademicYears } from '@/lib/onboarding/academic-years'
 import { queryKeys } from '@/api/query-keys'
+import { usePersonalisationStore } from '@/stores/personalisation.store'
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'Edulamad'
 
@@ -221,12 +222,20 @@ function OnboardingInner() {
     return payload
   }
 
+  const mergeCourseIds = usePersonalisationStore((s) => s.mergeCourseIds)
+
   const saveProgress = async () => {
     const payload = buildPayload()
     if (!payload) return false
     setSaveState('saving')
     try {
       await upsertM.mutateAsync(payload)
+      const deptCourseIds = (coursesQ.data ?? [])
+        .map((c) => c.id)
+        .filter((id) => typeof id === 'string' && id.length > 0)
+      if (deptCourseIds.length > 0) {
+        mergeCourseIds(deptCourseIds)
+      }
       setSaveState('saved')
       setSubmitError('')
       return true
