@@ -173,6 +173,11 @@ export default function StudentCreditsReferralPanel() {
                 setRedeemOk(false)
                 try {
                   const res = await redeemM.mutateAsync({ code })
+                  if (!res.ok) {
+                    setRedeemMsg(res.message || 'Could not redeem code.')
+                    setRedeemOk(false)
+                    return
+                  }
                   const parts = []
                   if (res.unlocksPlan) parts.push(`Plan unlocked: ${res.unlocksPlan}`)
                   if (typeof res.questionCreditsGranted === 'number')

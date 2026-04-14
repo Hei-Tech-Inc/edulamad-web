@@ -16,6 +16,7 @@ import {
   useSubmitMnemonic,
 } from '@/hooks/mnemonics/useMnemonics'
 import { isApiError } from '@/lib/api-error'
+import { SolutionGate } from '@/components/questions/SolutionGate'
 
 function pickCourseId(raw) {
   if (!raw || typeof raw !== 'object') return ''
@@ -79,12 +80,7 @@ export default function QuestionDetailTabs({ questionId, question }) {
       {tab === 'solution' ? (
         <div className="mt-4 space-y-4">
           {solutionsQ.isLoading ? <p className="text-sm text-slate-500">Loading solutions…</p> : null}
-          {solutionErr ? (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              Solutions need an active Basic or Pro plan (or staff access). Upgrade in Profile →
-              Subscription to unlock model answers.
-            </p>
-          ) : null}
+          {solutionErr ? <SolutionGate /> : null}
           {!solutionErr && solutionsQ.data?.length ? (
             <ul className="space-y-3">
               {solutionsQ.data.map((s) => (

@@ -72,6 +72,22 @@ export function isPlatformSuperAdminFromAccessToken(
 }
 
 /**
+ * Convex / app-level role from JWT (`student` | `ta` | `admin` | `ambassador`).
+ * Used client-side for navigation; backend RBAC remains authoritative for APIs.
+ */
+export function appRoleFromAccessToken(
+  accessToken: string | null | undefined,
+): string | null {
+  const payload = parseAccessTokenPayload(accessToken);
+  if (!payload) return null;
+  const raw = payload.appRole ?? payload.app_role;
+  if (typeof raw === 'string' && raw.trim()) {
+    return raw.trim().toLowerCase();
+  }
+  return null;
+}
+
+/**
  * Collect org / RBAC role strings from common JWT layouts (Nest, Spring `ROLE_*`, Keycloak `realm_access`).
  */
 export function roleStringsFromAccessToken(

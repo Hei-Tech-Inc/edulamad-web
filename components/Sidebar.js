@@ -27,6 +27,8 @@ import {
   FilePlus2,
   Inbox,
   Layers,
+  Wallet,
+  CreditCard,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthStore } from '@/stores/auth.store'
@@ -171,23 +173,26 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
             path: '/settings/account',
             icon: Settings,
           },
+          { title: 'Pricing & plans', path: '/pricing', icon: Wallet },
+          { title: 'Subscription', path: '/profile/subscription', icon: CreditCard },
           { title: 'Marketing site', path: '/', icon: BookOpen },
-        ],
-      },
-      developer: {
-        title: 'Developer',
-        icon: Code2,
-        items: [
-          {
-            title: 'API reference',
-            path: '/developer/api-reference',
-            icon: Braces,
-          },
         ],
       },
     }
     if (!isAdmin) {
       return base
+    }
+
+    const developerSection = {
+      title: 'Developer',
+      icon: Code2,
+      items: [
+        {
+          title: 'API reference',
+          path: '/developer/api-reference',
+          icon: Braces,
+        },
+      ],
     }
 
     const adminNavItems = [
@@ -235,6 +240,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
 
     return {
       ...base,
+      developer: developerSection,
       admin: {
         title: 'Admin',
         icon: ShieldCheck,

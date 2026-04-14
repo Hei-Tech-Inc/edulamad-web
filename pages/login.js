@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
@@ -7,21 +7,9 @@ import posthog from 'posthog-js'
 import { useAuth } from '../contexts/AuthContext'
 import { getSafeInternalPath } from '@/lib/safe-next-path'
 import { getMarketingBrandName } from '@/lib/landing-brand'
+import AuthSplitLayout from '../components/marketing/AuthSplitLayout'
 
 const BRAND = getMarketingBrandName()
-const CAMPUS_MARQUEE = [
-  'University of Ghana',
-  'KNUST',
-  'UCC',
-  'UDS',
-  'UEW',
-  'UHAS',
-  'UMaT',
-  'Ashesi',
-  'Academic City',
-  'Lancaster Ghana',
-]
-
 function mapSignInError(message) {
   const msg = String(message || '').toLowerCase()
   if (msg.includes('429')) return 'Too many attempts. Wait a minute before trying again.'
@@ -54,8 +42,6 @@ export default function LoginPage() {
   }, [router, router.isReady, router.query.next, user])
 
   const hasReturnTo = Boolean(getSafeInternalPath(router.query.next))
-  const marqueeItems = useMemo(() => [...CAMPUS_MARQUEE, ...CAMPUS_MARQUEE], [])
-
   if (user) return null
 
   const onSubmit = async (e) => {
@@ -79,25 +65,32 @@ export default function LoginPage() {
       <Head>
         <title>{`Sign in — ${BRAND}`}</title>
       </Head>
-      <main className="hero-grain min-h-screen bg-[#0a0a0a] text-white">
-        <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-4 py-10">
-          <section className="mx-auto w-full max-w-[420px]">
-            <div className="animated-border-inner rounded-2xl bg-[#111111] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.45)] sm:p-10">
-              <div className="mb-6 text-center">
-                <Link href="/" className="inline-flex items-center gap-2 text-white">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
-                    <GraduationCap className="h-4 w-4" />
-                  </span>
-                  <span className="font-semibold">{BRAND}</span>
-                </Link>
-                <h1 className="mt-5 text-3xl font-semibold tracking-tight">Welcome back</h1>
-                <p className="mt-1 text-sm text-slate-400">Sign in to continue studying</p>
-                {hasReturnTo ? (
-                  <p className="mt-3 text-xs text-orange-300">You will continue where you left off.</p>
-                ) : null}
-              </div>
+      <AuthSplitLayout
+        title={`Welcome back to ${BRAND}`}
+        subtitle="Sign in to continue your practice streak, review difficult topics, and track exam-readiness."
+        points={[
+          'Practice with past questions by course and level',
+          'Keep streaks with focused daily revision',
+          'Track weak topics and improve faster',
+          'Continue exactly where you left off',
+        ]}
+      >
+        <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-8">
+          <div className="mb-6 text-center">
+            <Link href="/" className="inline-flex items-center gap-2 text-white">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
+                <GraduationCap className="h-4 w-4" />
+              </span>
+              <span className="font-semibold">{BRAND}</span>
+            </Link>
+            <h1 className="mt-5 text-3xl font-semibold tracking-tight">Welcome back</h1>
+            <p className="mt-1 text-sm text-slate-400">Sign in to continue studying</p>
+            {hasReturnTo ? (
+              <p className="mt-3 text-xs text-orange-300">You will continue where you left off.</p>
+            ) : null}
+          </div>
 
-              <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
                     Email
@@ -164,42 +157,21 @@ export default function LoginPage() {
                 >
                   {loading ? 'Signing in...' : 'Sign in'}
                 </button>
-              </form>
+          </form>
 
-              <div className="my-5 flex items-center gap-3 text-xs text-slate-500">
-                <div className="h-px flex-1 bg-white/10" />
-                or
-                <div className="h-px flex-1 bg-white/10" />
-              </div>
+          <div className="my-5 flex items-center gap-3 text-xs text-slate-500">
+            <div className="h-px flex-1 bg-white/10" />
+            or
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
 
-              <p className="text-center text-sm text-slate-400">
-                <Link href="/register" className="font-semibold text-orange-300 hover:text-orange-200">
-                  Create a free account →
-                </Link>
-              </p>
-            </div>
-          </section>
-
-          <section className="mt-8 text-center">
-            <p className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500">
-              Trusted by students at 15+ Ghanaian universities
-            </p>
-            <div className="ticker-mask overflow-hidden">
-              <div className="landing-marquee-track landing-marquee-animate">
-                {marqueeItems.map((label, i) => (
-                  <span
-                    key={`${label}-${i}`}
-                    className="flex shrink-0 items-center gap-2 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500"
-                  >
-                    <span className="h-1 w-1 rounded-full bg-orange-500/70" />
-                    {label}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </section>
+          <p className="text-center text-sm text-slate-400">
+            <Link href="/register" className="font-semibold text-orange-300 hover:text-orange-200">
+              Create a free account →
+            </Link>
+          </p>
         </div>
-      </main>
+      </AuthSplitLayout>
     </>
   )
 }

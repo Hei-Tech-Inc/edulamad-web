@@ -57,6 +57,10 @@ import { loadQuizBookmarks } from '@/lib/quiz/bookmarks'
 import { buildQuizHref } from '@/lib/quiz/build-quiz-href'
 import StudentStudyQuickLinks from './StudentStudyQuickLinks'
 import DashboardFlashcardsStrip from './DashboardFlashcardsStrip'
+import { QuestionLimitBanner } from '@/components/dashboard/QuestionLimitBanner'
+import { UpgradeCard } from '@/components/dashboard/UpgradeCard'
+import { FeatureTeasers } from '@/components/dashboard/FeatureTeasers'
+import { ExamCountdownTeaser } from '@/components/dashboard/ExamCountdownTeaser'
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'
 
@@ -1096,7 +1100,15 @@ export default function Dashboard() {
             </button>
           </div>
         </motion.section>
-      ) : (
+      ) : null}
+
+      {!isAdmin ? (
+        <motion.section {...sectionMotion}>
+          <QuestionLimitBanner />
+        </motion.section>
+      ) : null}
+
+      {!isAdmin ? (
         <motion.section {...sectionMotion}>
           <CommandBar
             search={search}
@@ -1123,7 +1135,22 @@ export default function Dashboard() {
             }}
           />
         </motion.section>
-      )}
+      ) : null}
+
+      {!isAdmin ? (
+        <motion.section {...sectionMotion} className="grid gap-4 xl:grid-cols-12">
+          <div className="space-y-4 xl:col-span-8">
+            <UpgradeCard />
+            <FeatureTeasers />
+          </div>
+          <div className="xl:col-span-4">
+            <ExamCountdownTeaser
+              courseId={courseResults[0]?.id}
+              courseName={courseResults[0]?.name}
+            />
+          </div>
+        </motion.section>
+      ) : null}
 
       {!isAdmin ? (
         <motion.section {...sectionMotion}>

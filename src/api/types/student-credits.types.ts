@@ -19,8 +19,14 @@ export interface QuestionCreditsDto {
 }
 
 /** POST /promo/redeem success body */
-export interface PromoRedeemResponse {
-  ok: true;
-  unlocksPlan?: 'basic' | 'pro';
-  questionCreditsGranted?: number;
-}
+export type PromoRedeemResponse =
+  | {
+      ok: true;
+      unlocksPlan?: 'basic' | 'pro';
+      questionCreditsGranted?: number;
+    }
+  | {
+      ok: false;
+      message: string;
+      code?: string;
+    };

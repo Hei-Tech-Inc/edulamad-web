@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useAuthStore } from '@/stores/auth.store'
 import { safePosthogCapture, safePosthogIdentify } from '@/lib/safe-analytics'
 import { getMarketingBrandName } from '@/lib/landing-brand'
+import AuthSplitLayout from './marketing/AuthSplitLayout'
 
 const BRAND = getMarketingBrandName()
 
@@ -95,10 +96,17 @@ export default function RegisterFormPage() {
   }
 
   return (
-    <main className="hero-grain min-h-screen bg-[#0a0a0a] text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-10">
-        <section className="w-full max-w-[460px]">
-          <div className="animated-border-inner rounded-2xl bg-[#111111] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.45)] sm:p-10">
+    <AuthSplitLayout
+      title={`Start your ${BRAND} journey`}
+      subtitle="Create your account to practice smarter with past questions, quizzes, and focused revision."
+      points={[
+        'Get started in minutes with a free account',
+        'Track progress across courses and topics',
+        'Access guided practice and revision tools',
+        'Build exam confidence with daily consistency',
+      ]}
+    >
+      <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-8">
             <div className="mb-6 text-center">
               <Link href="/" className="inline-flex items-center gap-2 text-white">
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
@@ -193,9 +201,7 @@ export default function RegisterFormPage() {
                 Sign in →
               </Link>
             </p>
-          </div>
-        </section>
       </div>
-    </main>
+    </AuthSplitLayout>
   )
 }

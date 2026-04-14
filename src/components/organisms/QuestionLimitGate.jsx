@@ -53,6 +53,11 @@ export default function QuestionLimitGate({ title = "You've used your free quest
                 setMessage('')
                 try {
                   const res = await redeemM.mutateAsync({ code: code.trim() })
+                  if (!res.ok) {
+                    setOk(false)
+                    setMessage(res.message || 'Could not redeem code.')
+                    return
+                  }
                   setOk(true)
                   setMessage(
                     typeof res.questionCreditsGranted === 'number'
