@@ -106,16 +106,16 @@ export default function RegisterFormPage() {
         'Build exam confidence with daily consistency',
       ]}
     >
-      <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-5 text-slate-100 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-7">
-            <div className="mb-6 text-center">
-              <Link href="/" className="inline-flex items-center gap-2 text-white">
+      <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-4 text-slate-100 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-7">
+            <div className="mb-4 text-center sm:mb-6">
+              <Link href="/" className="hidden items-center gap-2 text-white sm:inline-flex">
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
                   <GraduationCap className="h-4 w-4" />
                 </span>
                 <span className="font-semibold">{BRAND}</span>
               </Link>
-              <h1 className="mt-5 text-3xl font-semibold tracking-tight text-slate-100">Create your account</h1>
-              <p className="mt-1 text-sm text-slate-400">Start with 3 free past questions</p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-100 sm:mt-5 sm:text-3xl">Create your account</h1>
+              <p className="mt-1 text-xs text-slate-400 sm:text-sm">Start with 3 free past questions</p>
             </div>
 
             {referralCode ? (
@@ -130,18 +130,18 @@ export default function RegisterFormPage() {
               </div>
             ) : null}
 
-            <form onSubmit={onSubmit} className="space-y-4">
+            <form onSubmit={onSubmit} className="space-y-3 sm:space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">First name</span>
-                  <span className="flex h-12 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3">
+                  <span className="flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 sm:h-12">
                     <User className="h-4 w-4 text-slate-500" />
                     <input value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="h-full w-full bg-transparent text-sm placeholder:text-white/35 focus:outline-none" placeholder="First name" />
                   </span>
                 </label>
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Last name</span>
-                  <span className="flex h-12 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3">
+                  <span className="flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 sm:h-12">
                     <User className="h-4 w-4 text-slate-500" />
                     <input value={lastName} onChange={(e) => setLastName(e.target.value)} required className="h-full w-full bg-transparent text-sm placeholder:text-white/35 focus:outline-none" placeholder="Last name" />
                   </span>
@@ -150,7 +150,7 @@ export default function RegisterFormPage() {
 
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Email</span>
-                <span className="flex h-12 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3">
+                <span className="flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 sm:h-12">
                   <Mail className="h-4 w-4 text-slate-500" />
                   <input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-full w-full bg-transparent text-sm placeholder:text-white/35 focus:outline-none" placeholder="you@example.com" />
                 </span>
@@ -158,7 +158,7 @@ export default function RegisterFormPage() {
 
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Password</span>
-                <span className="flex h-12 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3">
+                <span className="flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 sm:h-12">
                   <Lock className="h-4 w-4 text-slate-500" />
                   <input type={showPassword ? 'text' : 'password'} autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-full w-full bg-transparent text-sm placeholder:text-white/35 focus:outline-none" placeholder="At least 8 characters" />
                   <button type="button" onClick={() => setShowPassword((s) => !s)} className="rounded p-1 text-slate-400 hover:bg-white/10" aria-label={showPassword ? 'Hide password' : 'Show password'}>
@@ -184,13 +184,13 @@ export default function RegisterFormPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary-sweep w-full rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white disabled:opacity-60"
+                className="btn-primary-sweep w-full rounded-xl bg-orange-600 px-4 py-2.5 font-semibold text-white disabled:opacity-60 sm:py-3"
               >
                 {loading ? 'Creating account...' : 'Create account'}
               </button>
             </form>
 
-            <div className="my-5 flex items-center gap-3 text-xs text-slate-500">
+            <div className="my-3 flex items-center gap-3 text-xs text-slate-500 sm:my-5">
               <div className="h-px flex-1 bg-white/10" />
               or
               <div className="h-px flex-1 bg-white/10" />
