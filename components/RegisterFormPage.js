@@ -106,7 +106,7 @@ export default function RegisterFormPage() {
         'Build exam confidence with daily consistency',
       ]}
     >
-      <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-8">
+      <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-5 text-slate-100 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-7">
             <div className="mb-6 text-center">
               <Link href="/" className="inline-flex items-center gap-2 text-white">
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
@@ -114,7 +114,7 @@ export default function RegisterFormPage() {
                 </span>
                 <span className="font-semibold">{BRAND}</span>
               </Link>
-              <h1 className="mt-5 text-3xl font-semibold tracking-tight">Create your account</h1>
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight text-slate-100">Create your account</h1>
               <p className="mt-1 text-sm text-slate-400">Start with 3 free past questions</p>
             </div>
 
@@ -195,7 +195,7 @@ export default function RegisterFormPage() {
               or
               <div className="h-px flex-1 bg-white/10" />
             </div>
-            <p className="text-center text-sm text-slate-400">
+            <p className="text-center text-sm text-slate-300">
               Already have an account?{' '}
               <Link href="/login" className="font-semibold text-orange-300 hover:text-orange-200">
                 Sign in →

@@ -1063,12 +1063,6 @@ export default function Dashboard() {
                 Complete profile
               </Link>
             ) : null}
-            <Link
-              href="/developer/api-reference"
-              className="btn-secondary-sweep inline-flex min-h-10 min-w-[120px] items-center justify-center rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20"
-            >
-              API docs
-            </Link>
           </div>
         </div>
       </motion.section>

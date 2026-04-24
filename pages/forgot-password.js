@@ -1,44 +1,11 @@
-import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, GraduationCap, Mail } from 'lucide-react'
-import { useForgotPassword } from '@/hooks/auth/useAuthRecovery'
-import { AppApiError } from '@/lib/api-error'
+import { ArrowLeft, GraduationCap } from 'lucide-react'
 import { getMarketingBrandName } from '@/lib/landing-brand'
 
 const BRAND = getMarketingBrandName()
 
-function toMessage(err, fallback) {
-  if (err instanceof AppApiError) return err.message
-  if (err instanceof Error && err.message) return err.message
-  return fallback
-}
-
 export default function ForgotPasswordPage() {
-  const forgotM = useForgotPassword()
-  const [email, setEmail] = useState('')
-  const [sentTo, setSentTo] = useState('')
-  const [err, setErr] = useState('')
-  const [cooldown, setCooldown] = useState(0)
-
-  useEffect(() => {
-    if (cooldown <= 0) return undefined
-    const timer = window.setInterval(() => setCooldown((s) => Math.max(0, s - 1)), 1000)
-    return () => window.clearInterval(timer)
-  }, [cooldown])
-
-  const send = async () => {
-    setErr('')
-    try {
-      const target = email.trim()
-      await forgotM.mutateAsync(target)
-      setSentTo(target)
-      setCooldown(30)
-    } catch (error) {
-      setErr(toMessage(error, 'Could not request password reset.'))
-    }
-  }
-
   return (
     <>
       <Head>
@@ -62,56 +29,18 @@ export default function ForgotPasswordPage() {
                 </p>
               </div>
 
-              {!sentTo ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    void send()
-                  }}
-                  className="space-y-4"
+              <div className="space-y-4 text-center">
+                <h2 className="text-lg font-semibold">Password recovery is coming soon</h2>
+                <p className="text-sm text-slate-400">
+                  This flow is not available yet. Please contact support if you need account access help.
+                </p>
+                <Link
+                  href="/login"
+                  className="btn-primary-sweep inline-flex w-full items-center justify-center rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white"
                 >
-                  <label className="block">
-                    <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Email</span>
-                    <span className="flex h-12 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3">
-                      <Mail className="h-4 w-4 text-slate-500" />
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        className="h-full w-full bg-transparent text-sm placeholder:text-white/35 focus:outline-none"
-                      />
-                    </span>
-                  </label>
-                  {err ? <p className="text-sm text-red-300">{err}</p> : null}
-                  <button
-                    type="submit"
-                    disabled={forgotM.isPending}
-                    className="btn-primary-sweep w-full rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white disabled:opacity-60"
-                  >
-                    {forgotM.isPending ? 'Sending...' : 'Send reset link'}
-                  </button>
-                </form>
-              ) : (
-                <div className="space-y-4 text-center">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                  <h2 className="text-lg font-semibold">Check your email</h2>
-                  <p className="text-sm text-slate-400">
-                    We sent a reset link to <span className="font-medium text-slate-200">{sentTo}</span>.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => void send()}
-                    disabled={cooldown > 0 || forgotM.isPending}
-                    className="text-sm font-medium text-orange-300 disabled:opacity-60"
-                  >
-                    {cooldown > 0 ? `Resend in ${cooldown}s` : "Didn't get it? Resend →"}
-                  </button>
-                </div>
-              )}
+                  Back to sign in
+                </Link>
+              </div>
             </div>
           </section>
         </div>
