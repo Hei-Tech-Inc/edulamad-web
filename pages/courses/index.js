@@ -14,6 +14,7 @@ import MyCoursesCatalog from '../../components/courses/MyCoursesCatalog'
 import { useAuthStore } from '@/stores/auth.store'
 import { sessionHasAdminTools } from '@/lib/session-admin-access'
 import UploadFab from '../../components/UploadFab'
+import { PromoCodeInput } from '@/components/pricing/PromoCodeInput'
 
 export default function CoursesPage() {
   return (
@@ -81,14 +82,10 @@ function CoursesContent() {
     <div className="space-y-5">
       {isFreeUser && !promoDismissed ? (
         <section className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-slate-700">
-              Have a promo code? Enter it to unlock more questions.
-            </p>
-            <div className="flex items-center gap-3">
-              <Link href="/profile/subscription" className="text-sm font-semibold text-orange-700">
-                Enter code
-              </Link>
+          <div className="space-y-2">
+            <p className="text-sm text-slate-700">Have a promo code? Redeem it directly here.</p>
+            <PromoCodeInput compact />
+            <div className="flex justify-end">
               <button
                 type="button"
                 onClick={() => setPromoDismissed(true)}
