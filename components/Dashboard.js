@@ -239,8 +239,9 @@ function CommandBar({ search, onSearch, onResetFilters, timeframe, setTimeframe 
 function StudentCollapsible({ title, defaultOpen = true, children }) {
   return (
     <details open={defaultOpen} className="rounded-xl border border-white/10 bg-white/[0.03]">
-      <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-slate-100">
-        {title}
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-semibold text-slate-100">
+        <span className="break-words">{title}</span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
       </summary>
       <div className="border-t border-white/10 px-3 py-3">{children}</div>
     </details>
@@ -1003,12 +1004,6 @@ export default function Dashboard() {
     },
   })
 
-  const kpiSignals = {
-    user: [3, 4, 6, 5, 7, 8, 9],
-    level: [4, 4, 5, 6, 6, 7, 7],
-    streak: [1, 2, 3, 5, 8, 8, 10],
-    xp: [2, 3, 5, 7, 8, 9, 10],
-  }
   const sectionMotion = reduceMotion
     ? {}
     : {
@@ -1269,10 +1264,6 @@ export default function Dashboard() {
             ) : (
               <p className="mt-3 text-sm text-slate-400">No recent activity yet.</p>
             )}
-            <p className="mt-2 text-[11px] text-slate-500">
-              Detailed study timelines (attempt-by-attempt) need a dedicated backend activity feed endpoint.
-            </p>
-
             <div className="mt-5 border-t border-white/10 pt-4">
               <StudentCollapsible title="Tasks" defaultOpen={false}>
               <form
@@ -1472,7 +1463,7 @@ export default function Dashboard() {
                     <li key={b.id} className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
                       <Link
                         href={b.href}
-                        className="line-clamp-1 text-sm font-medium text-slate-100 hover:text-orange-200"
+                        className="block break-words text-sm font-medium text-slate-100 hover:text-orange-200"
                       >
                         {b.title}
                       </Link>

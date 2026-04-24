@@ -23,7 +23,7 @@ export function PromoCodeInput({ onSuccess, compact = false }: Props) {
 
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'}>
-      <p className="text-center text-xs text-slate-500">Have a promo code?</p>
+      <p className="break-words text-center text-xs text-slate-700 dark:text-slate-300">Have a promo code?</p>
       <div
         className={`flex flex-col gap-2 ${compact ? '' : 'sm:flex-row sm:items-center'}`}
       >
@@ -32,7 +32,7 @@ export function PromoCodeInput({ onSuccess, compact = false }: Props) {
           onChange={(e) => setCode(e.target.value)}
           placeholder="Enter code"
           autoComplete="off"
-          className="h-10 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-600 dark:bg-slate-950 dark:text-white"
+          className="h-10 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 dark:border-slate-600 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-400"
         />
         <button
           type="button"
@@ -64,7 +64,7 @@ export function PromoCodeInput({ onSuccess, compact = false }: Props) {
       </div>
       {msg ? (
         <p
-          className={`text-center text-xs ${ok ? 'text-emerald-700' : 'text-rose-600'}`}
+          className={`break-words text-center text-xs ${ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
         >
           {msg}
         </p>
