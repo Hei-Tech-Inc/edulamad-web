@@ -145,7 +145,9 @@ export default function LoginPage() {
                 ) : null}
 
                 <div className="text-right text-sm">
-                  <span className="text-slate-400">Password recovery coming soon</span>
+                  <Link href="/forgot-password" className="text-slate-300 hover:text-white">
+                    Forgot password?
+                  </Link>
                 </div>
 
                 <button
