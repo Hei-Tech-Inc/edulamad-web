@@ -673,9 +673,6 @@ export default function CourseQuizPractice() {
       : (essayDraft[current.id] || '').trim().length > 0
     : false
 
-  const solutionsFeedQ = useQuestionSolutionsFeed(current?.id, Boolean(current?.id))
-  const upvoteSolutionM = useUpvoteSolution(current?.id)
-  const addSolutionM = useAddQuestionSolution(current?.id)
   const subscriptionQ = useQuery({
     queryKey: ['subscriptions', 'me'],
     queryFn: async ({ signal }) => {
@@ -683,6 +680,18 @@ export default function CourseQuizPractice() {
       return data && typeof data === 'object' ? data : {}
     },
   })
+  const plan = String(subscriptionQ.data?.plan || subscriptionQ.data?.tier || '').toLowerCase()
+  const hasSolutionAccess =
+    plan === 'basic' ||
+    plan === 'pro' ||
+    subscriptionQ.data?.isPro === true ||
+    subscriptionQ.data?.isPaid === true
+  const solutionsFeedQ = useQuestionSolutionsFeed(
+    current?.id,
+    Boolean(current?.id) && hasSolutionAccess,
+  )
+  const upvoteSolutionM = useUpvoteSolution(current?.id)
+  const addSolutionM = useAddQuestionSolution(current?.id)
   const isProUser = Boolean(
     subscriptionQ.data?.plan === 'pro' ||
       subscriptionQ.data?.tier === 'pro' ||

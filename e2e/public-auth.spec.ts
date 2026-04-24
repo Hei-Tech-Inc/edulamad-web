@@ -9,7 +9,9 @@ test.describe('Public auth pages', () => {
 
   test('login page loads and Create account navigates to register', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^welcome back$/i }),
+    ).toBeVisible();
     const create = page.getByRole('link', { name: /create a free account/i });
     await expect(create).toBeVisible();
     await create.click();

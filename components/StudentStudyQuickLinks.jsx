@@ -25,9 +25,9 @@ export default function StudentStudyQuickLinks({ variant = 'light' }) {
   return (
     <section className={wrap} aria-label="Study shortcuts">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
+        <div className="min-w-0">
           <h2 className={titleCls}>Find quizzes &amp; study tools</h2>
-          <p className={`mt-0.5 ${descCls}`}>
+          <p className={`mt-0.5 break-words ${descCls}`}>
             Slides live under each course: My Courses → pick a course → Slides (or Offerings).
           </p>
         </div>
@@ -42,46 +42,46 @@ export default function StudentStudyQuickLinks({ variant = 'light' }) {
       </div>
       <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         <li>
-          <Link href="/flashcards" className={`flex h-full flex-col gap-0.5 ${cardBase}`}>
-            <span className="inline-flex items-center gap-1.5">
+          <Link href="/flashcards" className={`flex h-full min-w-0 flex-col gap-0.5 ${cardBase}`}>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
               <Layers className="h-4 w-4 text-orange-600" aria-hidden />
-              <span className={labelCls}>Flashcards</span>
+              <span className={`truncate ${labelCls}`}>Flashcards</span>
             </span>
             <span className={subCls}>Spaced repetition decks</span>
           </Link>
         </li>
         <li>
-          <Link href="/quiz/new" className={`flex h-full flex-col gap-0.5 ${cardBase}`}>
-            <span className="inline-flex items-center gap-1.5">
+          <Link href="/quiz/new" className={`flex h-full min-w-0 flex-col gap-0.5 ${cardBase}`}>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
               <ListOrdered className="h-4 w-4 text-orange-600" aria-hidden />
-              <span className={labelCls}>Start a quiz</span>
+              <span className={`truncate ${labelCls}`}>Start a quiz</span>
             </span>
             <span className={subCls}>New timed session</span>
           </Link>
         </li>
         <li>
-          <Link href="/quiz/history" className={`flex h-full flex-col gap-0.5 ${cardBase}`}>
-            <span className="inline-flex items-center gap-1.5">
+          <Link href="/quiz/history" className={`flex h-full min-w-0 flex-col gap-0.5 ${cardBase}`}>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
               <History className="h-4 w-4 text-orange-600" aria-hidden />
-              <span className={labelCls}>Quiz history</span>
+              <span className={`truncate ${labelCls}`}>Quiz history</span>
             </span>
             <span className={subCls}>Past attempts</span>
           </Link>
         </li>
         <li>
-          <Link href="/quiz/history#saved-quizzes" className={`flex h-full flex-col gap-0.5 ${cardBase}`}>
-            <span className="inline-flex items-center gap-1.5">
+          <Link href="/quiz/history#saved-quizzes" className={`flex h-full min-w-0 flex-col gap-0.5 ${cardBase}`}>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
               <Bookmark className="h-4 w-4 text-orange-600" aria-hidden />
-              <span className={labelCls}>Saved quizzes</span>
+              <span className={`truncate ${labelCls}`}>Saved quizzes</span>
             </span>
             <span className={subCls}>Stored on this device</span>
           </Link>
         </li>
         <li>
-          <Link href="/leaderboard" className={`flex h-full flex-col gap-0.5 ${cardBase}`}>
-            <span className="inline-flex items-center gap-1.5">
+          <Link href="/leaderboard" className={`flex h-full min-w-0 flex-col gap-0.5 ${cardBase}`}>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
               <Trophy className="h-4 w-4 text-orange-600" aria-hidden />
-              <span className={labelCls}>Leaderboard</span>
+              <span className={`truncate ${labelCls}`}>Leaderboard</span>
             </span>
             <span className={subCls}>Department rankings</span>
           </Link>

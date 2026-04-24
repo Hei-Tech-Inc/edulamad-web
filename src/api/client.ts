@@ -10,7 +10,7 @@ import API from '@/api/endpoints';
 import type { ApiResponse } from '@/api/types/common.types';
 import { getApiBaseURL } from '@/lib/api-base-url';
 import { AppApiError, parseApiErrorPayload } from '@/lib/api-error';
-import { isAbortLikeError } from '@/lib/abort-error';
+import { isAbortError } from '@/lib/abort-handler';
 import { useAuthStore } from '@/stores/auth.store';
 import { loadingBarActions } from '@/stores/loading-bar.store';
 
@@ -159,7 +159,7 @@ apiClientPublic.interceptors.response.use(
   },
   async (error: AxiosError) => {
     markRequestDone(error.config, true);
-    if (isCancel(error) || error.code === 'ERR_CANCELED' || isAbortLikeError(error)) {
+    if (isCancel(error) || error.code === 'ERR_CANCELED' || isAbortError(error)) {
       return Promise.reject(error);
     }
     return Promise.reject(toAppError(error));
@@ -219,7 +219,7 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     markRequestDone(error.config, true);
-    if (isCancel(error) || error.code === 'ERR_CANCELED' || isAbortLikeError(error)) {
+    if (isCancel(error) || error.code === 'ERR_CANCELED' || isAbortError(error)) {
       return Promise.reject(error);
     }
     const originalRequest = error.config;

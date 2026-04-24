@@ -3,12 +3,12 @@ import { useRouter } from 'next/router'
 import { Home, BookOpen, ListOrdered, Trophy, UserCircle2, Layers } from 'lucide-react'
 
 const TAB_ITEMS = [
-  { key: 'home', label: 'Home', href: '/dashboard', icon: Home },
-  { key: 'courses', label: 'My Courses', href: '/courses', icon: BookOpen },
-  { key: 'flashcards', label: 'Cards', href: '/flashcards', icon: Layers },
-  { key: 'practice', label: 'Quizzes', href: '/quiz/new', icon: ListOrdered },
-  { key: 'leaderboard', label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
-  { key: 'profile', label: 'Profile', href: '/profile', icon: UserCircle2 },
+  { key: 'home', label: 'Home', mobileLabel: 'Home', href: '/dashboard', icon: Home },
+  { key: 'courses', label: 'My Courses', mobileLabel: 'Courses', href: '/courses', icon: BookOpen },
+  { key: 'flashcards', label: 'Cards', mobileLabel: 'Cards', href: '/flashcards', icon: Layers },
+  { key: 'practice', label: 'Quizzes', mobileLabel: 'Quizzes', href: '/quiz/new', icon: ListOrdered },
+  { key: 'leaderboard', label: 'Leaderboard', mobileLabel: 'Ranks', href: '/leaderboard', icon: Trophy },
+  { key: 'profile', label: 'Profile', mobileLabel: 'Profile', href: '/profile', icon: UserCircle2 },
 ]
 
 function isActivePath(pathname, href) {
@@ -27,22 +27,24 @@ export default function AppTabBar() {
 
   return (
     <nav className="border-b border-white/10 bg-[#0b1222]/95 px-4 sm:px-6">
-      <ul className="mx-auto flex max-w-[1520px] items-center gap-1 overflow-x-auto py-2">
+      <ul className="mx-auto flex max-w-[1520px] snap-x snap-mandatory items-center gap-1 overflow-x-auto py-2">
         {TAB_ITEMS.map((item) => {
           const active = isActivePath(pathname, item.href)
           const Icon = item.icon
           return (
-            <li key={item.key}>
+            <li key={item.key} className="snap-start">
               <Link
                 href={item.href}
-                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                title={item.label}
+                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-medium transition sm:gap-2 sm:px-3 sm:text-sm ${
                   active
                     ? 'bg-orange-500/20 text-orange-200'
                     : 'text-slate-300 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 <Icon className="h-4 w-4" />
-                {item.label}
+                <span className="sm:hidden">{item.mobileLabel || item.label}</span>
+                <span className="hidden sm:inline">{item.label}</span>
               </Link>
             </li>
           )

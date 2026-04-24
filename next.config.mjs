@@ -16,12 +16,9 @@ function resolveApiProxyTarget() {
   if (pub) {
     try {
       const u = new URL(pub)
-      if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
-        const host = u.hostname === 'localhost' ? '127.0.0.1' : u.hostname
-        const port =
-          u.port || (u.protocol === 'https:' ? '443' : '80')
-        return `${u.protocol}//${host}:${port}`
-      }
+      const host = u.hostname === 'localhost' ? '127.0.0.1' : u.hostname
+      const port = u.port || (u.protocol === 'https:' ? '443' : '80')
+      return `${u.protocol}//${host}:${port}`
     } catch {
       /* fall through */
     }

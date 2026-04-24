@@ -16,10 +16,10 @@ type Props = {
 
 function FeatureRow({ feature }: { feature: PlanFeature }) {
   return (
-    <div
+      <div
       className={cn(
-        'flex items-start gap-2.5 text-sm',
-        !feature.included && 'opacity-60',
+        'flex items-start gap-2.5 text-sm text-slate-800 dark:text-slate-100',
+        !feature.included && 'opacity-[0.72]',
       )}
     >
       {feature.included ? (
@@ -35,19 +35,21 @@ function FeatureRow({ feature }: { feature: PlanFeature }) {
         </span>
       ) : (
         <Lock
-          className="mt-0.5 h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600"
+          className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500"
           aria-hidden
         />
       )}
       <span
         className={cn(
-          feature.highlight && feature.included && 'font-medium text-slate-900 dark:text-white',
+          feature.highlight &&
+            feature.included &&
+            'font-semibold text-slate-950 dark:text-white',
         )}
         title={feature.tooltip}
       >
         {feature.label}
         {feature.limit ? (
-          <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
             {feature.limit}
           </span>
         ) : null}
@@ -75,10 +77,10 @@ export function PlanCard({
   return (
     <div
       className={cn(
-        'relative flex flex-col gap-4 rounded-2xl border p-6 transition-all duration-200',
+        'relative flex flex-col gap-4 rounded-2xl border p-6 text-slate-900 transition-all duration-200 dark:text-slate-50',
         isHighlighted
-          ? 'scale-[1.02] border-orange-500 bg-white shadow-[0_0_0_2px_rgba(249,115,22,0.25)] dark:bg-slate-900'
-          : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900',
+          ? 'scale-[1.02] border-orange-500 bg-white shadow-[0_0_0_2px_rgba(249,115,22,0.25)] dark:border-orange-600/80 dark:bg-slate-950'
+          : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950',
         isCurrent && 'ring-2 ring-emerald-500',
       )}
     >
@@ -110,10 +112,12 @@ export function PlanCard({
       ) : null}
 
       <div>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-slate-950 dark:text-white">
           {plan.name}
         </h3>
-        <p className="mt-0.5 text-sm text-slate-500">{plan.tagline}</p>
+        <p className="mt-0.5 text-sm leading-snug text-slate-700 dark:text-slate-200">
+          {plan.tagline}
+        </p>
       </div>
 
       <div>
@@ -121,18 +125,22 @@ export function PlanCard({
           <span
             className={cn(
               'text-4xl font-bold tabular-nums',
-              isHighlighted ? 'text-orange-500' : 'text-slate-900 dark:text-white',
+              isHighlighted
+                ? 'text-orange-600 dark:text-orange-400'
+                : 'text-slate-950 dark:text-white',
             )}
           >
             {price}
           </span>
           {price !== '₵0' ? (
-            <span className="mb-1 text-sm text-slate-500">{period}</span>
+            <span className="mb-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+              {period}
+            </span>
           ) : null}
         </div>
         {originalPrice && billing === 'semester' ? (
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-sm text-slate-400 line-through">
+            <span className="text-sm text-slate-500 line-through dark:text-slate-500">
               {originalPrice}
             </span>
             {saving ? (
@@ -145,7 +153,9 @@ export function PlanCard({
       </div>
 
       {plan.studentCount ? (
-        <p className="text-xs text-slate-400">{plan.studentCount}</p>
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+          {plan.studentCount}
+        </p>
       ) : null}
 
       <button
@@ -153,22 +163,26 @@ export function PlanCard({
         onClick={onSelect}
         disabled={isCurrent}
         className={cn(
-          'relative w-full overflow-hidden rounded-xl py-3 text-sm font-semibold transition',
+          'relative isolate w-full overflow-hidden rounded-xl py-3 text-sm font-semibold transition',
           isCurrent
-            ? 'cursor-default bg-slate-100 text-slate-400 dark:bg-slate-800'
+            ? 'cursor-default bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
             : isHighlighted
-              ? 'relative btn-pricing-shimmer bg-orange-500 text-white shadow-lg hover:bg-orange-600'
+              ? 'btn-pricing-shimmer bg-orange-500 text-white shadow-lg hover:bg-orange-600'
               : 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100',
         )}
       >
-        {isCurrent ? 'Current plan' : plan.ctaLabel}
+        <span className="relative z-[1]">
+          {isCurrent ? 'Current plan' : plan.ctaLabel}
+        </span>
       </button>
 
       {plan.ctaSubtext && !isCurrent ? (
-        <p className="text-center text-xs text-slate-500">{plan.ctaSubtext}</p>
+        <p className="text-center text-xs font-medium text-slate-600 dark:text-slate-300">
+          {plan.ctaSubtext}
+        </p>
       ) : null}
 
-      <div className="mt-2 flex flex-col gap-2.5 border-t border-slate-100 pt-4 dark:border-slate-800">
+      <div className="mt-2 flex flex-col gap-2.5 border-t border-slate-200 pt-4 dark:border-slate-700">
         {plan.features.map((f) => (
           <FeatureRow key={f.label} feature={f} />
         ))}

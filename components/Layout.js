@@ -57,7 +57,7 @@ const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
       ) : null}
       <div
         className={`min-h-screen bg-gradient-to-b from-[#0a1020] via-[#0b1222] to-[#0a1020] transition-[margin] duration-200 ${
-          isInstitutionConsole ? 'ml-0' : sidebarCollapsed ? 'ml-20' : 'ml-64'
+          isInstitutionConsole ? 'ml-0' : sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
         }`}
       >
         <Header title={title} />

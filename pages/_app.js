@@ -14,8 +14,8 @@ import { AnalyticsProvider } from '../contexts/AnalyticsContext'
 import { ToastProvider } from '../components/Toast'
 import { Provider } from 'react-redux'
 import { store } from '../store'
-import { queryClient } from '@/lib/query-client'
-import { subscribeAbortUnhandledRejectionSilencer } from '@/lib/abort-error'
+import { getQueryClient } from '@/lib/query-client'
+import { installAbortHandler } from '@/lib/abort-handler'
 import { queryKeys } from '@/api/query-keys'
 import { getSafeInternalPath } from '@/lib/safe-next-path'
 import { isPublicAuthRoute } from '@/lib/public-auth-routes'
@@ -37,9 +37,10 @@ const ReactQueryDevtools = dynamic(
 function AppWrapper({ Component, pageProps }) {
   const router = useRouter()
   const loadingBarEnabled = process.env.NEXT_PUBLIC_ENABLE_TOP_LOADING_BAR === '1'
+  const queryClient = getQueryClient()
 
   useEffect(() => {
-    return subscribeAbortUnhandledRejectionSilencer()
+    return installAbortHandler()
   }, [])
 
   useEffect(() => {
@@ -161,7 +162,8 @@ function AuthWrapper({ children }) {
       !onboardingComplete &&
       !onOnboardingRoute &&
       currentPath !== '/verify-email' &&
-      currentPath !== '/'
+      currentPath !== '/' &&
+      currentPath !== '/pricing'
     ) {
       router.push('/onboarding')
       return

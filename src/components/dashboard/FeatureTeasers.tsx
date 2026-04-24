@@ -65,24 +65,24 @@ export function FeatureTeasers() {
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
         Unlock more tools
       </h3>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {locked.map((f) => (
           <button
             key={f.id}
             type="button"
             onClick={() => setTrigger(f.trigger)}
-            className="group rounded-xl border border-dashed border-slate-600/60 bg-white/[0.03] p-3 text-left transition hover:border-orange-400/50 hover:bg-orange-500/10"
+            className="group rounded-xl border border-dashed border-slate-300 bg-white p-3 text-left transition hover:border-orange-400/60 hover:bg-orange-50 dark:border-slate-600/60 dark:bg-white/[0.03] dark:hover:border-orange-400/50 dark:hover:bg-orange-500/10"
           >
             <div className="flex items-start justify-between gap-2">
               <span className="text-lg" aria-hidden>
                 {f.icon}
               </span>
-              <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400 transition group-hover:bg-orange-500/20 group-hover:text-orange-200">
+              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-700 transition group-hover:bg-orange-100 group-hover:text-orange-800 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-orange-500/20 dark:group-hover:text-orange-200">
                 🔒 Upgrade
               </span>
             </div>
-            <p className="mt-2 text-sm font-medium text-slate-100">{f.title}</p>
-            <p className="mt-0.5 text-[11px] text-slate-500">{f.desc}</p>
+            <p className="mt-2 break-words text-sm font-medium text-slate-900 dark:text-slate-100">{f.title}</p>
+            <p className="mt-0.5 break-words text-[11px] text-slate-600 dark:text-slate-500">{f.desc}</p>
           </button>
         ))}
       </div>

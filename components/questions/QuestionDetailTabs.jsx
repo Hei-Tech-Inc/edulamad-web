@@ -15,6 +15,7 @@ import {
   useMnemonicsForCourse,
   useSubmitMnemonic,
 } from '@/hooks/mnemonics/useMnemonics'
+import { useSubscriptionWithTier } from '@/hooks/subscriptions/useSubscriptionMe'
 import { isApiError } from '@/lib/api-error'
 import { SolutionGate } from '@/components/questions/SolutionGate'
 
@@ -34,8 +35,13 @@ export default function QuestionDetailTabs({ questionId, question }) {
   const [tab, setTab] = useState('solution')
   const courseId = useMemo(() => pickCourseId(question), [question])
   const topic = useMemo(() => pickTopic(question), [question])
+  const { tier } = useSubscriptionWithTier()
+  const hasSolutionAccess = tier !== 'free'
 
-  const solutionsQ = useQuestionSolutionsFeed(questionId, tab === 'solution')
+  const solutionsQ = useQuestionSolutionsFeed(
+    questionId,
+    tab === 'solution' && hasSolutionAccess,
+  )
   const upvoteM = useUpvoteSolution(questionId)
   const addSolutionM = useAddQuestionSolution(questionId)
 
@@ -52,7 +58,8 @@ export default function QuestionDetailTabs({ questionId, question }) {
   const [mnForm, setMnForm] = useState({ term: '', mnemonic: '', explanation: '' })
 
   const solutionErr =
-    solutionsQ.isError && isApiError(solutionsQ.error) && solutionsQ.error.status === 403
+    !hasSolutionAccess ||
+    (solutionsQ.isError && isApiError(solutionsQ.error) && solutionsQ.error.status === 403)
 
   return (
     <div className="mt-6 border-t border-slate-200 pt-4">

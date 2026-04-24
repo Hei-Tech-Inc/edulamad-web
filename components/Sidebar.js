@@ -251,7 +251,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
 
   return (
     <div
-      className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-neutral-800/80 bg-[#06080f] shadow-[12px_0_35px_rgba(2,6,23,0.3)] transition-[width] duration-200 ${
+      className={`fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-neutral-800/80 bg-[#06080f] shadow-[12px_0_35px_rgba(2,6,23,0.3)] transition-[width] duration-200 lg:flex ${
         collapsed ? 'w-20' : 'w-64'
       }`}
     >

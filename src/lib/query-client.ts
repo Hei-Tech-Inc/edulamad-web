@@ -1,9 +1,9 @@
 import { isCancelledError, QueryClient } from '@tanstack/react-query';
-import { isAbortLikeError } from '@/lib/abort-error';
+import { isAbortError } from '@/lib/abort-handler';
 import { isApiError } from '@/lib/api-error';
 
 function isBenignCancellation(error: unknown): boolean {
-  return isCancelledError(error) || isAbortLikeError(error);
+  return isCancelledError(error) || isAbortError(error);
 }
 
 export function makeQueryClient() {
@@ -36,5 +36,18 @@ export function makeQueryClient() {
   });
 }
 
-/** Shared client for the browser app (Pages Router). */
-export const queryClient = makeQueryClient();
+let browserQueryClient: QueryClient | undefined;
+
+/**
+ * Browser singleton QueryClient.
+ * - Server: fresh instance per request
+ * - Browser: one shared instance for app lifetime
+ */
+export function getQueryClient(): QueryClient {
+  if (typeof window === 'undefined') return makeQueryClient();
+  if (!browserQueryClient) browserQueryClient = makeQueryClient();
+  return browserQueryClient;
+}
+
+/** Backward compatibility for existing imports. */
+export const queryClient = getQueryClient();

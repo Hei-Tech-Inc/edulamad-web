@@ -12,6 +12,8 @@ export const PUBLIC_AUTH_ROUTE_PATHS = [
   '/pending-approval',
   '/reset-password',
   '/verify-email',
+  '/pricing',
+  '/payment/callback',
   '/developer/api-keys',
   '/developer/api-reference',
 ]

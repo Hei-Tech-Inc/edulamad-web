@@ -1,6 +1,7 @@
 'use client';
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { isAbortError } from '@/lib/abort-handler';
 
 interface Props {
   children: ReactNode;
@@ -15,19 +16,26 @@ interface State {
 export class AppErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: unknown): State {
+    if (isAbortError(error)) {
+      return { hasError: false, error: undefined };
+    }
+    const err =
+      error instanceof Error
+        ? error
+        : new Error(typeof error === 'string' ? error : 'Unknown error');
+    return { hasError: true, error: err };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    if (error.name === 'AbortError') return;
+    if (isAbortError(error)) return;
     if (process.env.NODE_ENV === 'development') {
       console.error('[AppErrorBoundary]', error, info.componentStack);
     }
   }
 
   render() {
-    if (this.state.hasError && this.state.error?.name !== 'AbortError') {
+    if (this.state.hasError && !isAbortError(this.state.error)) {
       return (
         this.props.fallback ?? (
           <div className="flex min-h-[200px] flex-col items-center justify-center gap-4 px-4">

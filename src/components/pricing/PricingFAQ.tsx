@@ -29,15 +29,17 @@ const FAQ = [
 
 export function PricingFAQ() {
   return (
-    <div className="mt-14 rounded-2xl border border-slate-200 bg-slate-50/50 p-6 dark:border-slate-800 dark:bg-slate-900/30">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+    <div className="mt-14 rounded-2xl border border-slate-200 bg-slate-100/80 p-6 dark:border-slate-700 dark:bg-slate-900">
+      <h3 className="text-lg font-semibold text-slate-950 dark:text-white">
         FAQ
       </h3>
       <ul className="mt-4 space-y-4">
         {FAQ.map((item) => (
           <li key={item.q}>
-            <p className="font-medium text-slate-900 dark:text-white">{item.q}</p>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            <p className="font-semibold text-slate-950 dark:text-white">
+              {item.q}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-800 dark:text-slate-200">
               {item.a}
             </p>
           </li>

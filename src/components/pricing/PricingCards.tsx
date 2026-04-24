@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 import {
-  PLANS,
   getPlan,
   semesterSavingPercent,
   type BillingPeriod,
@@ -19,6 +20,10 @@ type Props = {
   highlightPlanId?: string;
   onSelectPlan?: (planId: string, billing: BillingPeriod) => void;
   context?: Context;
+  /** Full /pricing page only; hide comparison + FAQ on embedded surfaces (e.g. homepage). */
+  showComparisonAndFaq?: boolean;
+  /** Tighter billing toggle spacing for homepage embed. */
+  compactToggle?: boolean;
 };
 
 /** Card order: Free → Pro (center, featured) → Basic (decoy). */
@@ -29,6 +34,8 @@ export function PricingCards({
   highlightPlanId = 'pro',
   onSelectPlan,
   context = 'page',
+  showComparisonAndFaq = true,
+  compactToggle = false,
 }: Props) {
   const [billing, setBilling] = useState<BillingPeriod>('semester');
   const urgencyLabel =
@@ -53,6 +60,7 @@ export function PricingCards({
         value={billing}
         onChange={setBilling}
         savePercentMax={savePercentMax}
+        compact={compactToggle}
       />
 
       <div
@@ -75,11 +83,26 @@ export function PricingCards({
         ))}
       </div>
 
-      {context === 'page' ? (
+      {context === 'page' && showComparisonAndFaq ? (
         <>
           <FeatureComparisonTable />
           <PricingFAQ />
         </>
+      ) : null}
+
+      {context === 'page' && !showComparisonAndFaq ? (
+        <div className="mt-10 flex flex-col items-center gap-2 border-t border-slate-200 pt-8 text-center dark:border-slate-700">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            Need the full feature matrix or billing FAQs?
+          </p>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+          >
+            View full pricing page
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        </div>
       ) : null}
     </div>
   );

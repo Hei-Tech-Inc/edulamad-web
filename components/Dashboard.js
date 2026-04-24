@@ -10,7 +10,6 @@ import {
   ChevronUp,
   Clock3,
   LayoutGrid,
-  LineChart,
   ListOrdered,
   Target,
   Search,
@@ -37,7 +36,6 @@ import { pickFirstHttpUrl } from '@/lib/api/pick-http-url'
 import {
   useAdminStats,
   useAnalyticsMe,
-  useAuthMe,
   useMyNotifications,
   useStudentProfile,
   useStudentStreak,
@@ -55,6 +53,7 @@ import CopyableId from './admin/CopyableId'
 import { SkeletonNotificationRow, SkeletonQuestionCard, SkeletonStatCard } from '@/components/ui/skeleton'
 import { loadQuizBookmarks } from '@/lib/quiz/bookmarks'
 import { buildQuizHref } from '@/lib/quiz/build-quiz-href'
+import { isPlatformSuperAdminFromAccessToken } from '@/lib/jwt-payload'
 import StudentStudyQuickLinks from './StudentStudyQuickLinks'
 import DashboardFlashcardsStrip from './DashboardFlashcardsStrip'
 import { QuestionLimitBanner } from '@/components/dashboard/QuestionLimitBanner'
@@ -184,13 +183,13 @@ function TinySparkline({ values }) {
 function TimeframeTabs({ value, onChange }) {
   const tabs = ['Today', 'This Week', 'This Semester']
   return (
-    <div className="inline-flex rounded-xl border border-white/20 bg-white/10 p-1">
+    <div className="inline-flex max-w-full overflow-x-auto rounded-xl border border-white/20 bg-white/10 p-1">
       {tabs.map((tab) => (
         <button
           key={tab}
           type="button"
           onClick={() => onChange(tab)}
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+          className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
             value === tab
               ? 'bg-orange-500 text-white'
               : 'text-slate-100 hover:bg-white/15'
@@ -205,9 +204,9 @@ function TimeframeTabs({ value, onChange }) {
 
 function CommandBar({ search, onSearch, onResetFilters, timeframe, setTimeframe }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#111827]/95 p-3 shadow-[0_12px_36px_rgba(0,0,0,0.35)]">
+    <div className="rounded-2xl border border-white/10 bg-[#0f172a]/75 p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[240px] flex-1">
+        <div className="relative min-w-0 flex-1 basis-full sm:basis-auto sm:min-w-[240px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" />
           <input
             value={search}
@@ -229,7 +228,7 @@ function CommandBar({ search, onSearch, onResetFilters, timeframe, setTimeframe 
         >
           Reset filters
         </button>
-        <div className="ml-auto">
+        <div className="w-full sm:ml-auto sm:w-auto">
           <TimeframeTabs value={timeframe} onChange={setTimeframe} />
         </div>
       </div>
@@ -241,9 +240,11 @@ export default function Dashboard() {
   const router = useRouter()
   const reduceMotion = useReducedMotion()
   const queryClient = useQueryClient()
-  const sessionEmail = useAuthStore((s) => s.user?.email)
   const sessionUser = useAuthStore((s) => s.user)
   const accessToken = useAuthStore((s) => s.accessToken)
+  const isPlatformSuperAdmin =
+    sessionUser?.isPlatformSuperAdmin === true ||
+    isPlatformSuperAdminFromAccessToken(accessToken)
   const [timeframe, setTimeframe] = useState('This Week')
   const [activeOnly, setActiveOnly] = useState(true)
   const [search, setSearch] = useState('')
@@ -371,12 +372,11 @@ export default function Dashboard() {
       .sort((a, b) => b[1] - a[1])
       .map(([t, n]) => ({ type: t, count: n }))
   }, [questionsQ.data])
-  const authMeQ = useAuthMe()
   const profileQ = useStudentProfile()
   const streakQ = useStudentStreak()
   const xpQ = useStudentXp()
   const analyticsQ = useAnalyticsMe()
-  const adminStatsQ = useAdminStats()
+  const adminStatsQ = useAdminStats(isPlatformSuperAdmin)
   const notificationsQ = useMyNotifications(5)
   const recentActivity = useMemo(() => {
     const fromNotes = (notificationsQ.data || []).slice(0, 4).map((note) => ({
@@ -952,7 +952,7 @@ export default function Dashboard() {
 
   const promoCodesQ = useQuery({
     queryKey: ['admin', 'promo', 'codes'],
-    enabled: isAdmin,
+    enabled: isAdmin && isPlatformSuperAdmin,
     retry: false,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get(API.admin.promo.codes, { signal })
@@ -962,7 +962,7 @@ export default function Dashboard() {
 
   const uploadQueueQ = useQuery({
     queryKey: ['questions', 'upload-queue', 'admin'],
-    enabled: isAdmin,
+    enabled: isAdmin && isPlatformSuperAdmin,
     retry: false,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get(API.questions.uploadQueue, { signal })
@@ -1110,6 +1110,18 @@ export default function Dashboard() {
 
       {!isAdmin ? (
         <motion.section {...sectionMotion}>
+          <StudentStudyQuickLinks variant="light" />
+        </motion.section>
+      ) : null}
+
+      {!isAdmin ? (
+        <motion.section {...sectionMotion}>
+          <DashboardFlashcardsStrip />
+        </motion.section>
+      ) : null}
+
+      {!isAdmin ? (
+        <motion.section {...sectionMotion}>
           <CommandBar
             search={search}
             onSearch={setSearch}
@@ -1139,7 +1151,7 @@ export default function Dashboard() {
 
       {!isAdmin ? (
         <motion.section {...sectionMotion} className="grid gap-4 xl:grid-cols-12">
-          <div className="space-y-4 xl:col-span-8">
+          <div className="space-y-3 xl:col-span-8">
             <UpgradeCard />
             <FeatureTeasers />
           </div>
@@ -1149,18 +1161,6 @@ export default function Dashboard() {
               courseName={courseResults[0]?.name}
             />
           </div>
-        </motion.section>
-      ) : null}
-
-      {!isAdmin ? (
-        <motion.section {...sectionMotion}>
-          <StudentStudyQuickLinks variant="dark" />
-        </motion.section>
-      ) : null}
-
-      {!isAdmin ? (
-        <motion.section {...sectionMotion}>
-          <DashboardFlashcardsStrip />
         </motion.section>
       ) : null}
 
@@ -1223,49 +1223,7 @@ export default function Dashboard() {
       ) : null}
 
       {!isAdmin ? (
-        <motion.section {...sectionMotion} className="grid gap-4 xl:grid-cols-12">
-          <div className="xl:col-span-8">
-            <SectionCard>
-              <SectionTitle icon={Bell} title="Recently added" />
-              {(notificationsQ.data || []).length ? (
-                <ul className="mt-3 space-y-2">
-                  {(notificationsQ.data || []).slice(0, 5).map((note) => (
-                    <li key={note.id} className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
-                      <p className="text-sm text-slate-100">{note.title}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500">{timeAgo(note.createdAt)}</p>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-3 text-sm text-slate-400">No recent updates yet.</p>
-              )}
-            </SectionCard>
-          </div>
-          <div className="xl:col-span-4">
-            <SectionCard>
-              <SectionTitle icon={LineChart} title="Leaderboard snapshot" />
-              <p className="mt-3 text-sm text-slate-400">
-                View top performers and your rank for this week.
-              </p>
-              <Link href="/leaderboard" className="mt-2 inline-flex text-xs font-semibold text-orange-300 hover:text-orange-200">
-                See full leaderboard
-              </Link>
-            </SectionCard>
-          </div>
-        </motion.section>
-      ) : null}
-
-      {!isAdmin ? (
-      <motion.section {...sectionMotion} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div>
-          <StatCard
-            label="Signed in user"
-            value={authMeQ.data?.email || sessionEmail || '—'}
-            hint={authMeQ.isError ? 'Using local session profile.' : undefined}
-            tone="sky"
-          />
-          <TinySparkline values={kpiSignals.user} />
-        </div>
+      <motion.section {...sectionMotion} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <div>
           <StatCard
             label="Student profile"

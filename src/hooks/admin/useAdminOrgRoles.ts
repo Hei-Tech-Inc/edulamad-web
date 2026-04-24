@@ -19,7 +19,8 @@ function normalizeRoles(raw: unknown): AdminOrgRoleRow[] {
 export function useAdminOrgRoles(organizationId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.admin.orgRoles(organizationId ?? ''),
-    queryFn: async (): Promise<AdminOrgRoleRow[]> => {
+    queryFn: async ({ signal }): Promise<AdminOrgRoleRow[]> => {
+      void signal;
       if (!organizationId) return [];
       return normalizeRoles([]);
     },

@@ -79,7 +79,7 @@ export function useQuestionSolutionsFeed(questionId: string | undefined, enabled
         })
         return normalizeSolutions(data)
       } catch (e) {
-        if (e instanceof AppApiError && e.status === 404) {
+        if (e instanceof AppApiError && (e.status === 404 || e.status === 403)) {
           const { data } = await apiClient.get<unknown>(API.questions.solutions(questionId), {
             signal,
           })
@@ -99,7 +99,10 @@ export function useUpvoteSolution(questionId: string | undefined) {
       try {
         await apiClient.post(API.solutions.vote(solutionId), { vote: 'up' })
       } catch (e) {
-        if (e instanceof AppApiError && (e.status === 404 || e.status === 405)) {
+        if (
+          e instanceof AppApiError &&
+          (e.status === 403 || e.status === 404 || e.status === 405)
+        ) {
           await apiClient.post(API.questions.solutionUpvote(solutionId))
           return solutionId
         }

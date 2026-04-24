@@ -7,7 +7,7 @@ import {
   type OpenAPISpec,
 } from '@/lib/openapi-spec-url';
 
-async function fetchLiveOpenApiSpec(): Promise<{
+async function fetchLiveOpenApiSpec(signal?: AbortSignal): Promise<{
   spec: OpenAPISpec;
   resolvedUrl: string;
 }> {
@@ -16,7 +16,11 @@ async function fetchLiveOpenApiSpec(): Promise<{
 
   for (const url of candidates) {
     try {
-      const res = await fetch(url, { credentials: 'omit', cache: 'no-store' });
+      const res = await fetch(url, {
+        credentials: 'omit',
+        cache: 'no-store',
+        signal,
+      });
       if (!res.ok) {
         lastMessage = `${url} → ${res.status}`;
         continue;
@@ -41,7 +45,7 @@ export function useOpenApiSpec(bundled: OpenAPISpec) {
 
   const query = useQuery({
     queryKey: queryKeys.openApi.spec(),
-    queryFn: fetchLiveOpenApiSpec,
+    queryFn: ({ signal }) => fetchLiveOpenApiSpec(signal),
     enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,

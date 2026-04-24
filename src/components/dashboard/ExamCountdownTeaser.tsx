@@ -46,7 +46,7 @@ export function ExamCountdownTeaser({ courseId, courseName }: Props) {
         className="group w-full cursor-pointer rounded-xl border border-orange-200/60 bg-gradient-to-r from-orange-50 to-amber-50 p-4 text-left dark:border-orange-900/50 dark:from-orange-950/30 dark:to-amber-950/20"
       >
         <div className="flex items-center justify-between gap-2">
-          <div>
+          <div className="min-w-0">
             <div className="mb-1 flex flex-wrap items-center gap-1.5">
               <span className="text-orange-600 dark:text-orange-400" aria-hidden>
                 ⏰
@@ -58,11 +58,11 @@ export function ExamCountdownTeaser({ courseId, courseName }: Props) {
                 Pro
               </span>
             </div>
-            <div className="blur-sm select-none">
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
+            <div className="select-none opacity-80">
+              <p className="break-words text-sm font-bold text-slate-800 dark:text-slate-100">
                 12 days until your exam
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="break-words text-xs text-slate-500">
                 Focus on: Recursion, Trees, Sorting
               </p>
             </div>

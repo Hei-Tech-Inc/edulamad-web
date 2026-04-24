@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { Bell, Sun, Moon, Search, X } from 'lucide-react'
+import { Bell, Sun, Moon, Search, X, ChevronLeft } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -117,6 +117,15 @@ const TopBar = ({ title }) => {
       /* ignore */
     }
   }
+  const canGoBack = router.pathname !== '/dashboard'
+
+  const handleGoBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back()
+      return
+    }
+    router.push('/dashboard')
+  }
 
   const apiConfigured =
     typeof process.env.NEXT_PUBLIC_API_URL === 'string'
@@ -135,7 +144,7 @@ const TopBar = ({ title }) => {
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0f172a]/90 backdrop-blur">
       {process.env.NODE_ENV === 'development' && (
-        <div className="px-4 py-1 text-[11px] font-mono bg-orange-50 text-orange-950 border-b border-orange-200/80 dark:bg-orange-950/35 dark:text-orange-100 dark:border-orange-900/50">
+        <div className="break-all px-4 py-1 text-[11px] font-mono bg-orange-50 text-orange-950 border-b border-orange-200/80 dark:bg-orange-950/35 dark:text-orange-100 dark:border-orange-900/50">
           Dev · {process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'} API:{' '}
           {apiDevNote}
         </div>
@@ -166,14 +175,26 @@ const TopBar = ({ title }) => {
           </span>
         </div>
       ) : null}
-      <div className="flex items-center justify-between px-6 py-3.5">
+      <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-3.5">
         {/* Page Title */}
-        <h1 className="text-lg font-semibold tracking-tight text-slate-100">
-          {title}
-        </h1>
+        <div className="flex min-w-0 items-center gap-2">
+          {canGoBack ? (
+            <button
+              type="button"
+              onClick={handleGoBack}
+              aria-label="Go back"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 text-slate-200 transition hover:bg-white/10 hover:text-white"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          ) : null}
+          <h1 className="truncate pr-3 text-base font-semibold tracking-tight text-slate-100 sm:text-lg">
+            {title}
+          </h1>
+        </div>
 
         {/* Right Side: Notification, Theme, User Info with Dropdown */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-1.5 sm:space-x-4">
           <button
             className="rounded-xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none"
             aria-label="Search"
@@ -196,7 +217,7 @@ const TopBar = ({ title }) => {
           </div>
           {/* Theme Switcher */}
           <button
-            className="rounded-xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none"
+            className="hidden rounded-xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none sm:inline-flex"
             aria-label="Toggle theme"
             onClick={toggleTheme}
           >
@@ -217,7 +238,7 @@ const TopBar = ({ title }) => {
                 <div className="max-w-[120px] truncate text-sm font-medium text-slate-100">{fullName}</div>
                 <div className="text-xs text-slate-400">{role}</div>
               </div>
-              <svg className="w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              <svg className="hidden h-4 w-4 text-gray-400 sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             {profileDropdownOpen && (
               <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-white/10 bg-[#111827] py-1 shadow-[0_18px_45px_rgba(2,6,23,0.45)]">

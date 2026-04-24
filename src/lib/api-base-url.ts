@@ -15,6 +15,11 @@ export function getApiBaseURL(): string {
     return '/api/backend';
   }
 
+  const browserHost = window.location.hostname;
+  if (browserHost === 'localhost' || browserHost === '127.0.0.1') {
+    return '/api/backend';
+  }
+
   try {
     const { hostname } = new URL(env);
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -49,6 +54,14 @@ export function getApiBaseUrlLabel(): {
       display: '/api/backend',
       detail:
         'Browser calls use this origin path; Next rewrites to your API (API_PROXY_TARGET / NEXT_PUBLIC_API_URL).',
+    };
+  }
+
+  const browserHost = window.location.hostname;
+  if (browserHost === 'localhost' || browserHost === '127.0.0.1') {
+    return {
+      display: '/api/backend',
+      detail: `Local dev origin proxies to NEXT_PUBLIC_API_URL (${env}).`,
     };
   }
 

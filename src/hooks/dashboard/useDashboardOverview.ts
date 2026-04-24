@@ -84,9 +84,10 @@ export function useAnalyticsMe() {
   });
 }
 
-export function useAdminStats() {
+export function useAdminStats(enabled = true) {
   return useQuery({
     queryKey: ['admin', 'stats'] as const,
+    enabled,
     retry: false,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<unknown>(API.admin.stats, { signal });

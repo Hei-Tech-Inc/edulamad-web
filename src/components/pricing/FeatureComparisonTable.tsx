@@ -136,38 +136,43 @@ const ROWS: Row[] = [
 function CellView({ value }: { value: Cell }) {
   if (typeof value === 'boolean') {
     return value ? (
-      <Check className="mx-auto h-4 w-4 text-emerald-600" aria-label="Included" />
+      <Check
+        className="mx-auto h-4 w-4 text-emerald-700 dark:text-emerald-400"
+        aria-label="Included"
+      />
     ) : (
-      <Minus className="mx-auto h-4 w-4 text-slate-300" aria-label="Not included" />
+      <Minus className="mx-auto h-4 w-4 text-slate-400 dark:text-slate-500" aria-label="Not included" />
     );
   }
-  return <span className="text-slate-700 dark:text-slate-200">{value}</span>;
+  return (
+    <span className="font-medium text-slate-800 dark:text-slate-100">{value}</span>
+  );
 }
 
 export function FeatureComparisonTable() {
   return (
     <div className="mt-14">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+      <h3 className="text-lg font-semibold text-slate-950 dark:text-white">
         Compare plans
       </h3>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
         See exactly what you stop losing when you leave the free limit behind.
       </p>
 
-      <div className="mt-6 hidden overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 md:block">
+      <div className="mt-6 hidden overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 md:block">
         <table className="w-full min-w-[640px] border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
-              <th className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
+            <tr className="border-b border-slate-200 bg-slate-100/90 dark:border-slate-700 dark:bg-slate-900">
+              <th className="px-4 py-3 font-semibold text-slate-950 dark:text-white">
                 Feature
               </th>
-              <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">
+              <th className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-100">
                 Free
               </th>
-              <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">
+              <th className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-100">
                 Basic
               </th>
-              <th className="px-4 py-3 font-semibold text-orange-700 dark:text-orange-300">
+              <th className="px-4 py-3 font-semibold text-orange-800 dark:text-orange-300">
                 Pro
               </th>
             </tr>
@@ -177,11 +182,11 @@ export function FeatureComparisonTable() {
               row.kind === 'category' ? (
                 <tr
                   key={`cat-${row.title}`}
-                  className="bg-slate-100/80 dark:bg-slate-900/80"
+                  className="bg-slate-100 dark:bg-slate-800/80"
                 >
                   <td
                     colSpan={4}
-                    className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500"
+                    className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300"
                   >
                     {row.title}
                   </td>
@@ -189,9 +194,9 @@ export function FeatureComparisonTable() {
               ) : (
                 <tr
                   key={`${row.feature}-${i}`}
-                  className="border-b border-slate-100 dark:border-slate-800"
+                  className="border-b border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-950"
                 >
-                  <td className="px-4 py-3 text-slate-800 dark:text-slate-100">
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-50">
                     {row.feature}
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -215,33 +220,39 @@ export function FeatureComparisonTable() {
           row.kind === 'category' ? (
             <p
               key={`m-cat-${row.title}`}
-              className="text-xs font-bold uppercase tracking-wide text-slate-500"
+              className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400"
             >
               {row.title}
             </p>
           ) : (
             <details
               key={`m-${row.feature}-${i}`}
-              className="rounded-xl border border-slate-200 bg-white open:shadow-sm dark:border-slate-800 dark:bg-slate-900"
+              className="rounded-xl border border-slate-200 bg-white open:shadow-sm dark:border-slate-700 dark:bg-slate-950"
             >
-              <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
+              <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-950 dark:text-white">
                 {row.feature}
               </summary>
               <div className="grid grid-cols-3 gap-2 border-t border-slate-100 px-4 py-3 text-xs dark:border-slate-800">
                 <div>
-                  <p className="font-semibold text-slate-500">Free</p>
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">
+                    Free
+                  </p>
                   <div className="mt-1 flex justify-center">
                     <CellView value={row.free} />
                   </div>
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-500">Basic</p>
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">
+                    Basic
+                  </p>
                   <div className="mt-1 flex justify-center">
                     <CellView value={row.basic} />
                   </div>
                 </div>
                 <div>
-                  <p className="font-semibold text-orange-600">Pro</p>
+                  <p className="font-semibold text-orange-700 dark:text-orange-400">
+                    Pro
+                  </p>
                   <div className="mt-1 flex justify-center">
                     <CellView value={row.pro} />
                   </div>
