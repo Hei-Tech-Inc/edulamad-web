@@ -20,13 +20,13 @@ export default function AuthSplitLayout({
       ]
 
   return (
-    <div className="h-dvh overflow-hidden bg-[#05070d] p-2 sm:p-4">
+    <div className="h-dvh overflow-hidden bg-[#05070d] p-1.5 sm:p-4">
       <div className="mx-auto grid h-full max-w-7xl overflow-hidden rounded-3xl border border-white/10 bg-[#070a12] shadow-[0_30px_70px_rgba(0,0,0,0.45)] lg:grid-cols-2">
-        <section className="flex items-center justify-center border-r border-white/10 p-4 sm:p-8 lg:p-12">
+        <section className="flex items-center justify-center border-r border-white/10 p-3 sm:p-8 lg:p-12">
           <div className="w-full max-w-md">
             <Link
               href="/"
-              className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-200"
+              className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-200 sm:mb-8"
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/15 text-orange-300">
                 <GraduationCap className="h-4 w-4" />
