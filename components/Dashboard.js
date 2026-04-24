@@ -236,6 +236,18 @@ function CommandBar({ search, onSearch, onResetFilters, timeframe, setTimeframe 
   )
 }
 
+function StudentCollapsible({ title, defaultOpen = true, children }) {
+  return (
+    <details open={defaultOpen} className="rounded-xl border border-white/10 bg-white/[0.03]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-semibold text-slate-100">
+        <span className="break-words">{title}</span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
+      </summary>
+      <div className="border-t border-white/10 px-3 py-3">{children}</div>
+    </details>
+  )
+}
+
 export default function Dashboard() {
   const router = useRouter()
   const reduceMotion = useReducedMotion()
@@ -468,8 +480,7 @@ export default function Dashboard() {
   const isOnboardingComplete = Boolean(
     profileQ.data?.universityId &&
       profileQ.data?.deptId &&
-      profileQ.data?.indexNumber &&
-      profileQ.data?.studentCategory,
+      (profileQ.data?.levelData ?? profileQ.data?.level),
   )
 
   useEffect(() => {
@@ -993,12 +1004,6 @@ export default function Dashboard() {
     },
   })
 
-  const kpiSignals = {
-    user: [3, 4, 6, 5, 7, 8, 9],
-    level: [4, 4, 5, 6, 6, 7, 7],
-    streak: [1, 2, 3, 5, 8, 8, 10],
-    xp: [2, 3, 5, 7, 8, 9, 10],
-  }
   const sectionMotion = reduceMotion
     ? {}
     : {
@@ -1013,7 +1018,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       <motion.section
         {...sectionMotion}
         className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-[#111827] via-[#0f172a] to-[#111827] p-6 text-white shadow-[0_20px_55px_rgba(15,23,42,0.3)]"
@@ -1028,13 +1033,13 @@ export default function Dashboard() {
               <Sparkles className="h-3.5 w-3.5" />
               {isAdmin ? 'Admin console' : 'Study cockpit'}
             </p>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-              {APP_NAME} dashboard
+            <h2 className="mt-3 break-words text-2xl font-bold tracking-tight sm:text-3xl">
+              Welcome back{sessionUser?.name ? `, ${String(sessionUser.name).split(' ')[0]}` : ''}.
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-slate-100">
               {isAdmin
                 ? 'Manage catalogue records, content pipeline, and promo operations from one clean workspace.'
-                : 'Browse institutions and pull past questions by course, level, year, and type from one place.'}
+                : 'Your dashboard is focused on your department first, then your university context.'}
             </p>
             <p className="mt-2 text-xs font-medium uppercase tracking-wider text-orange-200">
               Focus window: {timeframe}
@@ -1047,23 +1052,14 @@ export default function Dashboard() {
               ].map((chip) => (
                 <span
                   key={chip}
-                  className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-slate-100"
+                  className="max-w-full break-words rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-slate-100"
                 >
                   {chip}
                 </span>
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {!isAdmin ? (
-              <Link
-                href="/onboarding"
-                className="btn-primary-sweep inline-flex min-h-10 min-w-[120px] items-center justify-center rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-400"
-              >
-                Complete profile
-              </Link>
-            ) : null}
-          </div>
+          <div className="flex items-center gap-2" />
         </div>
       </motion.section>
 
@@ -1162,55 +1158,59 @@ export default function Dashboard() {
         <motion.section {...sectionMotion} className="grid gap-4 xl:grid-cols-12">
           <div className="xl:col-span-6">
             <SectionCard>
-              <div className="flex items-center justify-between gap-2">
-                <SectionTitle icon={BookOpen} title="Your courses" />
-                <Link href="/courses" className="text-xs font-semibold text-orange-300 hover:text-orange-200">
-                  See all
-                </Link>
-              </div>
-              {courseResults.length === 0 ? (
-                <p className="mt-3 text-sm text-slate-400">
-                  Choose your institution filters to see department courses.
-                </p>
-              ) : (
-                <ul className="mt-3 space-y-2">
-                  {courseResults.slice(0, 6).map((course) => (
-                    <li key={course.id}>
-                      <Link
-                        href={`/courses/${course.id}`}
-                        className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 hover:bg-white/[0.08]"
-                      >
-                        <span className="text-sm text-slate-100">
-                          {course.code ? `${course.code} — ` : ''}
-                          {course.name}
-                        </span>
-                        <span className="text-xs text-slate-400">Open</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <StudentCollapsible title="Your courses">
+                <div className="flex items-center justify-between gap-2">
+                  <SectionTitle icon={BookOpen} title="Your courses" />
+                  <Link href="/courses" className="text-xs font-semibold text-orange-300 hover:text-orange-200">
+                    See all
+                  </Link>
+                </div>
+                {courseResults.length === 0 ? (
+                  <p className="mt-3 text-sm text-slate-300">
+                    Your dashboard shows courses in your department first.
+                  </p>
+                ) : (
+                  <ul className="mt-3 space-y-2">
+                    {courseResults.slice(0, 6).map((course) => (
+                      <li key={course.id}>
+                        <Link
+                          href={`/courses/${course.id}`}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 hover:bg-white/[0.08]"
+                        >
+                          <span className="min-w-0 break-words text-sm text-slate-100">
+                            {course.code ? `${course.code} — ` : ''}
+                            {course.name}
+                          </span>
+                          <span className="shrink-0 text-xs text-slate-300">Open</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </StudentCollapsible>
             </SectionCard>
           </div>
           <div className="xl:col-span-6">
             <SectionCard>
-              <SectionTitle icon={ListOrdered} title="Continue where you left off" />
-              {quizBookmarks.length ? (
-                <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-3">
-                  <p className="text-sm text-slate-100">{quizBookmarks[0].title}</p>
-                  <p className="mt-1 text-xs text-slate-400">Saved {timeAgo(quizBookmarks[0].savedAt)}</p>
-                  <Link
-                    href={quizBookmarks[0].href}
-                    className="mt-2 inline-flex text-xs font-semibold text-orange-300 hover:text-orange-200"
-                  >
-                    Continue
-                  </Link>
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-slate-400">
-                  Start a quiz and save it for quick continue access.
-                </p>
-              )}
+              <StudentCollapsible title="Continue where you left off" defaultOpen={false}>
+                <SectionTitle icon={ListOrdered} title="Continue where you left off" />
+                {quizBookmarks.length ? (
+                  <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-3">
+                    <p className="break-words text-sm text-slate-100">{quizBookmarks[0].title}</p>
+                    <p className="mt-1 text-xs text-slate-300">Saved {timeAgo(quizBookmarks[0].savedAt)}</p>
+                    <Link
+                      href={quizBookmarks[0].href}
+                      className="mt-2 inline-flex text-xs font-semibold text-orange-300 hover:text-orange-200"
+                    >
+                      Continue
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-300">
+                    Start a quiz and save it for quick continue access.
+                  </p>
+                )}
+              </StudentCollapsible>
             </SectionCard>
           </div>
         </motion.section>
@@ -1225,15 +1225,12 @@ export default function Dashboard() {
             hint={`Level ${profileQ.data?.levelData ?? profileQ.data?.level ?? '—'}`}
             tone="violet"
           />
-          <TinySparkline values={kpiSignals.level} />
         </div>
         <div>
           <StatCard label="Current streak" value={streakQ.data ?? '—'} tone="orange" />
-          <TinySparkline values={kpiSignals.streak} />
         </div>
         <div>
           <StatCard label="Total XP" value={xpQ.data ?? '—'} tone="emerald" />
-          <TinySparkline values={kpiSignals.xp} />
         </div>
       </motion.section>
       ) : null}
@@ -1247,192 +1244,7 @@ export default function Dashboard() {
 
       {!isAdmin ? (
       <motion.section {...sectionMotion} className="grid gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-9">
-          <SectionCard className="h-full">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <SectionTitle icon={BookOpen} title="Questions" />
-              <div className="flex flex-wrap items-center gap-3">
-                {courseId && year && level && (questionsQ.data?.length ?? 0) > 0 ? (
-                  <Link
-                    href={buildQuizHref({
-                      courseId,
-                      year,
-                      level,
-                      type: type || 'all',
-                      mode: 'quiz',
-                      ...(courseValue?.name?.trim() ? { courseName: courseValue.name.trim() } : {}),
-                    })}
-                    className="btn-secondary-sweep inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-teal-500/40 bg-teal-500/10 px-3 py-1.5 text-xs font-semibold text-teal-200 hover:bg-teal-500/20"
-                  >
-                    <ListOrdered className="h-3.5 w-3.5" aria-hidden />
-                    Quiz mode
-                  </Link>
-                ) : null}
-                <label className="flex items-center gap-2 text-xs text-slate-400">
-                  <input
-                    type="checkbox"
-                    checked={activeOnly}
-                    onChange={(e) => setActiveOnly(e.target.checked)}
-                  />
-                  Active only
-                </label>
-              </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <EntityCombobox
-                id="dash-university"
-                label="Institution"
-                placeholder="Search institution"
-                value={universityValue}
-                search={institutionSearch}
-                onSearchChange={setInstitutionSearch}
-                onSelect={(item) => {
-                  const id = item?.id != null ? String(item.id) : ''
-                  setUniversityValue(id ? { ...item, id } : item)
-                  setUniversityId(id)
-                }}
-                options={universities}
-                loading={universitiesQ.isLoading}
-              />
-              <EntityCombobox
-                id="dash-college"
-                label="College / Faculty"
-                placeholder="Search college"
-                value={collegeValue}
-                search={collegeSearch}
-                onSearchChange={setCollegeSearch}
-                onSelect={(item) => {
-                  const id = item?.id != null ? String(item.id) : ''
-                  setCollegeValue(id ? { ...item, id } : item)
-                  setCollegeId(id)
-                }}
-                options={colleges}
-                loading={collegesQ.isLoading}
-                disabled={!universityId}
-              />
-              <EntityCombobox
-                id="dash-department"
-                label="Department"
-                placeholder="Search department"
-                value={departmentValue}
-                search={departmentSearch}
-                onSearchChange={setDepartmentSearch}
-                onSelect={(item) => {
-                  const id = item?.id != null ? String(item.id) : ''
-                  setDepartmentValue(id ? { ...item, id } : item)
-                  setDepartmentId(id)
-                }}
-                options={departments}
-                loading={departmentsQ.isLoading}
-                disabled={!collegeId}
-              />
-              <EntityCombobox
-                id="dash-course"
-                label="Course"
-                placeholder="Search course"
-                value={courseValue}
-                search={courseSearch}
-                onSearchChange={setCourseSearch}
-                onSelect={(item) => {
-                  const id = item?.id != null ? String(item.id) : ''
-                  setCourseValue(id ? { ...item, id } : item)
-                  setCourseId(id)
-                }}
-                options={courses}
-                loading={coursesQ.isLoading}
-                disabled={!departmentId}
-              />
-            </div>
-
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <SelectField
-                label="Year"
-                value={year}
-                onChange={setYear}
-                options={['2025', '2024', '2023', '2022', '2021'].map((v) => ({
-                  value: v,
-                  label: v,
-                }))}
-              />
-              <SelectField
-                label="Level"
-                value={level}
-                onChange={setLevel}
-                options={['100', '200', '300', '400', '500'].map((v) => ({
-                  value: v,
-                  label: `Level ${v}`,
-                }))}
-              />
-              <SelectField
-                label="Question type"
-                value={type}
-                onChange={setType}
-                options={QUESTION_TYPE_FILTER_OPTIONS}
-              />
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-              <span className="font-medium text-slate-400 dark:text-slate-300">Year {year}</span>
-              {' · '}
-              <span className="font-medium text-slate-400 dark:text-slate-300">Level {level}</span>
-              {' · '}
-              <span className="font-medium text-slate-400 dark:text-slate-300">
-                {QUESTION_TYPE_FILTER_OPTIONS.find((o) => o.value === type)?.label ?? type}
-              </span>
-              . Use <strong className="font-semibold text-slate-300">All types</strong> when your
-              import mixes labels (for example essay vs theory) so every item appears.
-            </p>
-
-            {!courseId ? (
-              <p className="mt-5 text-sm text-slate-400">Click filters above to start finding questions.</p>
-            ) : questionsQ.isLoading ? (
-              <div className="mt-5 space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <SkeletonQuestionCard key={`dash-questions-skeleton-${i}`} />
-                ))}
-              </div>
-            ) : questionsQ.isError ? (
-              <p className="mt-5 text-sm text-rose-600">
-                Could not load questions. Try <strong className="font-semibold">All types</strong> or
-                adjust year and level.
-              </p>
-            ) : (
-              <div className="mt-5 space-y-4">
-                {(questionsQ.data || []).length ? (
-                  <>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-orange-200/80">
-                      {(questionsQ.data || []).length} question
-                      {(questionsQ.data || []).length === 1 ? '' : 's'} for this course
-                    </p>
-                    {questionTypeMix.length > 1 ? (
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-                        <span className="shrink-0">By type:</span>
-                        {questionTypeMix.map(({ type: t, count }) => (
-                          <span
-                            key={t}
-                            className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 font-medium capitalize text-slate-300"
-                          >
-                            {t} · {count}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </>
-                ) : null}
-                <div className="grid gap-4">
-                  {(questionsQ.data || []).map((q, idx) => (
-                    <CourseQuestionCard key={q.id} question={q} index={idx} />
-                  ))}
-                </div>
-                {questionsQ.data?.length === 0 ? (
-                  <p className="text-sm text-slate-400">No questions matched your filters.</p>
-                ) : null}
-              </div>
-            )}
-          </SectionCard>
-        </div>
-
-        <div className="xl:col-span-3">
+        <div className="xl:col-span-12">
           <SectionCard>
             <SectionTitle icon={Clock3} title="Recent activity" />
             {recentActivity.length ? (
@@ -1452,12 +1264,8 @@ export default function Dashboard() {
             ) : (
               <p className="mt-3 text-sm text-slate-400">No recent activity yet.</p>
             )}
-            <p className="mt-2 text-[11px] text-slate-500">
-              Detailed study timelines (attempt-by-attempt) need a dedicated backend activity feed endpoint.
-            </p>
-
             <div className="mt-5 border-t border-white/10 pt-4">
-              <SectionTitle icon={Target} title="Tasks" />
+              <StudentCollapsible title="Tasks" defaultOpen={false}>
               <form
                 className="mt-3 space-y-2 rounded-lg border border-white/10 bg-white/[0.03] p-3"
                 onSubmit={(e) => {
@@ -1635,10 +1443,12 @@ export default function Dashboard() {
                     })}
                 </ul>
               )}
+              </StudentCollapsible>
             </div>
 
             <div className="mt-5 border-t border-white/10 pt-4">
-              <div className="flex items-center justify-between gap-2">
+              <StudentCollapsible title="Bookmarks" defaultOpen={false}>
+                <div className="flex items-center justify-between gap-2">
                 <SectionTitle icon={Bookmark} title="Bookmarks" />
                 <Link
                   href="/quiz/new"
@@ -1653,7 +1463,7 @@ export default function Dashboard() {
                     <li key={b.id} className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
                       <Link
                         href={b.href}
-                        className="line-clamp-1 text-sm font-medium text-slate-100 hover:text-orange-200"
+                        className="block break-words text-sm font-medium text-slate-100 hover:text-orange-200"
                       >
                         {b.title}
                       </Link>
@@ -1666,9 +1476,11 @@ export default function Dashboard() {
                   No bookmarks yet. Save quizzes in practice mode and they will appear here.
                 </p>
               )}
+              </StudentCollapsible>
             </div>
 
             <div className="mt-5 border-t border-white/10 pt-4">
+              <StudentCollapsible title="Notifications" defaultOpen={false}>
               <SectionTitle icon={Bell} title="Notifications" />
               {notificationsQ.isLoading ? (
                 <div className="mt-3 space-y-2">
@@ -1689,6 +1501,7 @@ export default function Dashboard() {
               ) : (
                 <p className="mt-3 text-sm text-slate-400">No notifications.</p>
               )}
+              </StudentCollapsible>
             </div>
           </SectionCard>
         </div>

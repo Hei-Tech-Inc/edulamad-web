@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { Eye, EyeOff, GraduationCap, Lock, Mail, User } from 'lucide-react'
+import { Eye, EyeOff, Gift, GraduationCap, Lock, Mail, User } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthStore } from '@/stores/auth.store'
 import { safePosthogCapture, safePosthogIdentify } from '@/lib/safe-analytics'
@@ -59,6 +59,7 @@ export default function RegisterFormPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [promoCode, setPromoCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -80,7 +81,7 @@ export default function RegisterFormPage() {
         email.trim(),
         password,
         fullName,
-        referralCode || undefined,
+        (promoCode.trim() || referralCode || '').trim() || undefined,
       )
       if (regError) {
         setError(formatRegistrationError(regError))
@@ -178,6 +179,22 @@ export default function RegisterFormPage() {
                   ))}
                 </div>
               </div>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Promo code (optional)
+                </span>
+                <span className="flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 sm:h-12">
+                  <Gift className="h-4 w-4 text-slate-500" />
+                  <input
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    className="h-full w-full bg-transparent text-sm uppercase placeholder:text-white/35 focus:outline-none"
+                    placeholder="Enter promo code"
+                    autoComplete="off"
+                  />
+                </span>
+              </label>
 
               <p className="text-xs text-slate-500">By creating an account you agree to our Terms.</p>
 
