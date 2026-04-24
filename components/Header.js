@@ -127,36 +127,13 @@ const TopBar = ({ title }) => {
     router.push('/dashboard')
   }
 
-  const apiConfigured =
-    typeof process.env.NEXT_PUBLIC_API_URL === 'string'
-      ? process.env.NEXT_PUBLIC_API_URL
-      : 'http://localhost:3000'
-  let apiDevNote = apiConfigured
-  try {
-    const { hostname } = new URL(apiConfigured)
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      apiDevNote = `browser → /api/backend → ${apiConfigured.replace(/\/$/, '')}`
-    }
-  } catch {
-    /* ignore */
-  }
-
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0f172a]/90 backdrop-blur">
-      {process.env.NODE_ENV === 'development' && (
-        <div className="break-all px-4 py-1 text-[11px] font-mono bg-orange-50 text-orange-950 border-b border-orange-200/80 dark:bg-orange-950/35 dark:text-orange-100 dark:border-orange-900/50">
-          Dev · {process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'} API:{' '}
-          {apiDevNote}
-        </div>
-      )}
       {actAsOrgId && isPlatformSuperAdmin ? (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-violet-200 bg-violet-100 px-4 py-2 text-sm text-violet-950 dark:border-violet-900 dark:bg-violet-950/50 dark:text-violet-100">
           <span>
             <strong className="font-semibold">Institution view:</strong>{' '}
             {actAsOrgLabel || actAsOrgId}
-            <span className="ml-2 font-mono text-xs opacity-80">
-              (X-Act-As-Org-Id on org APIs)
-            </span>
           </span>
           <span className="flex flex-wrap items-center gap-3">
             <Link

@@ -12,8 +12,6 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-  Code2,
-  Braces,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -183,18 +181,6 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
       return base
     }
 
-    const developerSection = {
-      title: 'Developer',
-      icon: Code2,
-      items: [
-        {
-          title: 'API reference',
-          path: '/developer/api-reference',
-          icon: Braces,
-        },
-      ],
-    }
-
     const adminNavItems = [
       {
         title: 'Admin overview',
@@ -240,7 +226,6 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
 
     return {
       ...base,
-      developer: developerSection,
       admin: {
         title: 'Admin',
         icon: ShieldCheck,
