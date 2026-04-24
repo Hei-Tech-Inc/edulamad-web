@@ -10,6 +10,7 @@ export const PUBLIC_AUTH_ROUTE_PATHS = [
   '/register',
   '/register-company', // legacy URL; Next redirects to /register
   '/pending-approval',
+  '/forgot-password',
   '/reset-password',
   '/verify-email',
   '/pricing',
