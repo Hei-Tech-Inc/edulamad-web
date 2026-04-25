@@ -64,6 +64,7 @@ export const queryKeys = {
       year: string;
       level: string;
       type: string;
+      tagId?: string;
     }) => ['questions', 'byCourse', filters] as const,
     detail: (questionId: string) => ['questions', 'detail', questionId] as const,
     solutions: (questionId: string) => ['questions', 'solutions', questionId] as const,

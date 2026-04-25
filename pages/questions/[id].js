@@ -7,6 +7,7 @@ import Breadcrumb from '@/components/ui/Breadcrumb'
 import { isApiError } from '@/lib/api-error'
 import QuestionLimitGate from '@/components/organisms/QuestionLimitGate'
 import QuestionDetailTabs from '../../components/questions/QuestionDetailTabs'
+import { QuestionTags } from '@/components/questions/QuestionTags'
 
 export default function QuestionDetailPage() {
   return (
@@ -47,6 +48,7 @@ function QuestionDetailContent() {
           <p className="mt-1 text-base text-slate-900">
             {questionQ.data.questionText || questionQ.data.text || 'Question'}
           </p>
+          <QuestionTags questionId={questionId} editable />
         </>
       ) : null}
       {questionQ.data ? (

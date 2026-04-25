@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useQuery, useQueries } from '@tanstack/react-query'
 import { useStudentProfile } from '@/hooks/students/useStudentProfile'
+import { useCourseTags } from '@/hooks/tags/useTags'
 import { Loader2 } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
@@ -34,6 +35,7 @@ function QuizNewRouteInner() {
   const [type, setType] = useState('all')
   const [count, setCount] = useState('20')
   const [mins, setMins] = useState('30')
+  const [selectedTag, setSelectedTag] = useState('')
 
   const yearCandidates = useMemo(buildYearRange, [])
 
@@ -65,6 +67,7 @@ function QuizNewRouteInner() {
     () => courses.find((c) => String(c.courseId) === String(courseId)),
     [courses, courseId],
   )
+  const courseTagsQ = useCourseTags(courseId || null)
 
   const yearAvailabilityQs = useQueries({
     queries: yearCandidates.map((yy) => ({
@@ -113,6 +116,7 @@ function QuizNewRouteInner() {
       year: String(autoPickedYear),
       level: String(level),
       type: String(type || 'all'),
+      ...(selectedTag ? { tagId: selectedTag } : {}),
       courseName: selectedCourse?.name || '',
       mode: 'quiz',
       count: Number.parseInt(count, 10) || 20,
@@ -242,6 +246,39 @@ function QuizNewRouteInner() {
           </label>
         </div>
       )}
+
+      {courseId && courseTagsQ.data?.length ? (
+        <div className="mt-4">
+          <p className="text-xs font-medium text-slate-500">Filter by topic</p>
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setSelectedTag('')}
+              className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium ${
+                !selectedTag
+                  ? 'border-orange-300 bg-orange-50 text-orange-800'
+                  : 'border-slate-200 text-slate-600'
+              }`}
+            >
+              All topics
+            </button>
+            {courseTagsQ.data.map((tag) => (
+              <button
+                key={tag._id}
+                type="button"
+                onClick={() => setSelectedTag((prev) => (prev === tag._id ? '' : tag._id))}
+                className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium ${
+                  selectedTag === tag._id
+                    ? 'border-sky-300 bg-sky-50 text-sky-800'
+                    : 'border-slate-200 text-slate-600'
+                }`}
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-5">
         <button

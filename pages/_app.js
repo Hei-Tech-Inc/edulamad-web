@@ -25,6 +25,7 @@ import TopLoadingBar from '@/components/ui/loading/TopLoadingBar'
 import { loadingBarActions } from '@/stores/loading-bar.store'
 import { SkeletonProfileHeader } from '@/components/ui/skeleton'
 import { AppErrorBoundary } from '@/components/providers/AppErrorBoundary'
+import { PushPermissionPrompt } from '@/components/notifications/PushPermissionPrompt'
 import '../styles/globals.css'
 
 const ReactQueryDevtools = dynamic(
@@ -204,7 +205,12 @@ function AuthWrapper({ children }) {
   }
 
   // Render children
-  return children
+  return (
+    <>
+      {children}
+      <PushPermissionPrompt enabled={Boolean(user && onboardingComplete && !onOnboardingRoute)} />
+    </>
+  )
 }
 
 // Configure static page generation

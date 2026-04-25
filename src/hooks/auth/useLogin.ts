@@ -7,6 +7,7 @@ import {
   type LoginDto,
   type LoginResponse,
 } from '@/api/types/auth.types';
+import { initOneSignal } from '@/lib/onesignal';
 import { useAuthStore } from '@/stores/auth.store';
 
 export function useLogin() {
@@ -23,9 +24,11 @@ export function useLogin() {
     onSuccess: (res) => {
       useAuthStore.getState().setOrg(null);
       useAuthStore.getState().setTokens(res.accessToken, res.refreshToken);
+      const user = mapAuthUserToRequestUser(res.user, res.accessToken);
       useAuthStore
         .getState()
-        .setUser(mapAuthUserToRequestUser(res.user, res.accessToken));
+        .setUser(user);
+      void initOneSignal(user.id);
       void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     },
   });

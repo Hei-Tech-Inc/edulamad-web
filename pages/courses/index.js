@@ -15,6 +15,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { sessionHasAdminTools } from '@/lib/session-admin-access'
 import UploadFab from '../../components/UploadFab'
 import { PromoCodeInput } from '@/components/pricing/PromoCodeInput'
+import { useMyEnrollments } from '@/hooks/enrollments/useEnrollments'
 
 export default function CoursesPage() {
   return (
@@ -48,10 +49,16 @@ function CoursesContent() {
   const departmentsQ = useDepartmentSearch(college?.id || null, deptSearch, true)
 
   const profile = profileQ.data || null
+  const enrollmentsQ = useMyEnrollments()
   const selectedLevel = Number(levelData || profile?.levelData || 300)
   const shouldShowPicker = !profile || !profile.universityId || !profile.deptId || !profile.levelData
 
   const selectedYear = String(new Date().getFullYear())
+  const enrollmentCount = Array.isArray(enrollmentsQ.data?.courseIds)
+    ? enrollmentsQ.data.courseIds.length
+    : Array.isArray(enrollmentsQ.data)
+      ? enrollmentsQ.data.length
+      : 0
 
   const onSaveDiscovery = async () => {
     setSaveError('')
@@ -181,10 +188,37 @@ function CoursesContent() {
               Level {selectedLevel} · {selectedYear}/{Number(selectedYear) + 1}
             </p>
           </div>
-          <Link href="/onboarding" className="text-sm font-medium text-orange-700 hover:text-orange-800">
-            Change
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => void window.location.assign('/courses/enroll')}
+              className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700"
+            >
+              Edit courses
+            </button>
+            <Link href="/onboarding" className="text-sm font-medium text-orange-700 hover:text-orange-800">
+              Change
+            </Link>
+          </div>
         </div>
+
+        {enrollmentCount === 0 ? (
+          <div className="mt-4 rounded-xl border border-orange-200 bg-orange-50 p-4">
+            <p className="text-sm font-medium text-slate-900">
+              Tell us which courses you&apos;re taking this semester
+            </p>
+            <p className="mt-1 text-xs text-slate-600">
+              We&apos;ll tailor your notifications and daily questions.
+            </p>
+            <button
+              type="button"
+              className="mt-3 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white"
+              onClick={() => void window.location.assign('/courses/enroll')}
+            >
+              Set my courses →
+            </button>
+          </div>
+        ) : null}
 
         <div className="mt-4">
           <MyCoursesCatalog

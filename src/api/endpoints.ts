@@ -134,6 +134,8 @@ const API = {
     topics: (courseId: string) => `/quiz/topics/${courseId}`,
     generate: '/quiz/generate',
     submit: (id: string) => `/quiz/${id}/submit`,
+    abandoned: '/quiz/abandoned',
+    resume: (id: string) => `/quiz/${id}/resume`,
   },
   files: {
     upload: '/files/upload',
@@ -238,6 +240,19 @@ const API = {
   notifications: {
     me: '/notifications/me',
     read: (id: string) => `/notifications/${id}/read`,
+    registerDevice: '/notifications/register-device',
+    answerDailyQuestion: '/notifications/daily-question/answer',
+  },
+  enrollments: {
+    me: '/enrollments/me',
+    meCourse: (courseId: string) => `/enrollments/me/${courseId}`,
+  },
+  tags: {
+    byQuestion: (questionId: string) => `/questions/${questionId}/tags`,
+    questionTag: (questionId: string, tagId: string) =>
+      `/questions/${questionId}/tags/${tagId}`,
+    byCourse: (courseId: string) => `/tags/courses/${courseId}`,
+    search: '/tags/search',
   },
   analytics: {
     me: '/analytics/me',

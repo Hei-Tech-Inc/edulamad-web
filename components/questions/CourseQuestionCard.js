@@ -5,6 +5,7 @@ import {
   fetchFileSignedUrl,
   fetchQuestionSourceDocumentUrl,
 } from '@/lib/api/resolve-signed-urls'
+import { QuestionTags } from '@/components/questions/QuestionTags'
 
 /**
  * @param {object} props
@@ -139,6 +140,7 @@ export default function CourseQuestionCard({ question: q, index, adminClearSolut
         >
           {q.questionText}
         </p>
+        <QuestionTags questionId={q.id} />
 
         {q.questionText && q.questionText.length > 220 ? (
           <button

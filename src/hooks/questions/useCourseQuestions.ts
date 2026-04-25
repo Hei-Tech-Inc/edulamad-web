@@ -23,6 +23,7 @@ type Filters = {
   level: string;
   /** Omit from API request when empty or `all` — list full course set (matches imports with mixed types). */
   type: string;
+  tagId?: string | null;
 };
 
 function asRecord(v: unknown): Record<string, unknown> | null {
@@ -117,17 +118,19 @@ export function useCourseQuestions(filters: Filters) {
   const year = filters.year.trim();
   const level = filters.level.trim();
   const type = filters.type.trim();
+  const tagId = (filters.tagId ?? '').trim();
   const enabled = Boolean(courseId && year && level);
   const typeKey = type || 'all';
 
   return useQuery({
-    queryKey: queryKeys.questions.byCourse({ courseId, year, level, type: typeKey }),
+    queryKey: queryKeys.questions.byCourse({ courseId, year, level, type: typeKey, tagId }),
     enabled,
     queryFn: async ({ signal }): Promise<CourseQuestion[]> => {
       const params: Record<string, string> = { year, level };
       if (shouldSendTypeParam(type)) {
         params.type = type.trim();
       }
+      if (tagId) params.tagId = tagId;
       const { data } = await apiClient.get<unknown>(API.questions.byCourse(courseId), {
         params,
         signal,

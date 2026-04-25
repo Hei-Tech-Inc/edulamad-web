@@ -99,6 +99,7 @@ function parseQuery(router) {
     courseName: s('courseName').trim() || fromValue('courseName'),
     offeringId: s('offeringId').trim() || fromValue('offeringId'),
     sourceLabel: s('sourceLabel').trim() || fromValue('sourceLabel'),
+    tagId: s('tagId').trim() || fromValue('tagId'),
     mode: (s('mode') || modeFromPayload) === 'quiz' ? 'quiz' : 'review',
     count: Number.isFinite(countRaw)
       ? countRaw
@@ -401,6 +402,7 @@ export default function CourseQuizPractice() {
     courseName,
     offeringId,
     sourceLabel,
+    tagId,
     mode,
     count: urlCount,
     seed: urlSeed,
@@ -412,6 +414,7 @@ export default function CourseQuizPractice() {
     year,
     level,
     type,
+    tagId: tagId || null,
   })
 
   const allQuestions = questionsQ.data ?? []
@@ -802,6 +805,7 @@ export default function CourseQuizPractice() {
       type,
       ...(offeringId ? { offeringId } : {}),
       ...(sourceLabel ? { sourceLabel } : {}),
+      ...(tagId ? { tagId } : {}),
       ...(courseName ? { courseName } : {}),
       mode: 'quiz',
       count: String(c),
@@ -817,6 +821,7 @@ export default function CourseQuizPractice() {
     type,
     offeringId,
     sourceLabel,
+    tagId,
     courseName,
     setupCount,
     setupMins,
@@ -831,11 +836,12 @@ export default function CourseQuizPractice() {
       type,
       ...(offeringId ? { offeringId } : {}),
       ...(sourceLabel ? { sourceLabel } : {}),
+      ...(tagId ? { tagId } : {}),
       ...(courseName ? { courseName } : {}),
       mode: 'review',
     }
     replaceQuizRoute(nextState)
-  }, [replaceQuizRoute, courseId, year, level, type, offeringId, sourceLabel, courseName])
+  }, [replaceQuizRoute, courseId, year, level, type, offeringId, sourceLabel, courseName, tagId])
 
   const setModeQuizSetup = useCallback(() => {
     const nextState = {
@@ -845,11 +851,12 @@ export default function CourseQuizPractice() {
       type,
       ...(offeringId ? { offeringId } : {}),
       ...(sourceLabel ? { sourceLabel } : {}),
+      ...(tagId ? { tagId } : {}),
       ...(courseName ? { courseName } : {}),
       mode: 'quiz',
     }
     replaceQuizRoute(nextState)
-  }, [replaceQuizRoute, courseId, year, level, type, offeringId, sourceLabel, courseName])
+  }, [replaceQuizRoute, courseId, year, level, type, offeringId, sourceLabel, courseName, tagId])
 
   const copyShareLink = useCallback(async () => {
     try {
