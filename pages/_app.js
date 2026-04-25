@@ -130,14 +130,21 @@ function AuthWrapper({ children }) {
   })
 
   const rawProfile = profileGateQ.data && typeof profileGateQ.data === 'object' ? profileGateQ.data : null
+  const asFiniteNumber = (value) => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null
+    if (typeof value === 'string' && value.trim() !== '') {
+      const parsed = Number(value)
+      return Number.isFinite(parsed) ? parsed : null
+    }
+    return null
+  }
   const levelOk =
-    typeof rawProfile?.levelData === 'number'
-      ? Number.isFinite(rawProfile.levelData)
-      : typeof rawProfile?.level === 'number' && Number.isFinite(rawProfile.level)
+    asFiniteNumber(rawProfile?.levelData) !== null ||
+    asFiniteNumber(rawProfile?.level) !== null
   const semOk =
-    typeof rawProfile?.semesterData === 'number'
-      ? Number.isFinite(rawProfile.semesterData)
-      : typeof rawProfile?.semester === 'number' && Number.isFinite(rawProfile.semester)
+    asFiniteNumber(rawProfile?.semesterData) !== null ||
+    asFiniteNumber(rawProfile?.semester) !== null
+  const profileGateReady = profileGateQ.isSuccess || profileGateQ.isError
 
   const onboardingComplete = Boolean(
     rawProfile?.universityId &&
@@ -159,8 +166,10 @@ function AuthWrapper({ children }) {
     if (!user) return
     if (profileGateQ.isLoading || profileGateQ.isFetching) return
 
+    // Fail-open: if profile gate request fails, keep users in app instead of looping them back to onboarding.
+    const shouldEnforceOnboarding = profileGateQ.isSuccess && !onboardingComplete
     if (
-      !onboardingComplete &&
+      shouldEnforceOnboarding &&
       !onOnboardingRoute &&
       currentPath !== '/verify-email' &&
       currentPath !== '/' &&
@@ -172,8 +181,10 @@ function AuthWrapper({ children }) {
 
     // If logged in on auth entry pages, redirect to the right app destination.
     if (onAuthEntryRoute) {
+      if (!profileGateReady) return
       const nextDest = currentPath === '/login' ? getSafeInternalPath(router.query.next) : null
-      const dest = onboardingComplete ? nextDest || '/dashboard' : '/onboarding'
+      const dest =
+        profileGateQ.isSuccess && !onboardingComplete ? '/onboarding' : nextDest || '/dashboard'
       router.push(dest)
     }
   }, [
@@ -184,6 +195,9 @@ function AuthWrapper({ children }) {
     onOnboardingRoute,
     onboardingComplete,
     onAuthEntryRoute,
+    profileGateReady,
+    profileGateQ.isSuccess,
+    profileGateQ.isError,
     profileGateQ.isLoading,
     profileGateQ.isFetching,
     router,

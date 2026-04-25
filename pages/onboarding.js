@@ -54,10 +54,10 @@ function extractName(raw) {
 export default function OnboardingPage() {
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-[#f8f8f6] text-slate-900">
+      <div className="h-[100dvh] overflow-hidden bg-[#f8f8f6] text-slate-900">
         <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(251,146,60,0.08),_transparent_55%)]" />
-        <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col px-4 pb-16 pt-10 sm:px-6 lg:px-8">
-          <header className="mb-8 flex items-center justify-between gap-4">
+        <div className="relative mx-auto flex h-full max-w-3xl flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[max(env(safe-area-inset-top),0.75rem)] sm:px-6 lg:px-8">
+          <header className="sticky top-0 z-10 -mx-2 mb-6 flex items-center justify-between gap-4 rounded-2xl bg-[#f8f8f6]/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-[#f8f8f6]/80">
             <div className="flex items-center gap-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/15 text-orange-700 ring-1 ring-orange-200">
                 <Sparkles className="h-4 w-4" aria-hidden />
@@ -368,7 +368,7 @@ function OnboardingInner() {
   }
 
   return (
-    <form onSubmit={onConfirmSubmit} className="flex flex-1 flex-col">
+    <form onSubmit={onConfirmSubmit} className="flex h-full min-h-0 flex-col">
       <SectionCard className="rounded-3xl border border-slate-200/80 bg-white/95 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
         <SectionTitle
           title={firstName ? `Hi ${firstName}` : 'Complete your profile'}
@@ -418,7 +418,7 @@ function OnboardingInner() {
         </nav>
       </SectionCard>
 
-      <div className="mt-6 flex flex-1 flex-col">
+      <div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6">
         <AnimatePresence mode="wait" initial={false}>
           {step === 1 ? (
             <motion.div

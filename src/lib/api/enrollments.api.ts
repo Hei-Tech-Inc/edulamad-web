@@ -5,6 +5,7 @@ export type SetEnrollmentsDto = {
   courseIds: string[];
   academicYear: string;
   semester: 1 | 2;
+  level: number;
 };
 
 export const enrollmentsApi = {

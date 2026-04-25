@@ -28,6 +28,7 @@ function EnrollmentPageInner() {
   const profile = profileQ.data || null
   const deptId = profile?.deptId || null
   const semester = profile?.semesterData === 2 ? 2 : 1
+  const level = Number(profile?.levelData || 300)
   const year = String(new Date().getFullYear())
   const academicYear = `${year}/${Number(year) + 1}`
   const coursesQ = useCourses(deptId, true)
@@ -44,13 +45,20 @@ function EnrollmentPageInner() {
   }
 
   const save = async () => {
-    await setEnrollmentsM.mutateAsync({
-      courseIds: selected,
-      academicYear,
-      semester,
-    })
-    showToast('Notifications updated', 'success')
-    router.back()
+    try {
+      await setEnrollmentsM.mutateAsync({
+        courseIds: selected,
+        academicYear,
+        semester,
+        level,
+      })
+      showToast('Notifications updated', 'success')
+      router.back()
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : 'Could not save enrollments. Please try again.'
+      showToast(msg, 'error')
+    }
   }
 
   return (
