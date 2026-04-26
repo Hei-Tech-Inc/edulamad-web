@@ -73,15 +73,6 @@ export const queryKeys = {
     sourceDocument: (questionId: string) =>
       ['questions', 'source-document', questionId] as const,
   },
-  tasks: {
-    list: (filters: {
-      offset?: number;
-      limit?: number;
-      search?: string;
-      status?: string;
-    }) => ['tasks', 'list', filters] as const,
-    detail: (taskId: string) => ['tasks', 'detail', taskId] as const,
-  },
   promo: {
     redeem: ['promo', 'redeem'] as const,
   },

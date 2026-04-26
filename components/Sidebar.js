@@ -15,6 +15,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  X,
   Compass,
   Trophy,
   UserCircle2,
@@ -48,7 +49,13 @@ function parseQueryParam(asPath, key) {
   }
 }
 
-const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
+const Sidebar = ({
+  collapsed = false,
+  onToggleCollapse,
+  autoHide = true,
+  mobileOpen = false,
+  onCloseMobile,
+}) => {
   const { user } = useAuth()
   const router = useRouter()
   const dispatch = useDispatch()
@@ -60,6 +67,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
     developer: true,
     admin: true,
   })
+  const [peekExpanded, setPeekExpanded] = useState(false)
   const { showToast } = useToast()
 
   const handleLogout = async () => {
@@ -85,6 +93,8 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
   const sessionUser = useAuthStore((s) => s.user)
   const accessToken = useAuthStore((s) => s.accessToken)
   const isAdmin = sessionHasAdminTools(sessionUser, accessToken)
+  const isAutoHidden = collapsed && autoHide
+  const isExpanded = !collapsed || peekExpanded
 
   const navItemActive = (itemPath) => {
     const pathOnly = itemPath.split(/[?#]/)[0]
@@ -234,22 +244,41 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
     }
   }, [isAdmin])
 
+  const isMobileOpen = Boolean(mobileOpen)
+
   return (
     <div
-      className={`fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-neutral-800/80 bg-[#06080f] shadow-[12px_0_35px_rgba(2,6,23,0.3)] transition-[width] duration-200 lg:flex ${
-        collapsed ? 'w-20' : 'w-64'
+      onMouseEnter={() => {
+        if (isAutoHidden) setPeekExpanded(true)
+      }}
+      onMouseLeave={() => {
+        if (isAutoHidden) setPeekExpanded(false)
+      }}
+      onFocusCapture={() => {
+        if (isAutoHidden) setPeekExpanded(true)
+      }}
+      onBlurCapture={(event) => {
+        if (!isAutoHidden) return
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setPeekExpanded(false)
+        }
+      }}
+      className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col border-r border-neutral-800/80 bg-[#06080f] shadow-[12px_0_35px_rgba(2,6,23,0.3)] transition-[width,transform,box-shadow] duration-300 ease-out lg:z-40 ${
+        isExpanded ? 'lg:w-72 lg:shadow-[16px_0_40px_rgba(2,6,23,0.42)]' : 'lg:w-[4.5rem]'
+      } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${
+        isMobileOpen ? 'pointer-events-auto' : 'pointer-events-none lg:pointer-events-auto'
       }`}
     >
       <div className="border-b border-neutral-800/80 p-4">
         <div
-          className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} gap-2`}
+          className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'} gap-2`}
         >
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded border border-orange-500/35 bg-orange-500/10 text-orange-400">
               <GraduationCap className="h-5 w-5" strokeWidth={2} />
             </span>
-            {!collapsed ? (
-              <span className="text-lg font-semibold tracking-tight text-white">
+            {isExpanded ? (
+              <span className="whitespace-nowrap text-[1.02rem] font-semibold tracking-[-0.01em] text-slate-50 subpixel-antialiased">
                 {APP_NAME}
               </span>
             ) : null}
@@ -257,7 +286,9 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="rounded-md p-1.5 text-slate-400 transition hover:bg-white/[0.06] hover:text-white"
+            className={`hidden rounded-md p-1.5 text-slate-300 transition hover:bg-white/[0.08] hover:text-white lg:inline-flex ${
+              isExpanded ? '' : 'absolute right-2 top-4'
+            }`}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -267,17 +298,26 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
               <PanelLeftClose className="h-4 w-4" />
             )}
           </button>
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="rounded-md p-1.5 text-slate-300 transition hover:bg-white/[0.08] hover:text-white lg:hidden"
+            aria-label="Close sidebar"
+            title="Close sidebar"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto overscroll-y-contain py-4 [scrollbar-gutter:stable]">
         {Object.entries(menuItems).map(([key, section]) => (
           <div key={key} className="mb-3">
-            {!collapsed ? (
+            {isExpanded ? (
               <button
                 type="button"
                 onClick={() => toggleSection(key)}
-                className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500 transition hover:bg-white/[0.05] hover:text-neutral-100 focus:outline-none"
+                className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-300/95 transition hover:bg-white/[0.06] hover:text-white focus:outline-none"
               >
                 <div className="flex items-center gap-2">
                   {React.createElement(section.icon, {
@@ -293,15 +333,15 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
               </button>
             ) : null}
 
-            {(collapsed || expandedSections[key]) && (
+            {(!isExpanded || expandedSections[key]) && (
               <ul
-                className={`mt-1.5 space-y-1 ${collapsed ? 'px-2' : 'ml-3 border-l border-neutral-800/80 pl-2.5'}`}
+                className={`mt-1.5 space-y-1 ${isExpanded ? 'ml-3 border-l border-neutral-800/80 pl-2.5' : 'px-2'}`}
               >
                 {section.items.map((item) => {
                   if (item.kind === 'hint') {
                     return (
                       <li key={item.key}>
-                        {collapsed ? (
+                        {!isExpanded ? (
                           <span
                             className="flex justify-center py-2 text-neutral-500"
                             title={item.body}
@@ -321,17 +361,26 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
                     <li key={`${key}-${item.title}`}>
                       <Link
                         href={item.path}
+                        onClick={onCloseMobile}
                         title={collapsed ? item.title : undefined}
-                        className={`flex items-center gap-2 rounded-md py-2 pl-2.5 pr-2.5 text-sm transition ${
+                          className={`group flex items-center gap-2 rounded-md py-2 pl-2.5 pr-2.5 text-[14px] leading-5 transition ${
                           active
-                            ? 'bg-gradient-to-r from-orange-500/20 to-orange-500/0 font-medium text-white'
-                            : 'text-neutral-400 hover:bg-white/[0.04] hover:text-neutral-200'
-                        } ${collapsed ? 'justify-center px-2 py-2' : ''}`}
+                            ? 'bg-gradient-to-r from-orange-500/20 to-orange-500/0 font-semibold text-white'
+                            : 'text-slate-200/90 hover:bg-white/[0.07] hover:text-white'
+                        } ${isExpanded ? '' : 'justify-center px-2 py-2'}`}
                       >
                         {React.createElement(item.icon, {
-                          className: `h-3.5 w-3.5 shrink-0 ${active ? 'text-orange-400' : 'text-neutral-600'}`,
+                          className: `h-3.5 w-3.5 shrink-0 ${active ? 'text-orange-400' : 'text-slate-400 group-hover:text-slate-200'}`,
                         })}
-                        {!collapsed ? item.title : null}
+                        <span
+                          className={`whitespace-nowrap font-medium subpixel-antialiased transition-all duration-200 ${
+                            isExpanded
+                              ? 'max-w-[14rem] translate-x-0 opacity-100'
+                              : 'pointer-events-none max-w-0 -translate-x-1 opacity-0'
+                          }`}
+                        >
+                          {item.title}
+                        </span>
                       </Link>
                     </li>
                   )
@@ -344,20 +393,20 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
 
       <div className="border-t border-neutral-800/80 bg-[#05070d] p-3">
         <div
-          className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} gap-2`}
+          className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'} gap-2`}
         >
           <div
-            className={`flex min-w-0 items-center gap-2 ${collapsed ? '' : 'flex-1'}`}
+            className={`flex min-w-0 items-center gap-2 ${isExpanded ? 'flex-1' : ''}`}
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-neutral-700 bg-neutral-950 text-xs font-semibold text-orange-400">
               {(user?.email?.[0] || 'U').toUpperCase()}
             </div>
-            {!collapsed ? (
+            {isExpanded ? (
               <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-slate-200">
+                <p className="truncate text-[12px] font-semibold text-slate-100 subpixel-antialiased">
                   {user?.email?.split('@')[0] || 'User'}
                 </p>
-                <p className="truncate text-[11px] text-slate-500">
+                <p className="truncate text-[11px] font-medium text-slate-300/95">
                   {user?.email || '—'}
                 </p>
               </div>

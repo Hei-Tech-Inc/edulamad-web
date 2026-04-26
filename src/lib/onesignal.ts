@@ -12,7 +12,9 @@ export async function initOneSignal(userId?: string): Promise<void> {
     await OneSignal.init({
       appId,
       allowLocalhostAsSecureOrigin: process.env.NODE_ENV === 'development',
-      serviceWorkerParam: { scope: '/push/' },
+      serviceWorkerPath: 'OneSignalSDKWorker.js',
+      serviceWorkerUpdaterPath: 'OneSignalSDKUpdaterWorker.js',
+      serviceWorkerParam: { scope: '/' },
     });
     initialized = true;
   }
@@ -45,7 +47,7 @@ async function registerDeviceWithBackend(
 export async function requestPushPermission(): Promise<boolean> {
   try {
     await OneSignal.Notifications.requestPermission();
-    return OneSignal.Notifications.permission;
+    return Notification.permission === 'granted';
   } catch {
     return false;
   }

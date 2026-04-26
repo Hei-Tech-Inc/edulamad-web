@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { Bell, Sun, Moon, Search, X, ChevronLeft } from 'lucide-react'
+import { Bell, Sun, Moon, Search, X, ChevronLeft, PanelLeftOpen } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 
-const TopBar = ({ title }) => {
+const TopBar = ({ title, onOpenMobileSidebar }) => {
   const { user, signOut } = useAuth()
   const router = useRouter()
   const actAsOrgId = useAuthStore((s) => s.actAsOrgId)
@@ -155,6 +155,14 @@ const TopBar = ({ title }) => {
       <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-3.5">
         {/* Page Title */}
         <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenMobileSidebar}
+            aria-label="Open sidebar"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 text-slate-200 transition hover:bg-white/10 hover:text-white lg:hidden"
+          >
+            <PanelLeftOpen className="h-5 w-5" />
+          </button>
           {canGoBack ? (
             <button
               type="button"

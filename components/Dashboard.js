@@ -16,7 +16,6 @@ import {
   Shield,
   Sparkles,
   Table2,
-  Trash2,
 } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -31,7 +30,6 @@ import {
 import { useCourseQuestions } from '@/hooks/questions/useCourseQuestions'
 import { useUploadQueuePreviewMutation } from '@/hooks/questions/useUploadQueuePreviewMutation'
 import { useAdminClearQuestionSolutions } from '@/hooks/admin/useAdminClearQuestionSolutions'
-import { useCreateTask, useDeleteTask, useTasksList, useUpdateTask } from '@/hooks/tasks/useTasks'
 import { pickFirstHttpUrl } from '@/lib/api/pick-http-url'
 import {
   useAdminStats,
@@ -985,15 +983,6 @@ export default function Dashboard() {
   const [uploadPreviewFeedback, setUploadPreviewFeedback] = useState(null)
 
   const clearQuestionSolutionsM = useAdminClearQuestionSolutions()
-  const tasksQ = useTasksList({ limit: 6, enabled: !isAdmin })
-  const createTaskM = useCreateTask()
-  const updateTaskM = useUpdateTask()
-  const deleteTaskM = useDeleteTask()
-  const [taskDraft, setTaskDraft] = useState({
-    title: '',
-    description: '',
-    status: 'OPEN',
-  })
 
   const deactivatePromoM = useMutation({
     mutationFn: async (id) => {
@@ -1264,187 +1253,6 @@ export default function Dashboard() {
             ) : (
               <p className="mt-3 text-sm text-slate-400">No recent activity yet.</p>
             )}
-            <div className="mt-5 border-t border-white/10 pt-4">
-              <StudentCollapsible title="Tasks" defaultOpen={false}>
-              <form
-                className="mt-3 space-y-2 rounded-lg border border-white/10 bg-white/[0.03] p-3"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const title = taskDraft.title.trim()
-                  const description = taskDraft.description.trim()
-                  if (!title || !description) return
-                  createTaskM.mutate(
-                    {
-                      title,
-                      description,
-                      status: taskDraft.status,
-                    },
-                    {
-                      onSuccess: () => {
-                        setTaskDraft({ title: '', description: '', status: 'OPEN' })
-                      },
-                    },
-                  )
-                }}
-              >
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Quick add
-                </p>
-                <input
-                  type="text"
-                  placeholder="Title"
-                  value={taskDraft.title}
-                  onChange={(e) => setTaskDraft((s) => ({ ...s, title: e.target.value }))}
-                  className="w-full rounded-md border border-white/10 bg-white/[0.05] px-2 py-1.5 text-sm text-slate-100 placeholder:text-slate-500"
-                />
-                <textarea
-                  placeholder="Description"
-                  rows={2}
-                  value={taskDraft.description}
-                  onChange={(e) => setTaskDraft((s) => ({ ...s, description: e.target.value }))}
-                  className="w-full resize-y rounded-md border border-white/10 bg-white/[0.05] px-2 py-1.5 text-sm text-slate-100 placeholder:text-slate-500"
-                />
-                <div className="flex flex-wrap items-center gap-2">
-                  <select
-                    value={taskDraft.status}
-                    onChange={(e) => setTaskDraft((s) => ({ ...s, status: e.target.value }))}
-                    className="rounded-md border border-white/10 bg-white/[0.05] px-2 py-1.5 text-xs text-slate-100"
-                  >
-                    <option value="OPEN">Open</option>
-                    <option value="IN_PROGRESS">In progress</option>
-                    <option value="DONE">Done</option>
-                  </select>
-                  <button
-                    type="submit"
-                    disabled={
-                      createTaskM.isPending ||
-                      !taskDraft.title.trim() ||
-                      !taskDraft.description.trim()
-                    }
-                    className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {createTaskM.isPending ? 'Saving…' : 'Add task'}
-                  </button>
-                </div>
-                {createTaskM.isError ? (
-                  <p className="text-xs text-rose-400">
-                    {createTaskM.error?.response?.data?.message ||
-                      (createTaskM.error instanceof Error
-                        ? createTaskM.error.message
-                        : 'Could not create task.')}
-                  </p>
-                ) : null}
-              </form>
-              {tasksQ.isLoading ? (
-                <div className="mt-3 space-y-2">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <SkeletonNotificationRow key={`dashboard-tasks-skeleton-${i}`} />
-                  ))}
-                </div>
-              ) : tasksQ.isError ? (
-                <p className="mt-3 text-sm text-slate-400">Tasks unavailable.</p>
-              ) : pickArray(tasksQ.data).length === 0 ? (
-                <p className="mt-3 text-sm text-slate-400">No tasks yet.</p>
-              ) : (
-                <ul className="mt-3 space-y-2">
-                  {pickArray(tasksQ.data)
-                    .slice(0, 6)
-                    .map((row, idx) => {
-                      const rec = asRecord(row) || {}
-                      const hasRealId =
-                        typeof rec.id === 'string' || typeof rec._id === 'string'
-                      const tid =
-                        typeof rec.id === 'string'
-                          ? rec.id
-                          : typeof rec._id === 'string'
-                            ? rec._id
-                            : `task-${idx}`
-                      const title =
-                        typeof rec.title === 'string' && rec.title.trim()
-                          ? rec.title.trim()
-                          : 'Task'
-                      const status = typeof rec.status === 'string' ? rec.status : ''
-                      const statusValue = ['OPEN', 'IN_PROGRESS', 'DONE'].includes(status)
-                        ? status
-                        : 'OPEN'
-                      const rowBusy =
-                        (updateTaskM.isPending &&
-                          updateTaskM.variables?.id === tid) ||
-                        (deleteTaskM.isPending && deleteTaskM.variables === tid)
-                      return (
-                        <li
-                          key={tid}
-                          className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm"
-                        >
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-slate-100">{title}</p>
-                              {!hasRealId && status ? (
-                                <p className="mt-0.5 text-[11px] uppercase tracking-wide text-slate-500">
-                                  {status}
-                                </p>
-                              ) : null}
-                            </div>
-                            {hasRealId ? (
-                              <div className="flex shrink-0 items-center gap-1.5">
-                                <select
-                                  aria-label={`Status for ${title}`}
-                                  value={statusValue}
-                                  disabled={rowBusy}
-                                  onChange={(e) => {
-                                    const next = e.target.value
-                                    if (next === statusValue) return
-                                    updateTaskM.mutate({ id: tid, payload: { status: next } })
-                                  }}
-                                  className="max-w-[9rem] rounded border border-white/15 bg-white/[0.06] px-1.5 py-1 text-[10px] font-medium uppercase text-slate-200 disabled:opacity-50"
-                                >
-                                  <option value="OPEN">Open</option>
-                                  <option value="IN_PROGRESS">In progress</option>
-                                  <option value="DONE">Done</option>
-                                </select>
-                                <button
-                                  type="button"
-                                  disabled={rowBusy}
-                                  title="Delete task"
-                                  onClick={() => {
-                                    if (
-                                      typeof window !== 'undefined' &&
-                                      !window.confirm('Delete this task?')
-                                    ) {
-                                      return
-                                    }
-                                    deleteTaskM.mutate(tid)
-                                  }}
-                                  className="rounded border border-rose-400/35 p-1 text-rose-300 transition hover:bg-rose-500/15 disabled:opacity-50"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
-                          {updateTaskM.isError && updateTaskM.variables?.id === tid ? (
-                            <p className="mt-1 text-[11px] text-rose-400">
-                              {updateTaskM.error?.response?.data?.message ||
-                                (updateTaskM.error instanceof Error
-                                  ? updateTaskM.error.message
-                                  : 'Could not update task.')}
-                            </p>
-                          ) : null}
-                          {deleteTaskM.isError && deleteTaskM.variables === tid ? (
-                            <p className="mt-1 text-[11px] text-rose-400">
-                              {deleteTaskM.error?.response?.data?.message ||
-                                (deleteTaskM.error instanceof Error
-                                  ? deleteTaskM.error.message
-                                  : 'Could not delete task.')}
-                            </p>
-                          ) : null}
-                        </li>
-                      )
-                    })}
-                </ul>
-              )}
-              </StudentCollapsible>
-            </div>
 
             <div className="mt-5 border-t border-white/10 pt-4">
               <StudentCollapsible title="Bookmarks" defaultOpen={false}>

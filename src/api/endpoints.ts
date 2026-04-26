@@ -143,14 +143,8 @@ const API = {
     detail: (key: string) => `/files/${key}`,
   },
   search: {
-    tasks: '/search/tasks',
     users: '/search/users',
     global: '/search/global',
-  },
-  /** Task CRUD (OpenAPI `tasks` tag). */
-  tasks: {
-    list: '/tasks',
-    detail: (id: string) => `/tasks/${id}`,
   },
   institutions: {
     universities: {
