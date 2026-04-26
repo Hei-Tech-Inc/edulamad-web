@@ -26,30 +26,57 @@ export default function AppTabBar() {
   const pathname = router.pathname || ''
 
   return (
-    <nav className="border-b border-white/10 bg-[#0b1222]/95 px-4 sm:px-6">
-      <ul className="mx-auto flex max-w-[1520px] snap-x snap-mandatory items-center gap-1 overflow-x-auto py-2">
+    <>
+      <nav className="border-b border-white/10 bg-[#0b1222]/95 px-4 sm:px-6 max-sm:hidden">
+        <ul className="mx-auto flex max-w-[1520px] snap-x snap-mandatory items-center gap-1 overflow-x-auto py-2">
+          {TAB_ITEMS.map((item) => {
+            const active = isActivePath(pathname, item.href)
+            const Icon = item.icon
+            return (
+              <li key={item.key} className="snap-start">
+                <Link
+                  href={item.href}
+                  title={item.label}
+                  className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-medium transition sm:gap-2 sm:px-3 sm:text-sm ${
+                    active
+                      ? 'bg-orange-500/20 text-orange-200'
+                      : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0b1222]/95 px-1 pb-[calc(env(safe-area-inset-bottom)+4px)] pt-1 backdrop-blur sm:hidden">
+        <ul className="grid grid-cols-6 gap-0.5">
         {TAB_ITEMS.map((item) => {
           const active = isActivePath(pathname, item.href)
           const Icon = item.icon
           return (
-            <li key={item.key} className="snap-start">
+            <li key={item.key} className="min-w-0">
               <Link
                 href={item.href}
                 title={item.label}
-                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-medium transition sm:gap-2 sm:px-3 sm:text-sm ${
+                className={`flex min-h-[58px] flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[9px] font-medium leading-tight transition active:scale-95 min-[390px]:min-h-[60px] min-[390px]:gap-1 min-[390px]:px-1 min-[390px]:py-2 min-[390px]:text-[10px] ${
                   active
-                    ? 'bg-orange-500/20 text-orange-200'
+                    ? 'bg-orange-500/15 text-orange-200'
                     : 'text-slate-300 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <Icon className="h-4 w-4" />
-                <span className="sm:hidden">{item.mobileLabel || item.label}</span>
-                <span className="hidden sm:inline">{item.label}</span>
+                <Icon className="h-3.5 w-3.5 min-[390px]:h-4 min-[390px]:w-4" />
+                <span className="max-w-full truncate px-0.5 max-[359px]:hidden">
+                  {item.mobileLabel || item.label}
+                </span>
               </Link>
             </li>
           )
         })}
-      </ul>
-    </nav>
+        </ul>
+      </nav>
+    </>
   )
 }

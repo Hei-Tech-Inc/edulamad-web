@@ -1,0 +1,17 @@
+{
+  "name": "Edulamad",
+  "short_name": "Edulamad",
+  "description": "Past questions, quizzes, and study tools.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0F0F",
+  "theme_color": "#0F0F0F",
+  "icons": [
+    {
+      "src": "/window.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

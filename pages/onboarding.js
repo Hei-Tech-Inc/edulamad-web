@@ -658,15 +658,15 @@ function OnboardingInner() {
                 <dl className="mt-6 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 text-sm">
                   <div className="flex justify-between gap-4">
                     <dt className="text-slate-500">Institution</dt>
-                    <dd className="max-w-[60%] text-right font-medium text-slate-900">{university?.name || '—'}</dd>
+                    <dd className="min-w-0 max-w-[60%] break-words text-right font-medium text-slate-900">{university?.name || '—'}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-slate-500">Faculty</dt>
-                    <dd className="max-w-[60%] text-right font-medium text-slate-900">{college?.name || '—'}</dd>
+                    <dd className="min-w-0 max-w-[60%] break-words text-right font-medium text-slate-900">{college?.name || '—'}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-slate-500">Department</dt>
-                    <dd className="max-w-[60%] text-right font-medium text-slate-900">{department?.name || '—'}</dd>
+                    <dd className="min-w-0 max-w-[60%] break-words text-right font-medium text-slate-900">{department?.name || '—'}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-slate-500">Study mode</dt>

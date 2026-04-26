@@ -181,7 +181,7 @@ function TinySparkline({ values }) {
 function TimeframeTabs({ value, onChange }) {
   const tabs = ['Today', 'This Week', 'This Semester']
   return (
-    <div className="inline-flex max-w-full overflow-x-auto rounded-xl border border-white/20 bg-white/10 p-1">
+    <div className="inline-flex max-w-full overflow-x-auto rounded-xl border border-white/20 bg-white/10 p-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {tabs.map((tab) => (
         <button
           key={tab}

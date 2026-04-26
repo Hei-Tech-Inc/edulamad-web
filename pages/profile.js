@@ -91,7 +91,7 @@ function ProfileContent() {
             </dl>
             <details className="mt-4 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-xs text-slate-600">
               <summary className="cursor-pointer font-medium text-slate-700">Technical IDs</summary>
-              <p className="mt-2 font-mono text-[11px] leading-relaxed">
+              <p className="mt-2 break-all font-mono text-[11px] leading-relaxed">
                 University ID: {p.universityId}
                 <br />
                 Department ID: {p.deptId}

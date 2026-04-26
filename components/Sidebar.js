@@ -1,6 +1,6 @@
 // components/Sidebar.js — Edulamad app shell
 // Sidebar links only point at UX routes backed by `contexts/api-docs.json` (or static marketing / API reference).
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import {
@@ -68,6 +68,7 @@ const Sidebar = ({
     admin: true,
   })
   const [peekExpanded, setPeekExpanded] = useState(false)
+  const firstMobileNavLinkRef = useRef(null)
   const { showToast } = useToast()
 
   const handleLogout = async () => {
@@ -93,8 +94,18 @@ const Sidebar = ({
   const sessionUser = useAuthStore((s) => s.user)
   const accessToken = useAuthStore((s) => s.accessToken)
   const isAdmin = sessionHasAdminTools(sessionUser, accessToken)
+  const isMobileOpen = Boolean(mobileOpen)
   const isAutoHidden = collapsed && autoHide
   const isExpanded = !collapsed || peekExpanded
+  const showExpandedContent = isMobileOpen || isExpanded
+
+  useEffect(() => {
+    if (!isMobileOpen) return
+    const id = window.setTimeout(() => {
+      firstMobileNavLinkRef.current?.focus?.()
+    }, 90)
+    return () => window.clearTimeout(id)
+  }, [isMobileOpen])
 
   const navItemActive = (itemPath) => {
     const pathOnly = itemPath.split(/[?#]/)[0]
@@ -244,8 +255,6 @@ const Sidebar = ({
     }
   }, [isAdmin])
 
-  const isMobileOpen = Boolean(mobileOpen)
-
   return (
     <div
       onMouseEnter={() => {
@@ -263,7 +272,7 @@ const Sidebar = ({
           setPeekExpanded(false)
         }
       }}
-      className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col border-r border-neutral-800/80 bg-[#06080f] shadow-[12px_0_35px_rgba(2,6,23,0.3)] transition-[width,transform,box-shadow] duration-300 ease-out lg:z-40 ${
+      className={`fixed left-0 top-0 z-50 flex h-dvh w-[min(86vw,20rem)] flex-col border-r border-neutral-800/80 bg-[#06080f] pt-safe shadow-[12px_0_35px_rgba(2,6,23,0.3)] transition-[width,transform,box-shadow] duration-200 ease-out will-change-transform lg:z-40 ${
         isExpanded ? 'lg:w-72 lg:shadow-[16px_0_40px_rgba(2,6,23,0.42)]' : 'lg:w-[4.5rem]'
       } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${
         isMobileOpen ? 'pointer-events-auto' : 'pointer-events-none lg:pointer-events-auto'
@@ -271,13 +280,13 @@ const Sidebar = ({
     >
       <div className="border-b border-neutral-800/80 p-4">
         <div
-          className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'} gap-2`}
+          className={`flex items-center ${showExpandedContent ? 'justify-between' : 'justify-center'} gap-2`}
         >
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded border border-orange-500/35 bg-orange-500/10 text-orange-400">
               <GraduationCap className="h-5 w-5" strokeWidth={2} />
             </span>
-            {isExpanded ? (
+            {showExpandedContent ? (
               <span className="whitespace-nowrap text-[1.02rem] font-semibold tracking-[-0.01em] text-slate-50 subpixel-antialiased">
                 {APP_NAME}
               </span>
@@ -287,7 +296,7 @@ const Sidebar = ({
             type="button"
             onClick={onToggleCollapse}
             className={`hidden rounded-md p-1.5 text-slate-300 transition hover:bg-white/[0.08] hover:text-white lg:inline-flex ${
-              isExpanded ? '' : 'absolute right-2 top-4'
+              showExpandedContent ? '' : 'absolute right-2 top-4'
             }`}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -310,10 +319,10 @@ const Sidebar = ({
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto overscroll-y-contain py-4 [scrollbar-gutter:stable]">
+      <nav className="flex-1 overflow-y-auto overscroll-y-contain px-1 py-4 [scrollbar-gutter:stable]">
         {Object.entries(menuItems).map(([key, section]) => (
           <div key={key} className="mb-3">
-            {isExpanded ? (
+            {showExpandedContent ? (
               <button
                 type="button"
                 onClick={() => toggleSection(key)}
@@ -333,15 +342,15 @@ const Sidebar = ({
               </button>
             ) : null}
 
-            {(!isExpanded || expandedSections[key]) && (
+            {(!showExpandedContent || expandedSections[key]) && (
               <ul
-                className={`mt-1.5 space-y-1 ${isExpanded ? 'ml-3 border-l border-neutral-800/80 pl-2.5' : 'px-2'}`}
+                className={`mt-1.5 space-y-1 ${showExpandedContent ? 'ml-3 border-l border-neutral-800/80 pl-2.5' : 'px-2'}`}
               >
-                {section.items.map((item) => {
+                {section.items.map((item, idx) => {
                   if (item.kind === 'hint') {
                     return (
                       <li key={item.key}>
-                        {!isExpanded ? (
+                        {!showExpandedContent ? (
                           <span
                             className="flex justify-center py-2 text-neutral-500"
                             title={item.body}
@@ -360,21 +369,22 @@ const Sidebar = ({
                   return (
                     <li key={`${key}-${item.title}`}>
                       <Link
+                        ref={isMobileOpen && idx === 0 ? firstMobileNavLinkRef : undefined}
                         href={item.path}
                         onClick={onCloseMobile}
-                        title={collapsed ? item.title : undefined}
-                          className={`group flex items-center gap-2 rounded-md py-2 pl-2.5 pr-2.5 text-[14px] leading-5 transition ${
+                        title={!showExpandedContent ? item.title : undefined}
+                          className={`group flex min-h-11 items-center gap-2 rounded-lg py-2.5 pl-2.5 pr-2.5 text-[14px] leading-5 transition ${
                           active
                             ? 'bg-gradient-to-r from-orange-500/20 to-orange-500/0 font-semibold text-white'
                             : 'text-slate-200/90 hover:bg-white/[0.07] hover:text-white'
-                        } ${isExpanded ? '' : 'justify-center px-2 py-2'}`}
+                        } ${showExpandedContent ? '' : 'justify-center px-2 py-2'} ${isMobileOpen ? 'focus:outline-none focus:ring-2 focus:ring-orange-500/50' : ''}`}
                       >
                         {React.createElement(item.icon, {
                           className: `h-3.5 w-3.5 shrink-0 ${active ? 'text-orange-400' : 'text-slate-400 group-hover:text-slate-200'}`,
                         })}
                         <span
                           className={`whitespace-nowrap font-medium subpixel-antialiased transition-all duration-200 ${
-                            isExpanded
+                            showExpandedContent
                               ? 'max-w-[14rem] translate-x-0 opacity-100'
                               : 'pointer-events-none max-w-0 -translate-x-1 opacity-0'
                           }`}
@@ -391,17 +401,17 @@ const Sidebar = ({
         ))}
       </nav>
 
-      <div className="border-t border-neutral-800/80 bg-[#05070d] p-3">
+      <div className="border-t border-neutral-800/80 bg-[#05070d] p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
         <div
-          className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'} gap-2`}
+          className={`flex items-center ${showExpandedContent ? 'justify-between' : 'justify-center'} gap-2`}
         >
           <div
-            className={`flex min-w-0 items-center gap-2 ${isExpanded ? 'flex-1' : ''}`}
+            className={`flex min-w-0 items-center gap-2 ${showExpandedContent ? 'flex-1' : ''}`}
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-neutral-700 bg-neutral-950 text-xs font-semibold text-orange-400">
               {(user?.email?.[0] || 'U').toUpperCase()}
             </div>
-            {isExpanded ? (
+            {showExpandedContent ? (
               <div className="min-w-0">
                 <p className="truncate text-[12px] font-semibold text-slate-100 subpixel-antialiased">
                   {user?.email?.split('@')[0] || 'User'}

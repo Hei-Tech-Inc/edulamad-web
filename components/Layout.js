@@ -56,8 +56,28 @@ const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
     setMobileSidebarOpen(false)
   }, [router.asPath])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const html = document.documentElement
+    const body = document.body
+    if (mobileSidebarOpen) {
+      html.style.overflow = 'hidden'
+      body.style.overflow = 'hidden'
+      body.style.touchAction = 'none'
+    } else {
+      html.style.overflow = ''
+      body.style.overflow = ''
+      body.style.touchAction = ''
+    }
+    return () => {
+      html.style.overflow = ''
+      body.style.overflow = ''
+      body.style.touchAction = ''
+    }
+  }, [mobileSidebarOpen])
+
   return (
-    <div className="bg-[#05070d]">
+    <div className="w-screen-safe overflow-x-hidden bg-[#05070d]">
       {!isInstitutionConsole ? (
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -71,19 +91,19 @@ const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
         <button
           type="button"
           aria-label="Close sidebar overlay"
-          className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-[1px] lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/45 lg:hidden"
           onClick={() => setMobileSidebarOpen(false)}
         />
       ) : null}
       <div
-        className={`min-h-screen bg-gradient-to-b from-[#0a1020] via-[#0b1222] to-[#0a1020] transition-[margin] duration-200 ${
+        className={`min-h-dvh bg-gradient-to-b from-[#0a1020] via-[#0b1222] to-[#0a1020] transition-[margin] duration-200 ${
           isInstitutionConsole ? 'ml-0' : sidebarCollapsed ? 'lg:ml-[4.5rem]' : 'lg:ml-72'
         }`}
       >
         <Header title={title} onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
         {showPrimaryTabs ? <AppTabBar /> : null}
         <main
-          className={`settings-light mx-auto min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-6 text-slate-900 antialiased sm:px-6 lg:px-8 lg:py-8 ${isInstitutionConsole ? 'max-w-none' : 'max-w-[1520px]'}`}
+          className={`settings-light mx-auto min-h-[calc(100dvh-4rem)] bg-slate-50 px-4 py-5 text-slate-900 antialiased sm:px-6 sm:py-6 lg:px-8 lg:py-8 ${showPrimaryTabs ? 'pb-safe-nav sm:pb-6 lg:pb-8' : ''} ${isInstitutionConsole ? 'max-w-none' : 'max-w-[1520px]'}`}
         >
           {children}
         </main>

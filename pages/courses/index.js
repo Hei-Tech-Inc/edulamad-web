@@ -181,18 +181,18 @@ function CoursesContent() {
       ) : null}
 
       <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold text-slate-900">My Courses</h3>
             <p className="text-sm text-slate-600">
               Level {selectedLevel} · {selectedYear}/{Number(selectedYear) + 1}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
             <button
               type="button"
               onClick={() => void window.location.assign('/courses/enroll')}
-              className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700"
+              className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700"
             >
               Edit courses
             </button>

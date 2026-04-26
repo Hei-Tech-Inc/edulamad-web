@@ -128,7 +128,7 @@ function QuizNewRouteInner() {
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
       <h1 className="text-xl font-semibold text-slate-900">Start new quiz</h1>
       <p className="mt-1 text-sm text-slate-600">Choose course and settings to generate a quiz session.</p>
 
@@ -250,7 +250,7 @@ function QuizNewRouteInner() {
       {courseId && courseTagsQ.data?.length ? (
         <div className="mt-4">
           <p className="text-xs font-medium text-slate-500">Filter by topic</p>
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+          <div className="scroll-row mt-2">
             <button
               type="button"
               onClick={() => setSelectedTag('')}

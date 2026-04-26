@@ -31,7 +31,7 @@ function LeaderboardContent() {
   return (
     <div className="space-y-5">
       <StudentStudyQuickLinks />
-      <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-lg font-semibold text-slate-900">Department leaderboard</h2>
         <p className="mt-1 text-sm text-slate-600">
           Rankings update as you complete quizzes. Your streak and XP also show on the home dashboard.
@@ -67,9 +67,9 @@ function LeaderboardContent() {
             {rows.slice(0, 10).map((row, idx) => (
               <li
                 key={String(row.id || idx)}
-                className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2"
               >
-                <span className="text-sm text-slate-800">
+                <span className="min-w-0 break-words text-sm text-slate-800">
                   {idx + 1}. {row.name || row.userName || 'Student'}
                 </span>
                 <span className="text-sm font-semibold text-slate-700">

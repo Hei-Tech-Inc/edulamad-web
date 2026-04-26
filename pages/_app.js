@@ -26,6 +26,7 @@ import { loadingBarActions } from '@/stores/loading-bar.store'
 import { SkeletonProfileHeader } from '@/components/ui/skeleton'
 import { AppErrorBoundary } from '@/components/providers/AppErrorBoundary'
 import { PushPermissionPrompt } from '@/components/notifications/PushPermissionPrompt'
+import { OneSignalInit } from '@/components/notifications/OneSignalInit'
 import '../styles/globals.css'
 
 const ReactQueryDevtools = dynamic(
@@ -221,6 +222,7 @@ function AuthWrapper({ children }) {
   // Render children
   return (
     <>
+      <OneSignalInit />
       {children}
       <PushPermissionPrompt enabled={Boolean(user && onboardingComplete && !onOnboardingRoute)} />
     </>

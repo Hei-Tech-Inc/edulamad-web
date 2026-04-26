@@ -29,7 +29,7 @@ function NotificationsContent() {
   })
 
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
       <h1 className="text-xl font-semibold text-slate-900">Notifications</h1>
       {notificationsQ.isLoading ? <p className="mt-3 text-sm text-slate-500">Loading notifications...</p> : null}
       {notificationsQ.isError ? (
@@ -40,7 +40,7 @@ function NotificationsContent() {
           {(notificationsQ.data || []).map((n) => (
             <li key={n.id} className="rounded-lg border border-slate-100 px-3 py-2">
               <p className="text-sm text-slate-900">{n.title}</p>
-              <div className="mt-1 flex items-center justify-between gap-2">
+              <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs text-slate-500">{n.createdAt || ''}</p>
                 <button
                   type="button"

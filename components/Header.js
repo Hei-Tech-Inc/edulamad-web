@@ -128,7 +128,7 @@ const TopBar = ({ title, onOpenMobileSidebar }) => {
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0f172a]/90 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0f172a]/90 backdrop-blur pt-safe">
       {actAsOrgId && isPlatformSuperAdmin ? (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-violet-200 bg-violet-100 px-4 py-2 text-sm text-violet-950 dark:border-violet-900 dark:bg-violet-950/50 dark:text-violet-100">
           <span>
@@ -152,49 +152,49 @@ const TopBar = ({ title, onOpenMobileSidebar }) => {
           </span>
         </div>
       ) : null}
-      <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-3.5">
+      <div className="flex items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-3.5">
         {/* Page Title */}
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={onOpenMobileSidebar}
             aria-label="Open sidebar"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 text-slate-200 transition hover:bg-white/10 hover:text-white lg:hidden"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-slate-200 transition hover:bg-white/10 hover:text-white lg:hidden"
           >
-            <PanelLeftOpen className="h-5 w-5" />
+            <PanelLeftOpen className="h-4 w-4" />
           </button>
           {canGoBack ? (
             <button
               type="button"
               onClick={handleGoBack}
               aria-label="Go back"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 text-slate-200 transition hover:bg-white/10 hover:text-white"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-slate-200 transition hover:bg-white/10 hover:text-white"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
           ) : null}
-          <h1 className="truncate pr-3 text-base font-semibold tracking-tight text-slate-100 sm:text-lg">
+          <h1 className="truncate pr-1 text-sm font-semibold tracking-tight text-slate-100 min-[380px]:text-[15px] sm:pr-3 sm:text-lg">
             {title}
           </h1>
         </div>
 
         {/* Right Side: Notification, Theme, User Info with Dropdown */}
-        <div className="flex items-center space-x-1.5 sm:space-x-4">
+        <div className="flex items-center space-x-0.5 min-[380px]:space-x-1 sm:space-x-4">
           <button
-            className="rounded-xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none"
+            className="hidden rounded-lg p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none min-[380px]:inline-flex sm:rounded-xl sm:p-2"
             aria-label="Search"
             onClick={() => setSearchOpen(true)}
           >
-            <Search className="w-6 h-6" />
+            <Search className="h-4 w-4 sm:h-6 sm:w-6" />
           </button>
           {/* Notification Bell */}
           <div className="relative" id="notif-dropdown" ref={notifDropdownRef}>
             <button
-              className="relative rounded-xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none"
+              className="relative hidden rounded-lg p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none min-[350px]:inline-flex sm:rounded-xl sm:p-2"
               aria-label="Notifications"
               onClick={() => router.push('/notifications')}
             >
-              <Bell className="w-6 h-6" />
+              <Bell className="h-4 w-4 sm:h-6 sm:w-6" />
               {unreadCount > 0 && (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               )}
@@ -216,7 +216,7 @@ const TopBar = ({ title, onOpenMobileSidebar }) => {
               aria-haspopup="true"
               aria-expanded={profileDropdownOpen}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-sm font-semibold text-slate-100">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.06] text-xs font-semibold text-slate-100 sm:h-10 sm:w-10 sm:rounded-xl sm:text-sm">
                 {avatarLetter}
               </div>
               <div className="hidden sm:block text-right">
