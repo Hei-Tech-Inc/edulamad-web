@@ -391,6 +391,17 @@ export default function Dashboard() {
   const adminStatsQ = useAdminStats(isPlatformSuperAdmin)
   const notificationsQ = useMyNotifications(5)
   const isAdmin = sessionHasAdminTools(sessionUser, accessToken)
+  const streakValue =
+    streakQ.data ??
+    profileQ.data?.streakDays ??
+    profileQ.data?.streak ??
+    0
+  const xpValue =
+    xpQ.data ??
+    profileQ.data?.xpTotal ??
+    profileQ.data?.totalXp ??
+    profileQ.data?.xp ??
+    0
 
   const adminHashMigrated = useRef(false)
 
@@ -1210,10 +1221,10 @@ export default function Dashboard() {
           />
         </div>
         <div>
-          <StatCard label="Current streak" value={streakQ.data ?? '—'} tone="orange" />
+          <StatCard label="Current streak" value={streakValue} tone="orange" />
         </div>
         <div>
-          <StatCard label="Total XP" value={xpQ.data ?? '—'} tone="emerald" />
+          <StatCard label="Total XP" value={xpValue} tone="emerald" />
         </div>
       </motion.section>
       ) : null}

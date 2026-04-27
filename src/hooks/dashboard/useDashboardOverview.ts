@@ -56,7 +56,13 @@ export function useStudentStreak() {
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<unknown>(API.students.meStreak, { signal });
       const obj = asRecord(data);
-      return pickNumber(obj, ['streak', 'currentStreak', 'days']);
+      return pickNumber(obj, [
+        'streak',
+        'streakDays',
+        'currentStreak',
+        'days',
+        'value',
+      ]);
     },
   });
 }
@@ -68,7 +74,14 @@ export function useStudentXp() {
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<unknown>(API.students.meXp, { signal });
       const obj = asRecord(data);
-      return pickNumber(obj, ['xp', 'totalXp', 'points']);
+      return pickNumber(obj, [
+        'xp',
+        'xpTotal',
+        'totalXp',
+        'points',
+        'totalPoints',
+        'value',
+      ]);
     },
   });
 }
