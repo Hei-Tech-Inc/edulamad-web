@@ -1287,7 +1287,7 @@ export default function Dashboard() {
                 </div>
               ) : notificationsQ.isError ? (
                 <p className="mt-3 text-sm text-slate-400">Notifications unavailable.</p>
-              ) : notificationsQ.data?.length ? (
+              ) : Array.isArray(notificationsQ.data) && notificationsQ.data.length > 0 ? (
                 <ul className="mt-3 space-y-2">
                   {notificationsQ.data.slice(0, 4).map((note) => (
                     <li key={note.id} className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm">
@@ -2316,7 +2316,7 @@ export default function Dashboard() {
                             <SkeletonNotificationRow key={`admin-course-content-skeleton-${i}`} />
                           ))}
                         </div>
-                      ) : questionsQ.data?.length ? (
+                      ) : Array.isArray(questionsQ.data) && questionsQ.data.length > 0 ? (
                         <>
                           <div className="mt-3 flex flex-wrap gap-2">
                             <Link
@@ -2367,7 +2367,7 @@ export default function Dashboard() {
                             ))}
                             {questionsQ.data.length > 6 ? (
                               <p className="text-xs text-slate-500">
-                                Showing 6 of {questionsQ.data.length} past questions. Open quiz or filters for full set.
+                                Showing 6 of {questionsQ.data?.length ?? 0} past questions. Open quiz or filters for full set.
                               </p>
                             ) : null}
                           </div>
@@ -2401,7 +2401,7 @@ export default function Dashboard() {
               <p className="mt-3 text-sm text-rose-600">Could not load promo codes.</p>
             ) : (
               <div className="mt-3 space-y-2">
-                {promoCodesQ.data.slice(0, 8).map((row) => {
+                {(Array.isArray(promoCodesQ.data) ? promoCodesQ.data : []).slice(0, 8).map((row) => {
                   const rec = asRecord(row) || {}
                   const id = typeof rec.id === 'string' ? rec.id : ''
                   const code = typeof rec.code === 'string' ? rec.code : '—'
@@ -2447,7 +2447,7 @@ export default function Dashboard() {
               <p className="mt-3 text-sm text-rose-600">Could not load upload queue.</p>
             ) : (
               <div className="mt-3 space-y-2">
-                {uploadQueueQ.data.slice(0, 8).map((row, idx) => {
+                {(Array.isArray(uploadQueueQ.data) ? uploadQueueQ.data : []).slice(0, 8).map((row, idx) => {
                   const rec = asRecord(row) || {}
                   const hasServerId =
                     typeof rec.id === 'string' || typeof rec._id === 'string'
