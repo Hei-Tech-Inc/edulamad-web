@@ -5,6 +5,8 @@ import ProtectedRoute from '../../components/ProtectedRoute'
 import Layout from '../../components/Layout'
 import StudentStudyQuickLinks from '../../components/StudentStudyQuickLinks'
 import { loadQuizBookmarks } from '@/lib/quiz/bookmarks'
+import { useQuizHistory } from '@/hooks/quiz/useQuizHistory'
+import { formatDuration, formatScore, formatTimeAgo } from '@/lib/utils/format'
 
 export default function QuizHistoryPage() {
   return (
@@ -19,6 +21,8 @@ export default function QuizHistoryPage() {
 function QuizHistoryContent() {
   const router = useRouter()
   const [bookmarks, setBookmarks] = useState([])
+  const [page, setPage] = useState(1)
+  const historyQ = useQuizHistory({ page, limit: 12 })
 
   useEffect(() => {
     const refresh = () => setBookmarks(loadQuizBookmarks())
@@ -76,13 +80,78 @@ function QuizHistoryContent() {
 
       <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Past quiz attempts</h2>
+        <p className="mt-2 text-sm text-slate-600">Every completed quiz shows score, duration, and recency here.</p>
+        {historyQ.isLoading ? (
+          <div className="mt-4 space-y-2">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={`quiz-history-skeleton-${idx}`} className="h-20 animate-pulse rounded-xl bg-slate-100" />
+            ))}
+          </div>
+        ) : historyQ.isError ? (
+          <p className="mt-4 text-sm text-rose-700">Quiz history is unavailable right now. Try again shortly.</p>
+        ) : historyQ.data?.items?.length ? (
+          <>
+            <ul className="mt-4 space-y-2">
+              {historyQ.data.items.map((attempt) => (
+                <li key={attempt.id} className="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-900">{attempt.courseName}</p>
+                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-800">
+                      {formatScore(attempt.score, attempt.totalQuestions)}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {formatTimeAgo(attempt.completedAt || attempt.startedAt)} · {formatDuration(attempt.durationSeconds)}
+                  </p>
+                  <div className="mt-2">
+                    <Link
+                      href={`/quiz/new?courseId=${encodeURIComponent(attempt.courseId)}`}
+                      className="text-xs font-semibold text-orange-700 hover:text-orange-800"
+                    >
+                      Retry this course
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-medium text-slate-600">Page {page}</span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!historyQ.data.hasMore}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="mt-4">
+            <p className="text-sm text-slate-600">No quiz attempts yet.</p>
+            <Link href="/quiz/new" className="mt-2 inline-flex text-sm font-medium text-orange-700 hover:text-orange-800">
+              Start a new quiz
+            </Link>
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Discover quizzes</h2>
         <p className="mt-2 text-sm text-slate-600">
-          A full attempt history will appear here as sessions are synced to your account. For now, use{' '}
-          <strong className="font-semibold">Saved quizzes</strong> above for quick return links.
+          Need new practice options? Browse suggestions from your enrolled courses.
         </p>
         <div className="mt-4">
-          <Link href="/quiz/new" className="text-sm font-medium text-orange-700 hover:text-orange-800">
-            Start a new quiz
+          <Link href="/quiz/discover" className="text-sm font-medium text-orange-700 hover:text-orange-800">
+            Open quiz discovery
           </Link>
         </div>
       </section>

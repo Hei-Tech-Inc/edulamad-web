@@ -10,6 +10,9 @@ export const queryKeys = {
     onboardingGate: ['students', 'me-profile', 'onboarding-gate'] as const,
     profile: ['students', 'profile'] as const,
     referral: ['students', 'referral'] as const,
+    activityFeed: (filters: { limit: number }) =>
+      ['students', 'activity-feed', filters] as const,
+    activityStats: ['students', 'activity-stats'] as const,
     questionCredits: ['students', 'question-credits'] as const,
     myCoursesInfinite: (filters: Record<string, unknown>) =>
       ['students', 'my-courses', 'infinite', filters] as const,
@@ -94,6 +97,10 @@ export const queryKeys = {
   },
   examCountdown: {
     course: (courseId: string) => ['exam-countdown', courseId] as const,
+  },
+  quiz: {
+    history: (filters: { page: number; limit: number }) =>
+      ['quiz', 'history', filters] as const,
   },
   gamification: {
     me: ['gamification', 'me'] as const,

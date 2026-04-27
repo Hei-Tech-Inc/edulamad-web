@@ -133,6 +133,7 @@ const API = {
   quiz: {
     topics: (courseId: string) => `/quiz/topics/${courseId}`,
     generate: '/quiz/generate',
+    history: '/quiz/history',
     submit: (id: string) => `/quiz/${id}/submit`,
     abandoned: '/quiz/abandoned',
     resume: (id: string) => `/quiz/${id}/resume`,
@@ -176,6 +177,8 @@ const API = {
     meProfile: '/students/me/profile',
     meStreak: '/students/me/streak',
     meXp: '/students/me/xp',
+    meActivity: '/students/me/activity',
+    meActivityStats: '/students/me/activity/stats',
     meReferral: '/students/me/referral',
     meQuestionCredits: '/students/me/question-credits',
     /** Paginated department catalog + material counts (OpenAPI `MyCoursesListResponseDto`). */

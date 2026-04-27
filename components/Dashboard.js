@@ -58,6 +58,8 @@ import { QuestionLimitBanner } from '@/components/dashboard/QuestionLimitBanner'
 import { UpgradeCard } from '@/components/dashboard/UpgradeCard'
 import { FeatureTeasers } from '@/components/dashboard/FeatureTeasers'
 import { ExamCountdownTeaser } from '@/components/dashboard/ExamCountdownTeaser'
+import { ActivityFeed } from '@/components/activity/ActivityFeed'
+import { QuizSuggestions } from '@/components/dashboard/QuizSuggestions'
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'
 
@@ -388,23 +390,6 @@ export default function Dashboard() {
   const analyticsQ = useAnalyticsMe()
   const adminStatsQ = useAdminStats(isPlatformSuperAdmin)
   const notificationsQ = useMyNotifications(5)
-  const recentActivity = useMemo(() => {
-    const fromNotes = (notificationsQ.data || []).slice(0, 4).map((note) => ({
-      id: `note-${note.id}`,
-      label: note.title || 'Notification',
-      when: note.createdAt || note.updatedAt || '',
-      type: 'notification',
-    }))
-    const fromBookmarks = quizBookmarks.slice(0, 3).map((b) => ({
-      id: `bookmark-${b.id}`,
-      label: `Bookmarked: ${b.title}`,
-      when: b.savedAt,
-      type: 'bookmark',
-    }))
-    return [...fromBookmarks, ...fromNotes]
-      .sort((a, b) => new Date(b.when || 0).getTime() - new Date(a.when || 0).getTime())
-      .slice(0, 6)
-  }, [notificationsQ.data, quizBookmarks])
   const isAdmin = sessionHasAdminTools(sessionUser, accessToken)
 
   const adminHashMigrated = useRef(false)
@@ -1133,6 +1118,15 @@ export default function Dashboard() {
           <div className="space-y-3 xl:col-span-8">
             <UpgradeCard />
             <FeatureTeasers />
+            <SectionCard>
+              <div className="flex items-center justify-between gap-2">
+                <SectionTitle icon={Target} title="Quiz picks for you" />
+                <Link href="/quiz/discover" className="text-xs font-semibold text-orange-300 hover:text-orange-200">
+                  Discover
+                </Link>
+              </div>
+              <QuizSuggestions />
+            </SectionCard>
           </div>
           <div className="xl:col-span-4">
             <ExamCountdownTeaser
@@ -1236,23 +1230,7 @@ export default function Dashboard() {
         <div className="xl:col-span-12">
           <SectionCard>
             <SectionTitle icon={Clock3} title="Recent activity" />
-            {recentActivity.length ? (
-              <ul className="mt-3 space-y-2">
-                {recentActivity.map((item) => (
-                  <li
-                    key={item.id}
-                    className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm"
-                  >
-                    <p className="text-slate-100">{item.label}</p>
-                    <p className="mt-0.5 text-[11px] uppercase tracking-wide text-slate-500">
-                      {item.type} · {timeAgo(item.when)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-sm text-slate-400">No recent activity yet.</p>
-            )}
+            <ActivityFeed limit={6} compact showHeaderLink />
 
             <div className="mt-5 border-t border-white/10 pt-4">
               <StudentCollapsible title="Bookmarks" defaultOpen={false}>

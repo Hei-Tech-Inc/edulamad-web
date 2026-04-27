@@ -162,6 +162,24 @@ function ProfileContent() {
           </div>
         </div>
         <div className="mt-5 flex flex-wrap gap-3">
+          <Link
+            href="/activity"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          >
+            Activity tracker
+          </Link>
+          <Link
+            href="/quiz/history"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          >
+            Quiz history
+          </Link>
+          <Link
+            href="/quiz/discover"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          >
+            Discover quizzes
+          </Link>
           <Link href="/settings/account" className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white">
             Account settings
           </Link>

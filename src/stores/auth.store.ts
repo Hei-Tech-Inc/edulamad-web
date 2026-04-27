@@ -12,6 +12,7 @@ export interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  _hasHydrated: boolean;
   /**
    * Platform super-admin: `X-Act-As-Org-Id` for org-scoped routes only (not `/platform/*`).
    * Session-only (excluded from persist).
@@ -28,6 +29,7 @@ export interface AuthState {
   clearAuth: () => void;
   hasPermission: (permission: Permission) => boolean;
   setLoading: (loading: boolean) => void;
+  setHasHydrated: (hydrated: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -42,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
+      _hasHydrated: false,
       setTokens: (access, refresh) =>
         set({
           accessToken: access,
@@ -80,6 +83,7 @@ export const useAuthStore = create<AuthState>()(
         return u.permissions.includes(permission);
       },
       setLoading: (loading) => set({ isLoading: loading }),
+      setHasHydrated: (hydrated) => set({ _hasHydrated: hydrated }),
     }),
     {
       name: 'nsuo-auth',
@@ -91,6 +95,9 @@ export const useAuthStore = create<AuthState>()(
         org: s.org,
         isAuthenticated: s.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );

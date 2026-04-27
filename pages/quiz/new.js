@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ProtectedRoute from '../../components/ProtectedRoute'
 import Layout from '../../components/Layout'
 import Link from 'next/link'
@@ -38,6 +38,25 @@ function QuizNewRouteInner() {
   const [selectedTag, setSelectedTag] = useState('')
 
   const yearCandidates = useMemo(buildYearRange, [])
+
+  useEffect(() => {
+    if (!router.isReady) return
+    const queryValue = (key) => {
+      const v = router.query[key]
+      return Array.isArray(v) ? v[0] : v
+    }
+    const nextCourseId = queryValue('courseId')
+    const nextYear = queryValue('year')
+    const nextLevel = queryValue('level')
+    const nextType = queryValue('type')
+    const nextTag = queryValue('tagId')
+
+    if (typeof nextCourseId === 'string' && nextCourseId) setCourseId(nextCourseId)
+    if (typeof nextYear === 'string' && nextYear) setYear(nextYear)
+    if (typeof nextLevel === 'string' && nextLevel) setLevel(nextLevel)
+    if (typeof nextType === 'string' && nextType) setType(nextType)
+    if (typeof nextTag === 'string') setSelectedTag(nextTag)
+  }, [router.isReady, router.query])
 
   const coursesQ = useQuery({
     queryKey: ['quiz-new', 'my-courses', year, level],

@@ -23,6 +23,7 @@ import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
 import TopLoadingBar from '@/components/ui/loading/TopLoadingBar'
 import { loadingBarActions } from '@/stores/loading-bar.store'
+import { useAuthStore } from '@/stores/auth.store'
 import { SkeletonProfileHeader } from '@/components/ui/skeleton'
 import { AppErrorBoundary } from '@/components/providers/AppErrorBoundary'
 import { PushPermissionPrompt } from '@/components/notifications/PushPermissionPrompt'
@@ -110,9 +111,11 @@ function AppWrapper({ Component, pageProps }) {
 function AuthWrapper({ children }) {
   const { user, initialized, loading } = useAuth()
   const router = useRouter()
+  const hasHydrated = useAuthStore((s) => s._hasHydrated)
 
   const currentPath = router.pathname
   const onOnboardingRoute = currentPath === '/onboarding'
+  const onShareableQuizRoute = currentPath === '/quiz/[id]'
   const onAuthEntryRoute =
     isPublicAuthRoute(currentPath) &&
     currentPath !== '/' &&
@@ -157,11 +160,13 @@ function AuthWrapper({ children }) {
 
   // Redirect unauthenticated users to login
   useEffect(() => {
-    if (!initialized || loading) return
+    if (!initialized || loading || !hasHydrated) return
 
     // If not logged in and trying to access protected route, redirect to login
-    if (!user && !isPublicAuthRoute(currentPath)) {
-      router.push('/login')
+    if (!user && !isPublicAuthRoute(currentPath) && !onShareableQuizRoute) {
+      const nextPath =
+        typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/dashboard'
+      router.replace(`/login?next=${encodeURIComponent(nextPath)}`)
     }
 
     if (!user) return
@@ -186,14 +191,16 @@ function AuthWrapper({ children }) {
       const nextDest = currentPath === '/login' ? getSafeInternalPath(router.query.next) : null
       const dest =
         profileGateQ.isSuccess && !onboardingComplete ? '/onboarding' : nextDest || '/dashboard'
-      router.push(dest)
+      router.replace(dest)
     }
   }, [
     user,
     initialized,
     loading,
+    hasHydrated,
     currentPath,
     onOnboardingRoute,
+    onShareableQuizRoute,
     onboardingComplete,
     onAuthEntryRoute,
     profileGateReady,
@@ -206,7 +213,7 @@ function AuthWrapper({ children }) {
   ])
 
   // Loading state
-  if (loading || !initialized) {
+  if (loading || !initialized || !hasHydrated) {
     // Show loading indicator only for protected routes
     if (!isPublicAuthRoute(currentPath)) {
       return (
