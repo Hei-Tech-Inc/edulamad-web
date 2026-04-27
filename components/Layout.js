@@ -26,6 +26,12 @@ const Layout = ({ children, title: initialTitle = 'Dashboard' }) => {
       newTitle = 'Quiz mode'
     } else if (path.startsWith('/flashcards')) {
       newTitle = 'Flashcards'
+    } else if (path.startsWith('/admin/')) {
+      if (path === '/admin/questions/upload') {
+        newTitle = 'JSON question upload'
+      } else {
+        newTitle = 'Admin'
+      }
     }
     setTitle(newTitle)
   }, [router.pathname])

@@ -28,6 +28,7 @@ import {
   Layers,
   Wallet,
   CreditCard,
+  FileJson2,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthStore } from '@/stores/auth.store'
@@ -242,6 +243,11 @@ const Sidebar = ({
         title: 'Upload question bundle',
         path: '/dashboard?admin=create#admin-upload-bundle',
         icon: Upload,
+      },
+      {
+        title: 'JSON question upload',
+        path: '/admin/questions/upload',
+        icon: FileJson2,
       },
     ]
 

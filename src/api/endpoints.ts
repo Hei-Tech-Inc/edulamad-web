@@ -117,6 +117,8 @@ const API = {
     questionsPendingReview: '/content/questions/pending-review',
     courseOfferings: (courseId: string) => `/content/courses/${courseId}/offerings`,
     offering: (offeringId: string) => `/content/offerings/${offeringId}`,
+    /** Bulk JSON question import (may not be in older OpenAPI bundles; see api-path-stubs). */
+    questionsBulkJsonUpload: '/content/questions/bulk-upload',
     questionsBulkApprove: '/content/questions/bulk-approve',
     questionApprove: (questionId: string) => `/content/questions/${questionId}/approve`,
     questionReject: (questionId: string) => `/content/questions/${questionId}/reject`,

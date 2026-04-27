@@ -25,6 +25,7 @@
     "/content/slides/bundle/{slideId}/file": {},
     "/content/slides/bundle/{slideId}/extracted-content": {},
     "/content/slides/bundle/{slideId}/summary-inline": {},
-    "/content/slides/bundle/{slideId}/publish": {}
+    "/content/slides/bundle/{slideId}/publish": {},
+    "/content/questions/bulk-upload": {}
   }
 }
