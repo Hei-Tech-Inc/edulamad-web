@@ -20,10 +20,10 @@ export default function AuthSplitLayout({
       ]
 
   return (
-    <div className="h-dvh overflow-hidden bg-[#05070d] p-1.5 sm:p-4">
-      <div className="mx-auto grid h-full max-w-7xl overflow-hidden rounded-3xl border border-white/10 bg-[#070a12] shadow-[0_30px_70px_rgba(0,0,0,0.45)] lg:grid-cols-2">
-        <section className="flex items-center justify-center border-r border-white/10 p-3 sm:p-8 lg:p-12">
-          <div className="w-full max-w-md">
+    <div className="min-h-dvh bg-[#05070d] p-1.5 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-4">
+      <div className="mx-auto w-full max-w-7xl rounded-3xl border border-white/10 bg-[#070a12] shadow-[0_30px_70px_rgba(0,0,0,0.45)] lg:grid lg:h-[min(100dvh,100svh)] lg:min-h-0 lg:max-h-[calc(100dvh-1.25rem)] lg:grid-cols-2 lg:overflow-hidden">
+        <section className="flex items-start justify-center p-3 sm:p-8 lg:max-h-full lg:min-h-0 lg:items-center lg:overflow-y-auto lg:border-r lg:border-white/10 lg:p-12">
+          <div className="w-full max-w-md py-2 sm:py-0">
             <Link
               href="/"
               className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-200 sm:mb-8"
