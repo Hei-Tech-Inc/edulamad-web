@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -73,8 +73,12 @@ export function UpgradeModal({
   trigger = 'generic',
 }: Props) {
   const copy = TRIGGER_COPY[trigger];
-  const { upgrade } = useUpgrade();
+  const { upgrade, isProcessing, error, clearError } = useUpgrade();
   const [billing, setBilling] = useState<BillingPeriod>('semester');
+
+  useEffect(() => {
+    if (isOpen) clearError();
+  }, [isOpen, clearError]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -89,6 +93,11 @@ export function UpgradeModal({
           <DialogDescription className="text-center">
             {copy.subtext}
           </DialogDescription>
+          {error ? (
+            <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-center text-sm text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+              {error}
+            </p>
+          ) : null}
         </DialogHeader>
 
         <div className="flex items-center justify-center gap-3 text-xs">
@@ -123,12 +132,14 @@ export function UpgradeModal({
           <CompactPlanCard
             plan={getPlan('basic')}
             billing={billing}
+            disabled={isProcessing}
             onSelect={() => void upgrade('basic', billing)}
           />
           <CompactPlanCard
             plan={getPlan('pro')}
             billing={billing}
             highlighted
+            disabled={isProcessing}
             onSelect={() => void upgrade('pro', billing)}
           />
         </div>

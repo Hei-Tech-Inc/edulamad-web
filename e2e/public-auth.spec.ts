@@ -27,4 +27,19 @@ test.describe('Public auth pages', () => {
     await page.goto('/register');
     await expect(page.locator('body')).toBeVisible();
   });
+
+  test('verify-email page loads', async ({ page }) => {
+    await page.goto('/verify-email');
+    await expect(
+      page.getByRole('heading', { level: 1, name: /verify email/i }),
+    ).toBeVisible();
+  });
+
+  test('subscription page redirects unauthenticated users to login', async ({
+    page,
+  }) => {
+    await page.goto('/profile/subscription');
+    await page.waitForURL(/\/login/, { timeout: 30_000 });
+    await expect(page).toHaveURL(/\/login/);
+  });
 });

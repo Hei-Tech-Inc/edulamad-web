@@ -6,6 +6,9 @@
         "serve"
       ],
       "type": "stdio"
+    },
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/hei-tech/javascript-nextjs"
     }
   }
 }

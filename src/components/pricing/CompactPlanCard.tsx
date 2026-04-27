@@ -8,6 +8,7 @@ type Props = {
   plan: Plan;
   billing: BillingPeriod;
   highlighted?: boolean;
+  disabled?: boolean;
   onSelect: () => void;
 };
 
@@ -15,6 +16,7 @@ export function CompactPlanCard({
   plan,
   billing,
   highlighted = false,
+  disabled = false,
   onSelect,
 }: Props) {
   const price =
@@ -66,9 +68,10 @@ export function CompactPlanCard({
       <p className="text-[11px] text-slate-500">{plan.studentCount}</p>
       <button
         type="button"
+        disabled={disabled}
         onClick={onSelect}
         className={cn(
-          'w-full rounded-lg py-2.5 text-sm font-semibold text-white transition',
+          'w-full rounded-lg py-2.5 text-sm font-semibold text-white transition disabled:opacity-60',
           highlighted
             ? 'bg-orange-500 hover:bg-orange-600'
             : 'bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100',

@@ -1,5 +1,9 @@
 import posthog from 'posthog-js'
 import type { CaptureResult } from 'posthog-js'
+import { captureRouterTransitionStart } from '@sentry/nextjs'
+
+/** Client bundle only — do not put this on `instrumentation.ts` (Node resolves the server export). */
+export const onRouterTransitionStart = captureRouterTransitionStart
 
 const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
 

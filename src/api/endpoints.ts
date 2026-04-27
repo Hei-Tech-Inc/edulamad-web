@@ -1,5 +1,6 @@
 /**
- * Typed path helpers — align with `paths` in `contexts/api-docs.json`.
+ * Typed path helpers — align with OpenAPI `paths` (live: `{NEXT_PUBLIC_API_URL}/api-json`, e.g. http://localhost:5003/api-json).
+ * Bundled `contexts/api-docs.json` is a fallback when the API is offline. Regenerate or refresh the bundle after backend changes.
  * `NEXT_PUBLIC_API_URL` is the axios base URL (include a global prefix in env if the API uses one).
  *
  * `deploymentExtensions` documents non-OpenAPI paths still referenced by some pages (not the main sidebar).
@@ -60,6 +61,8 @@ const API = {
     logout: '/auth/logout',
     verifyEmail: '/auth/verify-email',
     resendVerification: '/auth/resend-verification',
+    /** POST (Bearer) — same as resend by email but uses JWT; see OpenAPI. */
+    resendVerificationMe: '/auth/resend-verification/me',
     forgotPassword: '/auth/forgot-password',
     resetPassword: '/auth/reset-password',
     me: '/auth/me',
@@ -146,6 +149,15 @@ const API = {
   search: {
     users: '/search/users',
     global: '/search/global',
+    /** OpenAPI `SearchController_searchTasks` (may return empty in MVP). */
+    tasks: '/search/tasks',
+  },
+  /**
+   * User tasks (`TasksController_*` in OpenAPI; module may be retired in some builds).
+   */
+  tasks: {
+    list: '/tasks',
+    detail: (id: string) => `/tasks/${id}`,
   },
   institutions: {
     universities: {
@@ -221,12 +233,23 @@ const API = {
   subscriptions: {
     plans: '/subscriptions/plans',
     me: '/subscriptions/me',
+    /** JWT — returns Paystack `authorizationUrl` + `reference` (OpenAPI). */
+    subscribe: '/subscriptions/subscribe',
     payUploadFee: '/subscriptions/pay/upload-fee',
     paystackWebhook: '/subscriptions/webhooks/paystack',
+  },
+  payments: {
+    /** JWT — confirm after Paystack redirect (`reference` from subscribe response or query string). */
+    verify: (reference: string) =>
+      `/payments/verify/${encodeURIComponent(reference)}`,
+    /** Server-side Paystack callback (raw body; not for browser). */
+    webhook: '/payments/webhook',
   },
   gamification: {
     me: '/gamification/me',
     leaderboard: '/gamification/leaderboard',
+    /** Public or catalog of badge definitions (OpenAPI). */
+    badges: '/gamification/badges',
     badgesMe: '/gamification/badges/me',
     walletMe: '/gamification/wallet/me',
   },
@@ -238,6 +261,8 @@ const API = {
     me: '/notifications/me',
     read: (id: string) => `/notifications/${id}/read`,
     registerDevice: '/notifications/register-device',
+    unregisterDevice: '/notifications/unregister-device',
+    dailyQuestionToday: '/notifications/daily-question/today',
     answerDailyQuestion: '/notifications/daily-question/answer',
   },
   enrollments: {
