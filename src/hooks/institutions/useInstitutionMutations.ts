@@ -76,11 +76,27 @@ export function useUpdateDepartment() {
   });
 }
 
+/** Matches Nest/class-validator expectations alongside universityId / collegeId on sibling creates. */
+export type CreateCoursePayload = {
+  name: string;
+  departmentId: string;
+  isActive: boolean;
+  code?: string;
+};
+
 export function useCreateCourse() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
-      apiClient.post(API.institutions.courses.list, payload),
+    mutationFn: (payload: CreateCoursePayload) => {
+      const body: Record<string, unknown> = {
+        name: payload.name.trim(),
+        departmentId: payload.departmentId.trim(),
+        isActive: payload.isActive,
+      };
+      const code = payload.code?.trim();
+      if (code) body.code = code;
+      return apiClient.post(API.institutions.courses.list, body);
+    },
     onSuccess: () => invalidateInstitutions(qc),
   });
 }

@@ -63,7 +63,16 @@ function EditCourseContent() {
       }}
       submitLabel="Save changes"
       onSubmit={async (payload) => {
-        await update.mutateAsync({ id, payload });
+        await update.mutateAsync({
+          id,
+          payload: {
+            name: payload.name,
+            ...(payload.code !== undefined && payload.code !== ''
+              ? { code: payload.code }
+              : {}),
+            isActive: payload.isActive,
+          },
+        });
         await router.push('/admin/courses');
       }}
     />

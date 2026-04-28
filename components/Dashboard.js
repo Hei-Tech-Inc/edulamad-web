@@ -2001,17 +2001,20 @@ export default function Dashboard() {
                 onSubmit={async (e) => {
                   e.preventDefault()
                   try {
+                    const trimmedCode = courseFormState.code.trim()
                     const payload = {
                       name: courseFormState.name.trim(),
-                      code: courseFormState.code.trim() || undefined,
-                      deptId: courseFormState.deptId || departmentId,
                       isActive: courseFormState.isActive,
                     }
+                    if (trimmedCode) payload.code = trimmedCode
                     if (courseFormState.id) {
                       await updateCourseM.mutateAsync({ id: courseFormState.id, payload })
                       setCatalogStatus('Course updated.')
                     } else {
-                      await createCourseM.mutateAsync(payload)
+                      await createCourseM.mutateAsync({
+                        ...payload,
+                        departmentId: courseFormState.deptId || departmentId,
+                      })
                       setCatalogStatus('Course created.')
                     }
                     setCourseFormState({ id: '', name: '', code: '', deptId: departmentId || '', isActive: true })

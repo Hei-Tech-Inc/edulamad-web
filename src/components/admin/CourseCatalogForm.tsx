@@ -17,7 +17,7 @@ export function CourseCatalogForm({
   onSubmit: (payload: {
     name: string;
     code?: string;
-    deptId: string;
+    departmentId: string;
     isActive: boolean;
   }) => Promise<void>;
   submitLabel: string;
@@ -39,7 +39,7 @@ export function CourseCatalogForm({
       await onSubmit({
         name: name.trim(),
         code: code.trim() || undefined,
-        deptId: departmentId,
+        departmentId,
         isActive,
       });
     } catch (e) {
