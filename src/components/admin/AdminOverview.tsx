@@ -1,9 +1,49 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutGrid, School, BookOpen, Upload, ListTodo } from 'lucide-react';
+import { useMemo } from 'react';
+import {
+  LayoutGrid,
+  School,
+  BookOpen,
+  Upload,
+  ListTodo,
+  Ticket,
+  ClipboardList,
+  Users,
+  ScrollText,
+} from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { AdminQuickStats, type AdminStatItem } from '@/components/admin/AdminQuickStats';
 import { useAdminStats } from '@/hooks/admin/useAdminStats';
+
+function humanizeKey(k: string): string {
+  return k
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .trim();
+}
+
+function toQuickStats(data: unknown): AdminStatItem[] {
+  if (data === null || data === undefined) return [];
+  if (typeof data !== 'object') {
+    return [{ label: 'Value', value: String(data), icon: '📊', color: 'orange' }];
+  }
+  const rec = data as Record<string, unknown>;
+  const pairs = Object.entries(rec);
+  const numeric = pairs.filter(
+    ([, v]) => typeof v === 'number' && Number.isFinite(v as number),
+  );
+  const pick = numeric.length > 0 ? numeric : pairs.slice(0, 4);
+  const colors: NonNullable<AdminStatItem['color']>[] = ['orange', 'green', 'blue', 'amber'];
+  const icons = ['📊', '📈', '🎯', '✨'];
+  return pick.slice(0, 4).map(([k, v], i) => ({
+    label: humanizeKey(k),
+    value: typeof v === 'number' ? v : String(v),
+    icon: icons[i % icons.length],
+    color: colors[i % colors.length],
+  }));
+}
 
 function StatPreview({ data }: { data: unknown }) {
   if (data === null || data === undefined) {
@@ -53,6 +93,18 @@ const QUICK: {
     icon: BookOpen,
   },
   {
+    href: '/admin/content/pending-review',
+    title: 'Pending questions',
+    desc: 'Content review queue',
+    icon: ClipboardList,
+  },
+  {
+    href: '/admin/promo-codes',
+    title: 'Promo codes',
+    desc: 'Discount and trial codes',
+    icon: Ticket,
+  },
+  {
     href: '/admin/questions/upload',
     title: 'JSON upload',
     desc: 'Bulk question import',
@@ -64,15 +116,29 @@ const QUICK: {
     desc: 'Review pending uploads',
     icon: ListTodo,
   },
+  {
+    href: '/admin/leaderboard',
+    title: 'Leaderboard',
+    desc: 'Gamification standings',
+    icon: Users,
+  },
+  {
+    href: '/admin/audit-logs',
+    title: 'Audit logs',
+    desc: 'Accountability trail',
+    icon: ScrollText,
+  },
 ];
 
 export function AdminOverview() {
   const statsQ = useAdminStats();
+  const quickStats = useMemo(() => toQuickStats(statsQ.data), [statsQ.data]);
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8">
       <p className="text-sm text-text-secondary">
-        Manage institutions, courses, offerings, and content imports.
+        Manage institutions, courses, offerings, and content workflows. Lists hit bundled OpenAPI routes
+        where available; otherwise you will see a clear API error.
       </p>
 
       <section>
@@ -86,6 +152,18 @@ export function AdminOverview() {
             <p className="text-sm text-danger">
               Could not load admin stats. You may need elevated API access.
             </p>
+          ) : quickStats.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              <AdminQuickStats stats={quickStats} />
+              <details className="text-xs text-text-muted">
+                <summary className="cursor-pointer select-none text-text-secondary hover:text-text-primary">
+                  Raw payload
+                </summary>
+                <div className="mt-2">
+                  <StatPreview data={statsQ.data} />
+                </div>
+              </details>
+            </div>
           ) : (
             <StatPreview data={statsQ.data} />
           )}

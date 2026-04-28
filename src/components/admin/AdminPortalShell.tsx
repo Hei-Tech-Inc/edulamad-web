@@ -13,7 +13,7 @@ const SECTIONS: {
   items: { href: string; label: string; match?: 'exact' | 'prefix' }[];
 }[] = [
   {
-    title: 'Content',
+    title: 'Catalog',
     items: [
       { href: '/admin', label: 'Overview', match: 'exact' },
       { href: '/admin/institutions', label: 'Institutions', match: 'prefix' },
@@ -21,8 +21,33 @@ const SECTIONS: {
       { href: '/admin/questions/upload', label: 'JSON upload', match: 'prefix' },
       {
         href: '/dashboard?admin=catalog#admin-upload-queue',
-        label: 'Upload queue',
+        label: 'Dashboard upload queue',
       },
+    ],
+  },
+  {
+    title: 'Content pipeline',
+    items: [
+      { href: '/admin/content/pending-review', label: 'Pending questions', match: 'prefix' },
+      { href: '/admin/content/manual-queue', label: 'Manual queue', match: 'prefix' },
+      { href: '/admin/questions-upload-queue', label: 'Questions queue', match: 'prefix' },
+      { href: '/admin/ta-upload-queue', label: 'TA upload queue', match: 'prefix' },
+    ],
+  },
+  {
+    title: 'Engagement',
+    items: [
+      { href: '/admin/quiz-history', label: 'Quiz history', match: 'prefix' },
+      { href: '/admin/discussions', label: 'Discussions', match: 'prefix' },
+      { href: '/admin/leaderboard', label: 'Leaderboard', match: 'prefix' },
+    ],
+  },
+  {
+    title: 'Operations',
+    items: [
+      { href: '/admin/promo-codes', label: 'Promo codes', match: 'prefix' },
+      { href: '/admin/server-notifications', label: 'Server notifications', match: 'prefix' },
+      { href: '/admin/audit-logs', label: 'Audit logs', match: 'prefix' },
     ],
   },
   {
