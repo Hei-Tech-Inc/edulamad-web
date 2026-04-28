@@ -29,6 +29,7 @@ import {
   Wallet,
   CreditCard,
   FileJson2,
+  LayoutGrid,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthStore } from '@/stores/auth.store'
@@ -204,6 +205,11 @@ const Sidebar = ({
     }
 
     const adminNavItems = [
+      {
+        title: 'Admin portal',
+        path: '/admin',
+        icon: LayoutGrid,
+      },
       {
         title: 'Admin overview',
         path: '/dashboard#admin-panel-tabs',
