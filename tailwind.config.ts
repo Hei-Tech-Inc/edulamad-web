@@ -59,6 +59,7 @@ const config: Config = {
         'fade-in': 'fadeIn 0.2s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'slide-down': 'slideDown 0.3s ease-out',
+        'slide-in-right': 'slideInRight 0.2s ease-out',
         shimmer: 'shimmer 2s infinite',
         'pulse-slow': 'pulse 3s infinite',
         'bounce-in': 'bounceIn 0.4s cubic-bezier(0.34,1.56,0.64,1)',
@@ -76,6 +77,10 @@ const config: Config = {
         slideDown: {
           from: { transform: 'translateY(-16px)', opacity: '0' },
           to: { transform: 'translateY(0)', opacity: '1' },
+        },
+        slideInRight: {
+          from: { transform: 'translateX(100%)' },
+          to: { transform: 'translateX(0)' },
         },
         shimmer: {
           '0%': { backgroundPosition: '-200% center' },

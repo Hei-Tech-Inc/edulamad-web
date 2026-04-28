@@ -19,11 +19,13 @@ function EntityRow({
   selected,
   onSelect,
   editHref,
+  openHref,
 }: {
   entity: CatalogEntity;
   selected: boolean;
   onSelect: () => void;
   editHref: string;
+  openHref: string;
 }) {
   return (
     <div
@@ -49,14 +51,23 @@ function EntityRow({
           <p className="truncate text-xs text-text-muted">{entity.code}</p>
         ) : null}
       </div>
-      <Link
-        href={editHref}
-        onClick={(e) => e.stopPropagation()}
-        className="shrink-0 rounded p-1 text-text-muted opacity-0 transition-opacity hover:text-brand group-hover:opacity-100"
-        aria-label="Edit"
-      >
-        <Pencil className="h-4 w-4" />
-      </Link>
+      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <Link
+          href={openHref}
+          onClick={(e) => e.stopPropagation()}
+          className="rounded px-1.5 py-1 text-xs text-brand hover:underline"
+        >
+          Open
+        </Link>
+        <Link
+          href={editHref}
+          onClick={(e) => e.stopPropagation()}
+          className="rounded p-1 text-text-muted hover:text-brand"
+          aria-label="Edit"
+        >
+          <Pencil className="h-4 w-4" />
+        </Link>
+      </div>
     </div>
   );
 }
@@ -105,6 +116,7 @@ export function InstitutionsAdminPage() {
                     setCollegeId(null);
                   }}
                   editHref={`/admin/institutions/universities/${encodeURIComponent(u.id)}/edit`}
+                  openHref={`/admin/institutions/universities/${encodeURIComponent(u.id)}`}
                 />
               ))}
               <Link href="/admin/institutions/universities/new">
@@ -154,6 +166,7 @@ export function InstitutionsAdminPage() {
                 selected={collegeId === c.id}
                 onSelect={() => setCollegeId(c.id)}
                 editHref={`/admin/institutions/colleges/${encodeURIComponent(c.id)}/edit`}
+                openHref={`/admin/institutions/colleges/${encodeURIComponent(c.id)}`}
               />
             ))
           )}
@@ -224,6 +237,13 @@ export function InstitutionsAdminPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                  <Link
+                    href={`/admin/institutions/departments/${encodeURIComponent(d.id)}`}
+                    className="rounded px-1.5 py-1 text-xs text-brand hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Open
+                  </Link>
                   <Link
                     href={`/admin/courses?departmentId=${encodeURIComponent(d.id)}`}
                     className="rounded px-1.5 py-1 text-xs text-brand hover:underline"

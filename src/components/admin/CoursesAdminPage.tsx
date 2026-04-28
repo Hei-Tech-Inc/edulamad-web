@@ -220,6 +220,11 @@ export function CoursesAdminPage() {
                   <p className="truncate text-sm text-text-primary">{c.name}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Link href={`/admin/courses/${encodeURIComponent(c.id)}`}>
+                    <Button type="button" size="sm">
+                      Open
+                    </Button>
+                  </Link>
                   <Link href={`/courses/${encodeURIComponent(c.id)}`}>
                     <Button type="button" variant="outline" size="sm">
                       Student view
