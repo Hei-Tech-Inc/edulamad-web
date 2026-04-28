@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useState } from 'react';
-import { Pencil } from 'lucide-react';
+import { ChevronRight, Pencil } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
@@ -61,6 +62,7 @@ function EntityRow({
 }
 
 export function InstitutionsAdminPage() {
+  const router = useRouter();
   const [univId, setUnivId] = useState<string | null>(null);
   const [collegeId, setCollegeId] = useState<string | null>(null);
 
@@ -191,26 +193,53 @@ export function InstitutionsAdminPage() {
             (deptQ.data ?? []).map((d) => (
               <div
                 key={d.id}
-                className="flex items-center gap-2 rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-2.5"
+                role="button"
+                tabIndex={0}
+                className="group flex cursor-pointer items-center gap-2 rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-2.5 transition-colors hover:border-brand/35 hover:bg-brand/[0.06]"
+                onClick={() =>
+                  void router.push(
+                    `/admin/courses/new?departmentId=${encodeURIComponent(d.id)}`,
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    void router.push(
+                      `/admin/courses/new?departmentId=${encodeURIComponent(d.id)}`,
+                    );
+                  }
+                }}
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-text-primary">{d.name}</p>
                   {d.code ? (
                     <p className="truncate text-xs text-text-muted">{d.code}</p>
                   ) : null}
+                  <p className="mt-1 text-[11px] font-medium text-brand/90">
+                    New course
+                    <ChevronRight
+                      className="-mt-px ml-0.5 inline h-3.5 w-3.5 align-middle opacity-70 transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
+                  </p>
                 </div>
-                <Link
-                  href={`/admin/courses?departmentId=${encodeURIComponent(d.id)}`}
-                  className="shrink-0 text-xs text-brand hover:underline"
-                >
-                  Courses
-                </Link>
-                <Link
-                  href={`/admin/institutions/departments/${encodeURIComponent(d.id)}/edit`}
-                  className="shrink-0 text-xs text-text-muted hover:text-brand"
-                >
-                  Edit
-                </Link>
+                <div className="flex shrink-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                  <Link
+                    href={`/admin/courses?departmentId=${encodeURIComponent(d.id)}`}
+                    className="rounded px-1.5 py-1 text-xs text-brand hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Browse courses
+                  </Link>
+                  <Link
+                    href={`/admin/institutions/departments/${encodeURIComponent(d.id)}/edit`}
+                    className="rounded p-1 text-text-muted hover:text-brand"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Edit department"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Link>
+                </div>
               </div>
             ))
           )}

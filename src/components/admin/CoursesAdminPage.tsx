@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import {
   useColleges,
   useCourseSearch,
   useDepartments,
+  useDepartmentHierarchy,
   useUniversities,
 } from '@/hooks/institutions/useInstitutionsCatalog';
 import type { CatalogEntity } from '@/hooks/institutions/useInstitutionsCatalog';
@@ -19,14 +20,35 @@ export function CoursesAdminPage() {
   const router = useRouter();
   const [univId, setUnivId] = useState<string | null>(null);
   const [collegeId, setCollegeId] = useState<string | null>(null);
-  const [deptId, setDeptId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const hydratedHierarchyFor = useRef<string | null>(null);
 
+  const deptParam =
+    typeof router.query.departmentId === 'string' && router.query.departmentId.trim()
+      ? router.query.departmentId.trim()
+      : null;
+
+  const deptId = deptParam;
+
+  const hierarchyQ = useDepartmentHierarchy(deptParam);
+
+  /** deptId is driven by ?departmentId= in the URL (bookmarkable). */
   useEffect(() => {
-    const q = router.query;
-    const d = q.departmentId;
-    if (typeof d === 'string' && d) setDeptId(d);
-  }, [router.query]);
+    if (!deptParam || !hierarchyQ.data) return;
+    if (hydratedHierarchyFor.current === deptParam) return;
+    const h = hierarchyQ.data;
+    setUnivId(h.universityId);
+    setCollegeId(h.collegeId);
+    hydratedHierarchyFor.current = deptParam;
+  }, [deptParam, hierarchyQ.data]);
+
+  function replaceCoursesQuery(next: { departmentId?: string }) {
+    void router.replace(
+      { pathname: '/admin/courses', query: next.departmentId ? next : {} },
+      undefined,
+      { shallow: true },
+    );
+  }
 
   const uniQ = useUniversities(true);
   const colQ = useColleges(univId, true);
@@ -38,31 +60,52 @@ export function CoursesAdminPage() {
     return [...universities].sort((a, b) => a.name.localeCompare(b.name));
   }, [uniQ.data]);
 
+  const selectedDeptName = useMemo(() => {
+    if (!deptId) return null;
+    const list = deptQ.data ?? [];
+    return list.find((d) => d.id === deptId)?.name ?? null;
+  }, [deptId, deptQ.data]);
+
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-text-secondary">
-          Pick a department, then search courses in that catalog.
+        <p className="text-sm text-white/65">
+          Pick a department to list courses. The URL updates with{' '}
+          <code className="rounded bg-white/10 px-1 font-mono text-xs">departmentId</code> so you
+          can bookmark or share. From{' '}
+          <Link href="/admin/institutions" className="text-brand hover:underline">
+            Institutions
+          </Link>
+          , click a department to create a course with that department already chosen.
         </p>
         {deptId ? (
           <Link
             href={`/admin/courses/new?departmentId=${encodeURIComponent(deptId)}`}
           >
-            <Button type="button">Add course</Button>
+            <Button type="button">Create course</Button>
           </Link>
         ) : (
           <Button type="button" disabled title="Select a department first">
-            Add course
+            Create course
           </Button>
         )}
       </div>
 
       <Card className="flex flex-col gap-3 p-4">
-        <p className="text-xs font-semibold tracking-wider text-text-secondary uppercase">
+        <p className="text-xs font-semibold tracking-wider text-white/45 uppercase">
           Filter catalog
         </p>
+        {deptParam && hierarchyQ.isLoading ? (
+          <p className="text-sm text-white/55">Loading department context…</p>
+        ) : null}
+        {deptParam && hierarchyQ.isError ? (
+          <p className="text-sm text-danger">
+            Could not load hierarchy for this department — pick university and college manually
+            below.
+          </p>
+        ) : null}
         <div className="grid gap-3 md:grid-cols-3">
-          <label className="text-xs text-text-secondary">
+          <label className="text-xs text-white/55">
             University
             <select
               className="mt-1 flex h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm text-text-primary"
@@ -71,7 +114,8 @@ export function CoursesAdminPage() {
                 const v = e.target.value || null;
                 setUnivId(v);
                 setCollegeId(null);
-                setDeptId(null);
+                hydratedHierarchyFor.current = null;
+                replaceCoursesQuery({});
               }}
             >
               <option value="">Select…</option>
@@ -83,7 +127,7 @@ export function CoursesAdminPage() {
               ))}
             </select>
           </label>
-          <label className="text-xs text-text-secondary">
+          <label className="text-xs text-white/55">
             College
             <select
               className="mt-1 flex h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm text-text-primary disabled:opacity-40"
@@ -92,7 +136,8 @@ export function CoursesAdminPage() {
               onChange={(e) => {
                 const v = e.target.value || null;
                 setCollegeId(v);
-                setDeptId(null);
+                hydratedHierarchyFor.current = null;
+                replaceCoursesQuery({});
               }}
             >
               <option value="">{univId ? 'Select…' : 'Choose university first'}</option>
@@ -103,13 +148,20 @@ export function CoursesAdminPage() {
               ))}
             </select>
           </label>
-          <label className="text-xs text-text-secondary">
+          <label className="text-xs text-white/55">
             Department
             <select
-              className="mt-1 flex h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm text-text-primary disabled:opacity-40"
+              className={cn(
+                'mt-1 flex h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm text-text-primary disabled:opacity-40',
+                deptId && 'border-brand/30 ring-1 ring-brand/15',
+              )}
               disabled={!collegeId}
               value={deptId ?? ''}
-              onChange={(e) => setDeptId(e.target.value || null)}
+              onChange={(e) => {
+                const v = e.target.value || null;
+                hydratedHierarchyFor.current = null;
+                replaceCoursesQuery(v ? { departmentId: v } : {});
+              }}
             >
               <option value="">{collegeId ? 'Select…' : 'Choose college first'}</option>
               {(deptQ.data ?? []).map((d) => (
@@ -120,7 +172,12 @@ export function CoursesAdminPage() {
             </select>
           </label>
         </div>
-        <label className="text-xs text-text-secondary">
+        {selectedDeptName ? (
+          <p className="text-xs text-brand">
+            Selected: <span className="font-medium">{selectedDeptName}</span>
+          </p>
+        ) : null}
+        <label className="text-xs text-white/55">
           Search in department
           <Input
             className="mt-1"
@@ -133,18 +190,25 @@ export function CoursesAdminPage() {
       </Card>
 
       {!deptId ? (
-        <Card className="border-dashed p-8 text-center text-sm text-text-muted">
-          Select a department to list courses.
+        <Card className="border-dashed p-8 text-center text-sm text-white/55">
+          Select a department to list courses, or open{' '}
+          <Link href="/admin/institutions" className="text-brand hover:underline">
+            Institutions
+          </Link>{' '}
+          and click a department to create a course with that department pre-filled.
         </Card>
       ) : coursesQ.isLoading ? (
-        <p className="text-sm text-text-muted">Loading courses…</p>
+        <p className="text-sm text-white/55">Loading courses…</p>
       ) : (coursesQ.data?.length ?? 0) === 0 ? (
-        <Card className="border-dashed p-8 text-center text-sm text-text-muted">
+        <Card className="border-dashed p-8 text-center text-sm text-white/55">
           No courses match.{' '}
-          <Link href="/admin/courses/new" className="text-brand hover:underline">
-            Create one
-          </Link>
-          .
+          <Link
+            href={`/admin/courses/new?departmentId=${encodeURIComponent(deptId)}`}
+            className="font-medium text-brand hover:underline"
+          >
+            Create a course
+          </Link>{' '}
+          for this department.
         </Card>
       ) : (
         <ul className="flex flex-col gap-2">

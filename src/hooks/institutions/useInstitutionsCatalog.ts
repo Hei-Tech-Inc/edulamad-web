@@ -221,4 +221,54 @@ export function useCourseSearch(deptId: string | null, term: string, activeOnly 
   });
 }
 
+/** Resolve university → college → department for deep links (?departmentId=). */
+export type DepartmentHierarchy = {
+  departmentId: string;
+  collegeId: string;
+  universityId: string;
+};
+
+export async function fetchDepartmentHierarchy(
+  deptId: string,
+  signal?: AbortSignal,
+): Promise<DepartmentHierarchy | null> {
+  const { data: dept } = await apiClient.get<unknown>(
+    API.institutions.departments.detail(deptId),
+    { signal },
+  );
+  const dr = asRecord(dept);
+  if (!dr) return null;
+
+  let collegeIdRaw: unknown = dr.collegeId;
+  if (!collegeIdRaw && dr.college && typeof dr.college === 'object') {
+    collegeIdRaw = asRecord(dr.college)?.id;
+  }
+  const collegeId = typeof collegeIdRaw === 'string' ? collegeIdRaw : null;
+  if (!collegeId) return null;
+
+  const { data: college } = await apiClient.get<unknown>(
+    API.institutions.colleges.detail(collegeId),
+    { signal },
+  );
+  const cr = asRecord(college);
+  if (!cr) return null;
+
+  let universityIdRaw: unknown = cr.universityId;
+  if (!universityIdRaw && cr.university && typeof cr.university === 'object') {
+    universityIdRaw = asRecord(cr.university)?.id;
+  }
+  const universityId = typeof universityIdRaw === 'string' ? universityIdRaw : null;
+  if (!universityId) return null;
+
+  return { departmentId: deptId, collegeId, universityId };
+}
+
+export function useDepartmentHierarchy(deptId: string | null) {
+  return useQuery({
+    queryKey: [...queryKeys.institutions.all, 'hierarchy', deptId ?? ''] as const,
+    enabled: Boolean(deptId),
+    queryFn: async ({ signal }) => fetchDepartmentHierarchy(deptId as string, signal),
+  });
+}
+
 export type { CatalogEntity };
