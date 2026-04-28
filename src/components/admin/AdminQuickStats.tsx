@@ -1,44 +1,41 @@
 'use client';
 
+import { BarChart3, LineChart, PieChart, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface AdminStatItem {
   label: string;
   value: string | number;
-  icon?: string;
-  color?: 'orange' | 'green' | 'blue' | 'amber' | 'red';
 }
 
-const colors: Record<NonNullable<AdminStatItem['color']>, string> = {
-  orange: 'text-brand',
-  green: 'text-success',
-  blue: 'text-info',
-  amber: 'text-warning',
-  red: 'text-danger',
-};
+const ICONS = [BarChart3, LineChart, PieChart, Sparkles] as const;
 
 export function AdminQuickStats({ stats }: { stats: AdminStatItem[] }) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {stats.map((stat) => (
-        <div
-          key={stat.label}
-          className="flex flex-col gap-1 rounded-lg border border-white/[0.08] bg-bg-surface p-4"
-        >
-          {stat.icon ? <span className="text-lg">{stat.icon}</span> : null}
-          <p
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {stats.map((stat, i) => {
+        const Ico = ICONS[i % ICONS.length];
+        return (
+          <div
+            key={stat.label}
             className={cn(
-              'font-mono text-2xl font-bold tabular-nums',
-              stat.color ? colors[stat.color] : 'text-text-primary',
+              'flex flex-col gap-2 rounded-xl border border-white/[0.08]',
+              'bg-gradient-to-b from-white/[0.04] to-transparent p-4',
+              'shadow-sm shadow-black/20 transition-colors hover:border-brand/25 hover:from-brand/[0.06]',
             )}
           >
-            {typeof stat.value === 'number'
-              ? stat.value.toLocaleString()
-              : stat.value}
-          </p>
-          <p className="text-xs text-text-muted">{stat.label}</p>
-        </div>
-      ))}
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/12 text-brand ring-1 ring-brand/15">
+              <Ico className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
+            </div>
+            <p className="font-mono text-2xl font-bold tabular-nums tracking-tight text-brand">
+              {typeof stat.value === 'number'
+                ? stat.value.toLocaleString()
+                : stat.value}
+            </p>
+            <p className="text-[13px] leading-snug text-white/60">{stat.label}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }

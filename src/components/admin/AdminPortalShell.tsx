@@ -117,10 +117,10 @@ export function AdminPortalShell({
       <Link
         href={href}
         className={cn(
-          'rounded-lg px-2 py-2 text-sm transition-colors',
+          'rounded-lg px-2.5 py-2 text-[13px] transition-all duration-150',
           active
-            ? 'bg-brand/15 font-medium text-brand'
-            : 'text-text-muted hover:bg-bg-raised hover:text-text-primary',
+            ? 'bg-brand/18 font-medium text-brand shadow-sm shadow-brand/10 ring-1 ring-brand/25'
+            : 'text-white/55 hover:bg-white/[0.06] hover:text-white',
         )}
       >
         {label}
@@ -132,23 +132,25 @@ export function AdminPortalShell({
     <div className="flex min-h-dvh bg-bg-base text-text-primary">
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-56 flex-col border-r border-white/[0.06] bg-bg-surface lg:static lg:z-auto',
+          'fixed inset-y-0 left-0 z-50 flex w-[15rem] flex-col border-r border-white/[0.07]',
+          'bg-gradient-to-b from-bg-surface via-bg-surface to-bg-base',
+          'lg:static lg:z-auto',
           mobileOpen ? 'flex' : 'hidden lg:flex',
         )}
       >
-        <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-sm font-bold text-white shadow-md shadow-brand/25">
             E
           </div>
           <div>
-            <p className="text-xs font-semibold text-text-primary">Edulamad</p>
-            <p className="text-[10px] text-text-muted">Admin portal</p>
+            <p className="text-xs font-semibold tracking-tight text-white">Edulamad</p>
+            <p className="text-[10px] font-medium text-white/45">Admin portal</p>
           </div>
         </div>
-        <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
+        <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-5">
           {SECTIONS.map((section) => (
             <div key={section.title}>
-              <p className="mb-1.5 px-2 text-[10px] font-semibold tracking-wider text-text-muted uppercase">
+              <p className="mb-2 px-2 text-[10px] font-semibold tracking-[0.12em] text-white/40 uppercase">
                 {section.title}
               </p>
               <div className="flex flex-col gap-0.5">
@@ -167,7 +169,7 @@ export function AdminPortalShell({
         <div className="border-t border-white/[0.06] px-3 py-3">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-text-muted hover:bg-bg-raised hover:text-text-primary"
+            className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm text-white/55 transition-colors hover:bg-white/[0.06] hover:text-white"
           >
             ← Back to app
           </Link>
@@ -199,9 +201,10 @@ export function AdminPortalShell({
           </button>
           <span className="text-sm font-semibold">{title}</span>
         </header>
-        <main className="flex-1 overflow-x-hidden p-4 lg:p-6">
-          <div className="mb-6 hidden lg:block">
-            <h1 className="font-display text-2xl font-bold text-text-primary">
+        <main className="relative flex-1 overflow-x-hidden bg-bg-base p-4 lg:p-8">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent lg:left-0" />
+          <div className="mb-8 hidden lg:block">
+            <h1 className="font-display text-3xl font-bold tracking-tight text-white">
               {title}
             </h1>
           </div>

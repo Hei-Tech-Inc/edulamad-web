@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   LayoutGrid,
   School,
@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Users,
   ScrollText,
+  ChevronRight,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { AdminQuickStats, type AdminStatItem } from '@/components/admin/AdminQuickStats';
@@ -27,7 +28,7 @@ function humanizeKey(k: string): string {
 function toQuickStats(data: unknown): AdminStatItem[] {
   if (data === null || data === undefined) return [];
   if (typeof data !== 'object') {
-    return [{ label: 'Value', value: String(data), icon: '📊', color: 'orange' }];
+    return [{ label: 'Value', value: String(data) }];
   }
   const rec = data as Record<string, unknown>;
   const pairs = Object.entries(rec);
@@ -35,20 +36,16 @@ function toQuickStats(data: unknown): AdminStatItem[] {
     ([, v]) => typeof v === 'number' && Number.isFinite(v as number),
   );
   const pick = numeric.length > 0 ? numeric : pairs.slice(0, 4);
-  const colors: NonNullable<AdminStatItem['color']>[] = ['orange', 'green', 'blue', 'amber'];
-  const icons = ['📊', '📈', '🎯', '✨'];
-  return pick.slice(0, 4).map(([k, v], i) => ({
+  return pick.slice(0, 4).map(([k, v]) => ({
     label: humanizeKey(k),
     value: typeof v === 'number' ? v : String(v),
-    icon: icons[i % icons.length],
-    color: colors[i % colors.length],
   }));
 }
 
 function StatPreview({ data }: { data: unknown }) {
   if (data === null || data === undefined) {
     return (
-      <p className="text-sm text-text-muted">No stats returned (check permissions).</p>
+      <p className="text-sm text-white/55">No stats returned (check permissions).</p>
     );
   }
   if (typeof data === 'object') {
@@ -58,10 +55,12 @@ function StatPreview({ data }: { data: unknown }) {
         {entries.map(([k, v]) => (
           <div
             key={k}
-            className="rounded-lg border border-white/10 bg-bg-surface px-3 py-2"
+            className="rounded-lg border border-white/[0.07] bg-black/20 px-3 py-2.5"
           >
-            <dt className="text-[11px] font-medium text-text-muted">{k}</dt>
-            <dd className="font-mono text-sm text-text-primary">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-white/45">
+              {k}
+            </dt>
+            <dd className="mt-1 font-mono text-sm text-white/90">
               {typeof v === 'object' ? JSON.stringify(v) : String(v)}
             </dd>
           </div>
@@ -70,7 +69,7 @@ function StatPreview({ data }: { data: unknown }) {
     );
   }
   return (
-    <p className="font-mono text-sm text-text-primary">{String(data)}</p>
+    <p className="font-mono text-sm text-white/90">{String(data)}</p>
   );
 }
 
@@ -130,36 +129,52 @@ const QUICK: {
   },
 ];
 
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="mb-4 text-[11px] font-semibold tracking-[0.14em] text-white/45 uppercase">
+      {children}
+    </h2>
+  );
+}
+
 export function AdminOverview() {
   const statsQ = useAdminStats();
   const quickStats = useMemo(() => toQuickStats(statsQ.data), [statsQ.data]);
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-8">
-      <p className="text-sm text-text-secondary">
-        Manage institutions, courses, offerings, and content workflows. Lists hit bundled OpenAPI routes
-        where available; otherwise you will see a clear API error.
+    <div className="mx-auto flex max-w-6xl flex-col gap-10">
+      <p className="max-w-3xl text-[15px] leading-relaxed text-white/70">
+        Manage institutions, courses, offerings, and content workflows. Lists use bundled OpenAPI
+        routes where available; otherwise you will see a clear API error.
       </p>
 
       <section>
-        <h2 className="mb-3 text-xs font-semibold tracking-wider text-text-secondary uppercase">
-          Server snapshot
-        </h2>
-        <Card className="p-4">
+        <SectionLabel>Server snapshot</SectionLabel>
+        <Card className="border-white/[0.07] bg-bg-surface/80 p-5 shadow-lg shadow-black/30 backdrop-blur-sm">
           {statsQ.isLoading ? (
-            <p className="text-sm text-text-muted">Loading stats…</p>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((k) => (
+                <div
+                  key={k}
+                  className="h-28 animate-pulse rounded-xl bg-white/[0.06]"
+                />
+              ))}
+            </div>
           ) : statsQ.isError ? (
             <p className="text-sm text-danger">
               Could not load admin stats. You may need elevated API access.
             </p>
           ) : quickStats.length > 0 ? (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               <AdminQuickStats stats={quickStats} />
-              <details className="text-xs text-text-muted">
-                <summary className="cursor-pointer select-none text-text-secondary hover:text-text-primary">
-                  Raw payload
+              <details className="group/details rounded-lg border border-white/[0.06] bg-black/15 px-3 py-2">
+                <summary className="cursor-pointer list-none text-xs font-medium text-white/55 outline-none transition-colors hover:text-white/80 [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-center justify-between gap-2">
+                    Raw payload
+                    <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-open/details:rotate-90" />
+                  </span>
                 </summary>
-                <div className="mt-2">
+                <div className="mt-3 border-t border-white/[0.06] pt-3">
                   <StatPreview data={statsQ.data} />
                 </div>
               </details>
@@ -171,18 +186,32 @@ export function AdminOverview() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-xs font-semibold tracking-wider text-text-secondary uppercase">
-          Quick actions
-        </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <SectionLabel>Quick actions</SectionLabel>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {QUICK.map((a) => {
             const Icon = a.icon;
             return (
-              <Link key={a.href} href={a.href}>
-                <Card className="h-full cursor-pointer p-4 transition-colors hover:border-brand/30">
-                  <Icon className="mb-2 h-6 w-6 text-brand" aria-hidden />
-                  <p className="text-sm font-semibold text-text-primary">{a.title}</p>
-                  <p className="mt-1 text-xs text-text-muted">{a.desc}</p>
+              <Link key={a.href} href={a.href} className="group block outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base rounded-xl">
+                <Card className="relative h-full gap-0 overflow-hidden border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent p-0 shadow-md shadow-black/25 transition-all duration-200 hover:border-brand/35 hover:shadow-lg hover:shadow-brand/[0.07] active:scale-[0.99]">
+                  <div className="flex flex-col gap-3 p-5">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/14 text-brand ring-1 ring-brand/20 transition-colors group-hover:bg-brand/20">
+                        <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                      </span>
+                      <ChevronRight
+                        className="mt-1 h-5 w-5 shrink-0 text-white/25 transition-all group-hover:translate-x-0.5 group-hover:text-brand/80"
+                        aria-hidden
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[15px] font-semibold tracking-tight text-white">
+                        {a.title}
+                      </p>
+                      <p className="mt-1.5 text-[13px] leading-snug text-white/55">
+                        {a.desc}
+                      </p>
+                    </div>
+                  </div>
                 </Card>
               </Link>
             );
@@ -190,15 +219,21 @@ export function AdminOverview() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-dashed border-white/15 bg-bg-surface/50 p-4 text-sm text-text-secondary">
+      <section className="rounded-2xl border border-brand/15 bg-gradient-to-br from-brand/[0.06] via-transparent to-transparent px-5 py-5 text-[15px] leading-relaxed text-white/65 shadow-inner shadow-black/20">
         <p>
-          <strong className="text-text-primary">Hierarchy:</strong> University → College →
-          Department → Course → Offering → assessments & questions. Use{' '}
-          <Link href="/admin/institutions" className="text-brand hover:underline">
+          <span className="font-semibold text-white">Hierarchy:</span>{' '}
+          University → College → Department → Course → Offering → assessments & questions. Use{' '}
+          <Link
+            href="/admin/institutions"
+            className="font-medium text-brand underline decoration-brand/40 underline-offset-2 transition-colors hover:text-brand hover:decoration-brand"
+          >
             Institutions
           </Link>{' '}
           and{' '}
-          <Link href="/admin/courses" className="text-brand hover:underline">
+          <Link
+            href="/admin/courses"
+            className="font-medium text-brand underline decoration-brand/40 underline-offset-2 transition-colors hover:text-brand hover:decoration-brand"
+          >
             Courses
           </Link>{' '}
           to walk the tree.
