@@ -119,8 +119,8 @@ export function AdminPortalShell({
         className={cn(
           'rounded-lg px-2.5 py-2 text-[13px] transition-all duration-150',
           active
-            ? 'bg-brand/18 font-medium text-brand shadow-sm shadow-brand/10 ring-1 ring-brand/25'
-            : 'text-white/55 hover:bg-white/[0.06] hover:text-white',
+            ? 'bg-blue-500/20 font-medium text-blue-100 shadow-sm shadow-blue-500/10 ring-1 ring-blue-300/30'
+            : 'text-slate-300 hover:bg-white/[0.08] hover:text-white',
         )}
       >
         {label}
@@ -129,11 +129,11 @@ export function AdminPortalShell({
   }
 
   return (
-    <div className="flex min-h-dvh bg-bg-base text-text-primary">
+    <div className="flex min-h-dvh bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-text-primary">
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex w-[15rem] flex-col border-r border-white/[0.07]',
-          'bg-gradient-to-b from-bg-surface via-bg-surface to-bg-base',
+          'bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-blue-950/90 backdrop-blur',
           'lg:static lg:z-auto',
           mobileOpen ? 'flex' : 'hidden lg:flex',
         )}
@@ -186,7 +186,7 @@ export function AdminPortalShell({
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-white/[0.06] bg-bg-surface px-4 py-3 lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-white/[0.08] bg-slate-900/95 px-4 py-3 backdrop-blur lg:hidden">
           <button
             type="button"
             className="rounded-lg border border-white/10 p-2 text-text-primary"
@@ -201,8 +201,9 @@ export function AdminPortalShell({
           </button>
           <span className="text-sm font-semibold">{title}</span>
         </header>
-        <main className="relative flex-1 overflow-x-hidden bg-bg-base p-4 lg:p-8">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent lg:left-0" />
+        <main className="relative flex-1 overflow-x-hidden p-4 lg:p-8">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_45%)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent lg:left-0" />
           <div className="mb-8 hidden lg:block">
             <h1 className="font-display text-3xl font-bold tracking-tight text-white">
               {title}

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { useState } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import ProtectedRoute from '../../components/ProtectedRoute'
 import Layout from '../../components/Layout'
@@ -13,6 +14,7 @@ import { sessionHasAdminTools } from '@/lib/session-admin-access'
 import { buildQuizHref } from '@/lib/quiz/build-quiz-href'
 import { normalizeStudentLevel } from '@/lib/courses/normalize-student-level'
 import UploadFab from '../../components/UploadFab'
+import { PracticeBankTab } from '@/components/courses/PracticeBankTab'
 
 export default function CourseDetailPage() {
   return (
@@ -120,6 +122,7 @@ function CourseDetailContent() {
   const loading =
     myCourseQ.isPending || (myCourseQ.isError && fallbackCourseQ.isPending)
   const showError = myCourseQ.isError && fallbackCourseQ.isError
+  const [courseTab, setCourseTab] = useState('past-papers')
 
   return (
     <div className="space-y-5">
@@ -165,7 +168,34 @@ function CourseDetailContent() {
 
       {!loading && !showError ? (
         <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap gap-3">
+          <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-100 pb-3">
+            <button
+              type="button"
+              onClick={() => setCourseTab('past-papers')}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                courseTab === 'past-papers'
+                  ? 'bg-orange-100 text-orange-900'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              Past papers
+            </button>
+            <button
+              type="button"
+              onClick={() => setCourseTab('practice')}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                courseTab === 'practice'
+                  ? 'bg-orange-100 text-orange-900'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              Practice
+            </button>
+          </div>
+
+          {courseTab === 'past-papers' ? (
+            <>
+              <div className="flex flex-wrap gap-3">
             <Link
               href={buildQuizHref({
                 courseId: String(courseId),
@@ -241,6 +271,10 @@ function CourseDetailContent() {
               </ul>
             </div>
           ) : null}
+            </>
+          ) : (
+            <PracticeBankTab courseId={courseId} />
+          )}
         </section>
       ) : null}
       {isAdmin ? <UploadFab /> : null}

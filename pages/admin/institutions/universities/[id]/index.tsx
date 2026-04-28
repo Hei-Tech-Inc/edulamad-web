@@ -14,6 +14,9 @@ import { EntityBanner } from '@/components/admin/entity/EntityBanner';
 import { EntityTabs } from '@/components/admin/entity/EntityTabs';
 import { EditDrawer } from '@/components/admin/entity/EditDrawer';
 import { ConfirmDialog } from '@/components/admin/entity/ConfirmDialog';
+import { UniversityStudentsTab } from '@/components/admin/university/UniversityStudentsTab';
+import { UniversityAmbassadorsTab } from '@/components/admin/university/UniversityAmbassadorsTab';
+import { UniversityPromoCodesTab } from '@/components/admin/university/UniversityPromoCodesTab';
 import {
   useDeleteUniversity,
   useUniversityColleges,
@@ -61,6 +64,8 @@ function UniversityDetailContent() {
     { id: 'colleges', label: 'Colleges', icon: '🏛', count: colleges.length },
     { id: 'courses', label: 'All courses', icon: '📚', count: statsQ.data?.courseCount ?? 0 },
     { id: 'students', label: 'Students', icon: '👤', count: statsQ.data?.studentCount ?? 0 },
+    { id: 'ambassadors', label: 'Ambassadors', icon: '🤝', count: 0 },
+    { id: 'promo-codes', label: 'Promo codes', icon: '🎫', count: 0 },
     { id: 'questions', label: 'Questions', icon: '📝', count: statsQ.data?.questionCount ?? 0 },
     { id: 'content-gaps', label: 'Gaps', icon: '⚠', count: statsQ.data?.gapCount ?? 0 },
     { id: 'settings', label: 'Settings', icon: '⚙' },
@@ -119,29 +124,33 @@ function UniversityDetailContent() {
 
       {actionMsg ? (
         <Card
-          className={`text-sm ${
+          className={`border text-sm ${
             actionMsg.kind === 'success'
-              ? 'border-success/30 bg-success/10 text-success'
-              : 'border-danger/30 bg-danger/10 text-danger'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-rose-200 bg-rose-50 text-rose-700'
           }`}
         >
           {actionMsg.text}
         </Card>
       ) : null}
 
+      <Card className="border-white/15 bg-white/95 py-3 text-xs text-slate-600 shadow-lg shadow-blue-950/10">
+        Endpoint status: university details, stats, and colleges are live. Students, ambassadors, promo-codes, and deep analytics auto-fallback to scaffold mode when backend routes are unavailable.
+      </Card>
+
       {tab === 'overview' ? (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <Card>
+          <Card className="border-white/15 bg-white/95 shadow-lg shadow-blue-950/10">
             <h3 className="text-sm font-semibold text-text-primary">Content breakdown</h3>
-            <div className="mt-3 flex flex-col gap-3 text-xs text-text-muted">
+            <div className="mt-3 flex flex-col gap-3 text-xs text-slate-600">
               <p>Questions with solutions: unavailable in current API contract.</p>
               <p>Questions without solutions: unavailable in current API contract.</p>
               <p>Courses with content: unavailable in current API contract.</p>
             </div>
           </Card>
-          <Card>
+          <Card className="border-white/15 bg-white/95 shadow-lg shadow-blue-950/10">
             <h3 className="text-sm font-semibold text-text-primary">Students by plan</h3>
-            <div className="mt-3 flex flex-col gap-2 text-sm text-text-muted">
+            <div className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
               <p>Free / Basic / Pro split is unavailable from bundled endpoints.</p>
               <p>Use this tab when backend stats endpoints are exposed.</p>
             </div>
@@ -182,8 +191,19 @@ function UniversityDetailContent() {
         />
       ) : null}
 
-      {tab === 'courses' || tab === 'students' || tab === 'questions' || tab === 'content-gaps' ? (
-        <Card className="text-sm text-text-muted">
+      {tab === 'students' ? <UniversityStudentsTab universityId={id} /> : null}
+
+      {tab === 'ambassadors' ? <UniversityAmbassadorsTab universityId={id} /> : null}
+
+      {tab === 'promo-codes' ? (
+        <UniversityPromoCodesTab
+          universityId={id}
+          universityName={valueName(uni) || 'this university'}
+        />
+      ) : null}
+
+      {tab === 'courses' || tab === 'questions' || tab === 'content-gaps' ? (
+        <Card className="border-white/15 bg-white/95 text-sm text-slate-600 shadow-lg shadow-blue-950/10">
           Detailed {tab.replace('-', ' ')} analytics are not in the bundled API contract yet.
         </Card>
       ) : null}
