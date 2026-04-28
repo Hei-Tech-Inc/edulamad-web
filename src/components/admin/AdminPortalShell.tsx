@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { sessionHasAdminTools } from '@/lib/session-admin-access';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
-import Layout from '@/components/Layout';
+import Layout from '../../../components/Layout';
 
 export function AdminPortalShell({
   title,
