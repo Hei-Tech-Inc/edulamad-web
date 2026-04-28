@@ -84,21 +84,39 @@ export const adminApi = {
     return asRow(data);
   },
   universityStats: async (id: string, signal?: AbortSignal) => {
-    const { data: collegesData } = await apiClient.get<unknown>(
-      API.institutions.universities.colleges(id),
-      { signal, params: { activeOnly: true } },
-    );
-    const colleges = asRows(collegesData);
-    const departments = await listDepartmentsForUniversity(id, signal);
-    const courses = await listCoursesForDepartments(departments, signal);
-    return {
-      collegeCount: colleges.length,
-      deptCount: departments.length,
-      courseCount: courses.length,
-      questionCount: 0,
-      studentCount: 0,
-      gapCount: 0,
-    };
+    try {
+      const dashboard = (await adminApi.universityDashboard(id, signal)) as Record<
+        string,
+        unknown
+      >;
+      const students = asRow(dashboard.students) ?? {};
+      const content = asRow(dashboard.content) ?? {};
+      const gaps = asRow(dashboard.contentGaps) ?? {};
+      return {
+        collegeCount: Number(content.collegeCount ?? 0),
+        deptCount: Number(content.departmentCount ?? 0),
+        courseCount: Number(content.courseCount ?? 0),
+        questionCount: Number(content.questionCount ?? 0),
+        studentCount: Number(students.total ?? students.studentCount ?? 0),
+        gapCount: Number(gaps.total ?? gaps.gapCount ?? 0),
+      };
+    } catch {
+      const { data: collegesData } = await apiClient.get<unknown>(
+        API.institutions.universities.colleges(id),
+        { signal, params: { activeOnly: true } },
+      );
+      const colleges = asRows(collegesData);
+      const departments = await listDepartmentsForUniversity(id, signal);
+      const courses = await listCoursesForDepartments(departments, signal);
+      return {
+        collegeCount: colleges.length,
+        deptCount: departments.length,
+        courseCount: courses.length,
+        questionCount: 0,
+        studentCount: 0,
+        gapCount: 0,
+      };
+    }
   },
   collegeStats: async (id: string, signal?: AbortSignal) => {
     const { data: deptData } = await apiClient.get<unknown>(
@@ -175,5 +193,34 @@ export const adminApi = {
       params: { activeOnly: true },
     });
     return asRows(data);
+  },
+  universityDashboard: async (id: string, signal?: AbortSignal) => {
+    const { data } = await apiClient.get<unknown>(`/admin/universities/${id}/dashboard`, { signal });
+    return data;
+  },
+  universityStudents: async (
+    id: string,
+    params?: Record<string, unknown>,
+    signal?: AbortSignal,
+  ) => {
+    const { data } = await apiClient.get<unknown>(`/admin/universities/${id}/students`, {
+      params,
+      signal,
+    });
+    return data;
+  },
+  universityPromoCodes: async (id: string, signal?: AbortSignal) => {
+    const { data } = await apiClient.get<unknown>(`/admin/universities/${id}/promo-codes`, { signal });
+    return data;
+  },
+  createUniversityPromo: async (id: string, dto: Record<string, unknown>) => {
+    const { data } = await apiClient.post<unknown>(`/admin/universities/${id}/promo-codes`, dto);
+    return data;
+  },
+  topicCoverage: async (courseId: string, signal?: AbortSignal) => {
+    const { data } = await apiClient.get<unknown>(`/admin/courses/${courseId}/topic-coverage`, {
+      signal,
+    });
+    return data;
   },
 };

@@ -11,6 +11,15 @@ import {
   useCreateOffering,
 } from '@/hooks/content/useCourseOfferings';
 import { generateAcademicYears } from '@/lib/academic-years';
+import {
+  currentAcademicYear,
+  generateAssessmentLabel,
+  getSourceTypeLabel,
+  isValidAcademicYear,
+} from '@/lib/utils/academic-year';
+import { assessmentsApi } from '@/lib/api/assessments.api';
+import { AssessmentTypeSelector } from '@/components/admin/AssessmentTypeSelector';
+import { AcademicYearInput } from '@/components/admin/AcademicYearInput';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -50,6 +59,14 @@ export function CourseOfferingsAdminPage() {
   const [academicYear, setAcademicYear] = useState(years[0]);
   const [semester, setSemester] = useState<1 | 2>(1);
   const [level, setLevel] = useState<100 | 200 | 300 | 400 | 500>(200);
+  const [openOfferingId, setOpenOfferingId] = useState<string | null>(null);
+  const [assessmentType, setAssessmentType] = useState('final_exam');
+  const [assessmentNumber, setAssessmentNumber] = useState(1);
+  const [customLabel, setCustomLabel] = useState('');
+  const [paperYear, setPaperYear] = useState(currentAcademicYear());
+  const [paperYearErr, setPaperYearErr] = useState('');
+  const [submitErr, setSubmitErr] = useState('');
+  const [submittingPaper, setSubmittingPaper] = useState(false);
 
   const courseName =
     detailQ.data &&
@@ -74,6 +91,49 @@ export function CourseOfferingsAdminPage() {
       semester,
       level,
     });
+  };
+
+  const addPaper = async (offeringId: string) => {
+    if (!isValidAcademicYear(paperYear)) {
+      setPaperYearErr('Must be format YYYY/YYYY (e.g. 2024/2025)');
+      return;
+    }
+    setPaperYearErr('');
+    setSubmitErr('');
+    setSubmittingPaper(true);
+    try {
+      await assessmentsApi.upload({
+        offeringId,
+        documentType: assessmentType as
+          | 'final_exam'
+          | 'interim_assessment'
+          | 'class_quiz'
+          | 'class_test'
+          | 'assignment',
+        assessmentType:
+          assessmentType === 'interim_assessment' ||
+          assessmentType === 'class_quiz' ||
+          assessmentType === 'class_test' ||
+          assessmentType === 'assignment'
+            ? assessmentType
+            : undefined,
+        assessmentNumber:
+          assessmentType === 'final_exam' ? undefined : assessmentNumber,
+        customLabel: customLabel || undefined,
+        academicYear: paperYear,
+      });
+      setCustomLabel('');
+      setAssessmentNumber(1);
+      setAssessmentType('final_exam');
+    } catch (e) {
+      setSubmitErr(
+        e instanceof Error
+          ? e.message
+          : 'Could not add assessment paper.',
+      );
+    } finally {
+      setSubmittingPaper(false);
+    }
   };
 
   return (
@@ -170,20 +230,219 @@ export function CourseOfferingsAdminPage() {
             No offerings yet for this course.
           </Card>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-3">
             {(offeringsQ.data ?? []).map((raw, i) => (
               <li key={String((raw as { _id?: unknown })._id ?? (raw as { id?: unknown }).id ?? i)}>
                 <Card className="p-4">
-                  <p className="text-sm font-medium text-text-primary">{offeringLabel(raw)}</p>
-                  <pre className="mt-2 max-h-40 overflow-auto text-[11px] text-text-muted">
-                    {JSON.stringify(raw, null, 2)}
-                  </pre>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-text-primary">{offeringLabel(raw)}</p>
+                    <button
+                      type="button"
+                      className="text-xs text-brand hover:underline"
+                      onClick={() =>
+                        setOpenOfferingId((prev) =>
+                          prev === String((raw as { _id?: unknown })._id ?? (raw as { id?: unknown }).id ?? i)
+                            ? null
+                            : String((raw as { _id?: unknown })._id ?? (raw as { id?: unknown }).id ?? i),
+                        )
+                      }
+                    >
+                      {openOfferingId === String((raw as { _id?: unknown })._id ?? (raw as { id?: unknown }).id ?? i) ? 'Hide details' : 'Manage papers'}
+                    </button>
+                  </div>
+                  {openOfferingId === String((raw as { _id?: unknown })._id ?? (raw as { id?: unknown }).id ?? i) ? (
+                    <OfferingCard
+                      offering={raw as Record<string, unknown>}
+                      onAddPaper={addPaper}
+                      submittingPaper={submittingPaper}
+                      assessmentType={assessmentType}
+                      assessmentNumber={assessmentNumber}
+                      customLabel={customLabel}
+                      academicYear={paperYear}
+                      paperYearError={paperYearErr}
+                      submitError={submitErr}
+                      setAssessment={(type, num, label) => {
+                        setAssessmentType(type);
+                        setAssessmentNumber(num);
+                        setCustomLabel(label);
+                      }}
+                      setAcademicYear={setPaperYear}
+                    />
+                  ) : null}
                 </Card>
               </li>
             ))}
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+function OfferingCard({
+  offering,
+  onAddPaper,
+  submittingPaper,
+  assessmentType,
+  assessmentNumber,
+  customLabel,
+  academicYear,
+  paperYearError,
+  submitError,
+  setAssessment,
+  setAcademicYear,
+}: {
+  offering: Record<string, unknown>;
+  onAddPaper: (offeringId: string) => Promise<void>;
+  submittingPaper: boolean;
+  assessmentType: string;
+  assessmentNumber: number;
+  customLabel: string;
+  academicYear: string;
+  paperYearError: string;
+  submitError: string;
+  setAssessment: (type: string, number: number, label: string) => void;
+  setAcademicYear: (value: string) => void;
+}) {
+  const offeringId =
+    typeof offering._id === 'string'
+      ? offering._id
+      : typeof offering.id === 'string'
+        ? offering.id
+        : '';
+
+  const assessmentsQ = useQuery({
+    queryKey: ['offering-assessments', offeringId],
+    enabled: Boolean(offeringId),
+    queryFn: async ({ signal }) => {
+      // TODO(api): `/content/offerings/{offeringId}/assessments` is missing in current OpenAPI;
+      // keep UI shape and fallback to empty list until backend route is available.
+      try {
+        const { data } = await assessmentsApi.getByOffering(offeringId, signal);
+        const arr = Array.isArray((data as { data?: unknown[] })?.data)
+          ? (data as { data: unknown[] }).data
+          : Array.isArray(data)
+            ? data
+            : [];
+        return { items: arr as Record<string, unknown>[], mocked: false };
+      } catch {
+        return { items: [] as Record<string, unknown>[], mocked: true };
+      }
+    },
+  });
+
+  const grouped = {
+    final_exam: [] as Record<string, unknown>[],
+    interim_assessment: [] as Record<string, unknown>[],
+    class_quiz: [] as Record<string, unknown>[],
+    class_test: [] as Record<string, unknown>[],
+    assignment: [] as Record<string, unknown>[],
+  };
+  for (const item of assessmentsQ.data?.items ?? []) {
+    const type =
+      typeof item.type === 'string'
+        ? item.type
+        : typeof item.documentType === 'string'
+          ? item.documentType
+          : 'final_exam';
+    if (type in grouped) {
+      grouped[type as keyof typeof grouped].push(item);
+    }
+  }
+
+  const practiceCount = 0;
+
+  return (
+    <div className="mt-3 flex flex-col gap-4 rounded-lg border border-white/[0.06] bg-black/20 p-3">
+      {assessmentsQ.data?.mocked ? (
+        <p className="text-xs text-warning">
+          TODO: assessments-by-offering endpoint is missing; displaying skeleton/mock list.
+        </p>
+      ) : null}
+
+      <AssessmentRow title="Final Exam(s)" items={grouped.final_exam} sourceType="final_exam" />
+      <AssessmentRow title="Interim Assessments" items={grouped.interim_assessment} sourceType="interim_assessment" />
+      <AssessmentRow title="Class Quizzes" items={grouped.class_quiz} sourceType="class_quiz" />
+      <AssessmentRow title="Class Tests" items={grouped.class_test} sourceType="class_test" />
+      <AssessmentRow title="Assignments" items={grouped.assignment} sourceType="assignment" />
+
+      <div className="rounded-lg border border-brand/20 bg-brand/10 px-3 py-2 text-xs text-brand">
+        Practice bank questions: {practiceCount} {' '}
+        <span className="text-white/70">(linked in student course Practice tab)</span>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-lg border border-white/[0.08] bg-bg-surface p-3">
+        <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
+          Add paper / assessment
+        </p>
+        <AssessmentTypeSelector
+          value={assessmentType}
+          number={assessmentNumber}
+          customLabel={customLabel}
+          onChange={setAssessment}
+        />
+        <AcademicYearInput
+          value={academicYear}
+          onChange={setAcademicYear}
+          error={paperYearError}
+          useDropdown
+        />
+        <p className="text-xs text-text-muted">
+          This will be labelled:{' '}
+          <span className="font-medium text-brand">
+            {generateAssessmentLabel(assessmentType, assessmentNumber, customLabel)}
+          </span>
+        </p>
+        {submitError ? <p className="text-xs text-danger">{submitError}</p> : null}
+        <Button
+          type="button"
+          disabled={!offeringId || submittingPaper}
+          onClick={() => void onAddPaper(offeringId)}
+        >
+          {submittingPaper ? 'Adding…' : 'Add assessment'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function AssessmentRow({
+  title,
+  items,
+  sourceType,
+}: {
+  title: string;
+  items: Record<string, unknown>[];
+  sourceType: string;
+}) {
+  const source = getSourceTypeLabel(sourceType);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-text-secondary">{title}</p>
+        <span className="text-xs text-text-muted">{items.length}</span>
+      </div>
+      {items.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-white/[0.08] px-3 py-2 text-xs text-text-muted">
+          No records
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {items.map((item, i) => (
+            <div
+              key={`${String(item._id ?? item.id ?? i)}`}
+              className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-bg-raised px-3 py-2"
+            >
+              <p className="text-xs text-text-primary">
+                {typeof item.label === 'string' ? item.label : `${source.label} ${i + 1}`}
+              </p>
+              <span className="text-[10px] text-text-muted">
+                {typeof item.academicYear === 'string' ? item.academicYear : '—'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

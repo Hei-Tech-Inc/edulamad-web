@@ -135,7 +135,7 @@ export function EntityBanner({
                     <p className="font-mono text-lg font-bold leading-none tabular-nums text-text-primary">
                       {typeof s.value === 'number' ? s.value.toLocaleString() : s.value}
                     </p>
-                    <p className="text-xs text-text-muted">{s.label}</p>
+                <p className="text-xs text-text-muted">{s.label}</p>
                   </div>
                 ))}
               </div>

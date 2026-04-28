@@ -1,0 +1,90 @@
+'use client';
+
+import { generateAssessmentLabel } from '@/lib/utils/academic-year';
+
+interface AssessmentTypeSelectorProps {
+  value: string;
+  onChange: (type: string, number: number, label: string) => void;
+  number?: number;
+  customLabel?: string;
+}
+
+const ASSESSMENT_TYPES = [
+  {
+    value: 'interim_assessment',
+    label: 'Midsem / Interim',
+    desc: 'Mid-semester exam or assessment',
+  },
+  { value: 'class_quiz', label: 'Class Quiz', desc: 'Short in-class quiz' },
+  { value: 'class_test', label: 'Class Test', desc: 'Longer in-class test' },
+  { value: 'assignment', label: 'Assignment', desc: 'Take-home or project-based' },
+];
+
+export function AssessmentTypeSelector({
+  value,
+  onChange,
+  number = 1,
+  customLabel,
+}: AssessmentTypeSelectorProps) {
+  const preview = generateAssessmentLabel(value, number, customLabel);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <label className="mb-1.5 block text-xs text-text-muted">Assessment type *</label>
+        <div className="grid grid-cols-2 gap-2">
+          {ASSESSMENT_TYPES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => onChange(t.value, number, customLabel ?? '')}
+              className={`rounded-lg border px-3 py-2.5 text-left transition-all ${
+                value === t.value
+                  ? 'border-brand/40 bg-brand/15 text-brand'
+                  : 'border-white/[0.08] bg-bg-surface text-text-secondary'
+              }`}
+            >
+              <p className="text-xs font-medium">{t.label}</p>
+              <p className="mt-0.5 text-[10px] opacity-70">{t.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1 block text-xs text-text-muted">Number *</label>
+          <select
+            value={number}
+            onChange={(e) => onChange(value, Number.parseInt(e.target.value, 10), customLabel ?? '')}
+            className="h-10 w-full appearance-none rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
+          >
+            {[1, 2, 3].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-text-muted">
+            Custom label <span className="ml-1 text-text-muted/60">(optional)</span>
+          </label>
+          <input
+            type="text"
+            placeholder={`e.g. ${generateAssessmentLabel(value, number)}`}
+            value={customLabel ?? ''}
+            onChange={(e) => onChange(value, number, e.target.value)}
+            className="h-10 w-full rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-muted/50 focus:border-brand/50 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-bg-raised px-3 py-2">
+        <span className="text-xs text-text-muted">Preview:</span>
+        <span className="text-xs font-medium text-brand">{preview}</span>
+      </div>
+    </div>
+  );
+}

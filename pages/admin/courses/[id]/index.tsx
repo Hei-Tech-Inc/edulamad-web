@@ -13,6 +13,7 @@ import { EntityBanner } from '@/components/admin/entity/EntityBanner';
 import { EntityTabs } from '@/components/admin/entity/EntityTabs';
 import { InlineList } from '@/components/admin/entity/InlineList';
 import { ConfirmDialog } from '@/components/admin/entity/ConfirmDialog';
+import { CourseTopicCoverageMap } from '@/components/admin/CourseTopicCoverageMap';
 import { useCourseOfferings, useCreateOffering } from '@/hooks/content/useCourseOfferings';
 import { generateAcademicYears } from '@/lib/academic-years';
 import { useUpdateCourse } from '@/hooks/institutions/useInstitutionMutations';
@@ -181,6 +182,10 @@ function CourseDetailContent() {
         </Card>
       ) : null}
 
+      <Card className="border-brand/20 bg-brand/10 py-3 text-xs text-brand">
+        Endpoint status: course details and offerings are live. Questions, solutions, flashcards, enrollment analytics, and topic coverage will display scaffolded states when extended admin endpoints are unavailable.
+      </Card>
+
       {tab === 'offerings' ? (
         <InlineList
           title="Offerings"
@@ -209,9 +214,12 @@ function CourseDetailContent() {
       ) : null}
 
       {tab === 'questions' || tab === 'solutions' || tab === 'flashcards' || tab === 'students' ? (
-        <Card className="text-sm text-text-muted">
-          Detailed {tab} management will appear here when dedicated admin endpoints are available.
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Card className="text-sm text-text-muted">
+            Detailed {tab} management will appear here when dedicated admin endpoints are available.
+          </Card>
+          <CourseTopicCoverageMap courseId={id} />
+        </div>
       ) : null}
 
       {tab === 'settings' ? (
