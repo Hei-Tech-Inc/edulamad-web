@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { Plus, ArrowLeft, Edit, Trash, Eye } from 'lucide-react'
 import ProtectedRoute from '../../components/ProtectedRoute'
-import Layout from '../../components/Layout'
+import { AdminPortalShell } from '@/components/admin/AdminPortalShell'
 import DataTable from '../../components/DataTable'
 import { useAuth } from '../../contexts/AuthContext'
 import organizationService from '../../lib/organizationService'
@@ -13,9 +13,9 @@ import { useToast } from '../../components/Toast'
 export default function AdminOrganizationsPage() {
   return (
     <ProtectedRoute>
-      <Layout title="Admin dashboard">
+      <AdminPortalShell title="Institution management">
         <OrganizationsList />
-      </Layout>
+      </AdminPortalShell>
     </ProtectedRoute>
   )
 }

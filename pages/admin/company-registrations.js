@@ -1,7 +1,7 @@
 // pages/admin/company-registrations.js
 import React from 'react'
 import AdminCompanyRegistrationsPage from '../../components/AdminCompanyRegistrationsPage'
-import Layout from '../../components/Layout'
+import { AdminPortalShell } from '@/components/admin/AdminPortalShell'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useAuth } from '../../contexts/AuthContext'
@@ -43,9 +43,9 @@ export default function AdminRegistrationsPage() {
           content="How account registration works on this deployment"
         />
       </Head>
-      <Layout title="Registration">
+      <AdminPortalShell title="Registration">
         <AdminCompanyRegistrationsPage />
-      </Layout>
+      </AdminPortalShell>
     </>
   )
 }

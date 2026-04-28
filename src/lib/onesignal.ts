@@ -123,6 +123,12 @@ async function registerDeviceWithBackend(
 
 export async function requestPushPermission(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
+  if (!('Notification' in window)) return false;
+
+  // Browser has already blocked notifications for this origin.
+  if (Notification.permission === 'denied') return false;
+  if (Notification.permission === 'granted') return true;
+
   try {
     const OneSignal = await getOneSignal();
     await OneSignal.Notifications.requestPermission();
