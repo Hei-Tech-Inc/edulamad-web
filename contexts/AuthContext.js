@@ -15,7 +15,7 @@ import {
 import { toCompatUser } from '@/lib/auth-compat'
 import { AppApiError } from '@/lib/api-error'
 import { formatAuthErrorMessage } from '@/lib/format-auth-error'
-import { initOneSignal, logoutOneSignal } from '@/lib/onesignal'
+import { logoutOneSignal } from '@/lib/onesignal'
 import { queryKeys } from '@/api/query-keys'
 import { queryClient } from '@/lib/query-client'
 import { useAuthStore } from '@/stores/auth.store'
@@ -83,7 +83,6 @@ export function AuthProvider({ children }) {
       useAuthStore
         .getState()
         .setUser(mapAuthUserToRequestUser(data.user, data.accessToken))
-      void initOneSignal(String(data?.user?.id || ''))
       void queryClient.invalidateQueries({ queryKey: queryKeys.students.onboardingGate })
       void queryClient.invalidateQueries({ queryKey: queryKeys.students.profile })
     } catch (e) {
@@ -159,7 +158,6 @@ export function AuthProvider({ children }) {
       useAuthStore
         .getState()
         .setUser(mapAuthUserToRequestUser(user, accessToken))
-      void initOneSignal(String(user?.id || ''))
       if (regData?.org && typeof regData.org === 'object') {
         useAuthStore.getState().setOrg(regData.org)
       }

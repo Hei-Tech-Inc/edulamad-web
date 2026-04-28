@@ -2,61 +2,89 @@
 
 import { notificationsApi } from '@/lib/api/notifications.api';
 
-let initialized = false;
-
 async function getOneSignal() {
   const mod = await import('react-onesignal');
   return mod.default;
 }
 
-export async function initOneSignal(userId?: string): Promise<void> {
+let sdkInitialized = false;
+let initPromise: Promise<void> | null = null;
+let pushChangeListenerAttached = false;
+
+function isAlreadyInitializedError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /already initialized/i.test(msg);
+}
+
+/**
+ * OneSignal must only be initialized once per page load. Login, AuthContext, and
+ * OneSignalInit previously all called init — parallel calls raced and triggered
+ * "SDK already initialized".
+ */
+async function ensureSdkInitialized(): Promise<void> {
   if (typeof window === 'undefined') return;
   const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
   if (!appId) {
     console.warn('[OneSignal] NEXT_PUBLIC_ONESIGNAL_APP_ID not set');
     return;
   }
+  if (sdkInitialized) return;
 
-  if (!initialized) {
-    try {
+  if (!initPromise) {
+    initPromise = (async () => {
       const OneSignal = await getOneSignal();
-      await OneSignal.init({
-        appId,
-        allowLocalhostAsSecureOrigin: process.env.NODE_ENV === 'development',
-        serviceWorkerPath: 'push/OneSignalSDKWorker.js',
-        serviceWorkerUpdaterPath: 'push/OneSignalSDKUpdaterWorker.js',
-        serviceWorkerParam: { scope: '/push/' },
-      });
-      initialized = true;
-    } catch (err) {
-      console.warn('[OneSignal] init failed', err);
-      return;
-    }
+      try {
+        await OneSignal.init({
+          appId,
+          allowLocalhostAsSecureOrigin: process.env.NODE_ENV === 'development',
+          serviceWorkerPath: 'push/OneSignalSDKWorker.js',
+          serviceWorkerUpdaterPath: 'push/OneSignalSDKUpdaterWorker.js',
+          serviceWorkerParam: { scope: '/push/' },
+        });
+      } catch (err) {
+        if (!isAlreadyInitializedError(err)) throw err;
+      }
+      sdkInitialized = true;
+    })().finally(() => {
+      initPromise = null;
+    });
   }
+
+  await initPromise;
+}
+
+export async function initOneSignal(userId?: string): Promise<void> {
+  await ensureSdkInitialized();
+
+  const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+  if (!appId) return;
+
+  const OneSignal = await getOneSignal();
 
   if (userId) {
     try {
-      const OneSignal = await getOneSignal();
       await OneSignal.login(userId);
     } catch {
       // Non-critical in browsers with blocked storage/cookies.
     }
   }
 
-  const OneSignal = await getOneSignal();
+  if (!pushChangeListenerAttached) {
+    pushChangeListenerAttached = true;
+    OneSignal.User.PushSubscription.addEventListener('change', async (event) => {
+      const id = event?.current?.id;
+      if (id) {
+        await registerDeviceWithBackend(id, 'web');
+      }
+    });
+  }
+
   const subscriptionId = await Promise.resolve(OneSignal.User.PushSubscription.id).catch(
     () => null,
   );
   if (subscriptionId) {
     await registerDeviceWithBackend(subscriptionId, 'web');
   }
-
-  OneSignal.User.PushSubscription.addEventListener('change', async (event) => {
-    const id = event?.current?.id;
-    if (id) {
-      await registerDeviceWithBackend(id, 'web');
-    }
-  });
 }
 
 async function registerDeviceWithBackend(

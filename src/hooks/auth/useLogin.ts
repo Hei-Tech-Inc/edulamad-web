@@ -7,7 +7,6 @@ import {
   type LoginDto,
   type LoginResponse,
 } from '@/api/types/auth.types';
-import { initOneSignal } from '@/lib/onesignal';
 import { useAuthStore } from '@/stores/auth.store';
 
 export function useLogin() {
@@ -28,7 +27,6 @@ export function useLogin() {
       useAuthStore
         .getState()
         .setUser(user);
-      void initOneSignal(user.id);
       void queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     },
   });
