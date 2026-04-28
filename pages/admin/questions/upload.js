@@ -1,13 +1,13 @@
 import ProtectedRoute from '../../../components/ProtectedRoute'
-import Layout from '../../../components/Layout'
+import { AdminPortalShell } from '@/components/admin/AdminPortalShell'
 import { AdminJsonQuestionUploadPage } from '@/components/admin/AdminJsonQuestionUploadPage'
 
 export default function AdminJsonQuestionUploadRoute() {
   return (
     <ProtectedRoute>
-      <Layout title="JSON question upload">
+      <AdminPortalShell title="JSON question upload">
         <AdminJsonQuestionUploadPage />
-      </Layout>
+      </AdminPortalShell>
     </ProtectedRoute>
   )
 }
