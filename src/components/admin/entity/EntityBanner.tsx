@@ -25,12 +25,12 @@ export interface EntityBannerProps {
 }
 
 const badgeClasses: Record<BadgeVariant, string> = {
-  default: 'border-slate-300 bg-slate-100 text-slate-700',
-  orange: 'border-orange-200 bg-orange-50 text-orange-700',
-  green: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  blue: 'border-blue-200 bg-blue-50 text-blue-700',
-  amber: 'border-amber-200 bg-amber-50 text-amber-700',
-  red: 'border-rose-200 bg-rose-50 text-rose-700',
+  default: 'border-white/15 bg-white/10 text-white/85',
+  orange: 'border-brand/40 bg-brand/10 text-brand',
+  green: 'border-success/40 bg-success/10 text-success',
+  blue: 'border-info/40 bg-info/10 text-info',
+  amber: 'border-warning/40 bg-warning/10 text-warning',
+  red: 'border-danger/40 bg-danger/10 text-danger',
 };
 
 function Badge({
@@ -80,22 +80,22 @@ export function EntityBanner({
   return (
     <div className="flex flex-col gap-4">
       {breadcrumbs?.length ? (
-        <nav className="flex items-center gap-1.5 text-xs text-slate-300/80">
+        <nav className="flex items-center gap-1.5 text-xs text-text-muted">
           {breadcrumbs.map((crumb, i) => (
             <span key={`${crumb.href}-${i}`} className="flex items-center gap-1.5">
               {i > 0 && <span>›</span>}
-              <Link href={crumb.href} className="transition-colors hover:text-white">
+              <Link href={crumb.href} className="hover:text-text-primary transition-colors">
                 {crumb.label}
               </Link>
             </span>
           ))}
           <span>›</span>
-          <span className="text-white">{name}</span>
+          <span className="text-text-primary">{name}</span>
         </nav>
       ) : null}
 
-      <Card className="overflow-hidden border-white/15 bg-white/95 p-0 shadow-xl shadow-blue-950/20">
-        <div className="h-1.5 w-full bg-gradient-to-r from-blue-500/70 via-cyan-400/70 to-indigo-500/70" />
+      <Card className="overflow-hidden border-white/[0.08] p-0">
+        <div className="h-1.5 w-full" style={{ backgroundColor: `${bgColor}70` }} />
 
         <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
           <div className="shrink-0">
@@ -135,7 +135,7 @@ export function EntityBanner({
                     <p className="font-mono text-lg font-bold leading-none tabular-nums text-text-primary">
                       {typeof s.value === 'number' ? s.value.toLocaleString() : s.value}
                     </p>
-                <p className="text-xs text-slate-500">{s.label}</p>
+                <p className="text-xs text-text-muted">{s.label}</p>
                   </div>
                 ))}
               </div>

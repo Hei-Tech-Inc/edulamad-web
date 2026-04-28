@@ -10,6 +10,8 @@ async function getOneSignal() {
 let sdkInitialized = false;
 let initPromise: Promise<void> | null = null;
 let pushChangeListenerAttached = false;
+let identitySyncPromise: Promise<void> | null = null;
+let lastSyncedUserId: string | null = null;
 
 function isAlreadyInitializedError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
@@ -61,12 +63,33 @@ export async function initOneSignal(userId?: string): Promise<void> {
 
   const OneSignal = await getOneSignal();
 
-  if (userId) {
-    try {
-      await OneSignal.login(userId);
-    } catch {
-      // Non-critical in browsers with blocked storage/cookies.
+  if (userId && userId !== lastSyncedUserId) {
+    if (!identitySyncPromise) {
+      identitySyncPromise = (async () => {
+        try {
+          await OneSignal.login(userId);
+          lastSyncedUserId = userId;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          // OneSignal can return identity conflict (409) for stale user identity links.
+          // Recover by resetting local identity and retrying once.
+          if (/409|conflict|identity/i.test(message)) {
+            try {
+              await OneSignal.logout();
+              await OneSignal.login(userId);
+              lastSyncedUserId = userId;
+              return;
+            } catch {
+              // fall through
+            }
+          }
+          // Non-critical in browsers with blocked storage/cookies.
+        } finally {
+          identitySyncPromise = null;
+        }
+      })();
     }
+    await identitySyncPromise;
   }
 
   if (!pushChangeListenerAttached) {
@@ -119,6 +142,7 @@ export async function logoutOneSignal(): Promise<void> {
   try {
     const OneSignal = await getOneSignal();
     await OneSignal.logout();
+    lastSyncedUserId = null;
   } catch {
     // ignore
   }

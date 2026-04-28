@@ -87,12 +87,12 @@ export function UniversityAmbassadorsTab({ universityId }: { universityId: strin
   return (
     <div className="flex flex-col gap-4">
       {q.data?.mocked ? (
-        <Card className="border-amber-200 bg-amber-50 text-xs text-amber-700">
+        <Card className="border-warning/30 bg-warning/10 text-xs text-warning">
           Live ambassador endpoint is unavailable; showing scaffold mode until the backend route is enabled.
         </Card>
       ) : null}
       {q.isFetching && !q.isLoading ? (
-        <p className="text-xs text-slate-300">Refreshing ambassador data…</p>
+        <p className="text-xs text-text-muted">Refreshing ambassador data…</p>
       ) : null}
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -102,7 +102,7 @@ export function UniversityAmbassadorsTab({ universityId }: { universityId: strin
           { label: 'Total refs', value: q.data?.stats?.totalReferrals ?? 0 },
           { label: 'Credits', value: q.data?.stats?.creditsEarned ?? 0 },
         ].map((s) => (
-          <Card key={s.label} className="items-center gap-1 border-white/15 bg-white/95 py-3 text-center shadow-sm">
+          <Card key={s.label} className="items-center gap-1 py-3 text-center">
             <p className="font-mono text-xl font-bold text-text-primary">{s.value}</p>
             <p className="text-xs text-text-muted">{s.label}</p>
           </Card>
@@ -112,7 +112,7 @@ export function UniversityAmbassadorsTab({ universityId }: { universityId: strin
       <select
         value={status}
         onChange={(e) => setStatus(e.target.value)}
-        className="h-9 w-fit rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none"
+        className="h-9 w-fit rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
       >
         <option value="">All ambassadors</option>
         <option value="active">Active</option>

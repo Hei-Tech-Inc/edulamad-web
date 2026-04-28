@@ -172,17 +172,17 @@ function CourseDetailContent() {
 
       {actionMsg ? (
         <Card
-          className={`border text-sm ${
+          className={`text-sm ${
             actionMsg.kind === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-              : 'border-rose-200 bg-rose-50 text-rose-700'
+              ? 'border-success/30 bg-success/10 text-success'
+              : 'border-danger/30 bg-danger/10 text-danger'
           }`}
         >
           {actionMsg.text}
         </Card>
       ) : null}
 
-      <Card className="border-white/15 bg-white/95 py-3 text-xs text-slate-600 shadow-lg shadow-blue-950/10">
+      <Card className="border-brand/20 bg-brand/10 py-3 text-xs text-brand">
         Endpoint status: course details and offerings are live. Questions, solutions, flashcards, enrollment analytics, and topic coverage will display scaffolded states when extended admin endpoints are unavailable.
       </Card>
 
@@ -194,7 +194,7 @@ function CourseDetailContent() {
           onAdd={() => setAddOfferingOpen(true)}
           addLabel="Add year"
           renderItem={(offering) => (
-            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-3 shadow-sm">
+            <div className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-3">
               <div>
                 <p className="text-sm text-text-primary">
                   {valueString(offering, 'academicYear') || 'Academic year'} · Sem{' '}
@@ -215,7 +215,7 @@ function CourseDetailContent() {
 
       {tab === 'questions' || tab === 'solutions' || tab === 'flashcards' || tab === 'students' ? (
         <div className="flex flex-col gap-4">
-          <Card className="border-white/15 bg-white/95 text-sm text-slate-600 shadow-lg shadow-blue-950/10">
+          <Card className="text-sm text-text-muted">
             Detailed {tab} management will appear here when dedicated admin endpoints are available.
           </Card>
           <CourseTopicCoverageMap courseId={id} />

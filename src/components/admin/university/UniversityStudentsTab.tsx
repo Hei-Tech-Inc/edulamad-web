@@ -97,12 +97,12 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
   return (
     <div className="flex flex-col gap-4">
       {q.data?.mocked ? (
-        <Card className="border-amber-200 bg-amber-50 text-xs text-amber-700">
+        <Card className="border-warning/30 bg-warning/10 text-xs text-warning">
           Live students endpoint is unavailable; showing scaffold mode until the backend route is enabled.
         </Card>
       ) : null}
       {q.isFetching && !q.isLoading ? (
-        <p className="text-xs text-slate-300">Refreshing students data…</p>
+        <p className="text-xs text-text-muted">Refreshing students data…</p>
       ) : null}
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -112,7 +112,7 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
           { label: 'Pro', value: q.data?.byPlan?.pro ?? 0 },
           { label: 'Total', value: q.data?.total ?? 0 },
         ].map((s) => (
-          <Card key={s.label} className="items-center gap-1 border-white/15 bg-white/95 py-3 text-center shadow-sm">
+          <Card key={s.label} className="items-center gap-1 py-3 text-center">
             <p className="font-mono text-xl font-bold text-text-primary">{s.value}</p>
             <p className="text-xs text-text-muted">{s.label}</p>
           </Card>
@@ -124,12 +124,12 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search students..."
-          className="h-9 min-w-[220px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none"
+          className="h-9 min-w-[220px] flex-1 rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand/50 focus:outline-none"
         />
         <select
           value={plan}
           onChange={(e) => setPlan(e.target.value)}
-          className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none"
+          className="h-9 rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
         >
           <option value="">All plans</option>
           <option value="free">Free</option>
@@ -139,7 +139,7 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
         <select
           value={level}
           onChange={(e) => setLevel(e.target.value)}
-          className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-blue-400 focus:outline-none"
+          className="h-9 rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
         >
           <option value="">All levels</option>
           {[100, 200, 300, 400, 500].map((l) => (
@@ -152,7 +152,7 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
           value={deptId}
           onChange={(e) => setDeptId(e.target.value)}
           placeholder="Department id (optional)"
-          className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none"
+          className="h-9 rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand/50 focus:outline-none"
         />
       </div>
 

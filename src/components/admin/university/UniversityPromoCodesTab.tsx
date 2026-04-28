@@ -170,12 +170,12 @@ export function UniversityPromoCodesTab({
   return (
     <div className="flex flex-col gap-4">
       {q.data?.mocked ? (
-        <Card className="border-amber-200 bg-amber-50 text-xs text-amber-700">
+        <Card className="border-warning/30 bg-warning/10 text-xs text-warning">
           Live promo-code endpoint is unavailable; showing scaffold mode until the backend route is enabled.
         </Card>
       ) : null}
       {q.isFetching && !q.isLoading ? (
-        <p className="text-xs text-slate-300">Refreshing promo-code data…</p>
+        <p className="text-xs text-text-muted">Refreshing promo-code data…</p>
       ) : null}
 
       <div className="flex items-center justify-between">
