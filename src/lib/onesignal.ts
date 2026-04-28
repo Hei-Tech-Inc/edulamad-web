@@ -132,7 +132,8 @@ export async function requestPushPermission(): Promise<boolean> {
   try {
     const OneSignal = await getOneSignal();
     await OneSignal.Notifications.requestPermission();
-    return Notification.permission === 'granted';
+    const permissionAfterPrompt = window.Notification.permission as NotificationPermission;
+    return permissionAfterPrompt === 'granted';
   } catch {
     return false;
   }
