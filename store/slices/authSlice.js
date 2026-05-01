@@ -10,6 +10,7 @@ import { toCompatUser } from '@/lib/auth-compat'
 import { AppApiError } from '@/lib/api-error'
 import { queryClient } from '@/lib/query-client'
 import { useAuthStore } from '@/stores/auth.store'
+import { clearClientSession } from '@/lib/clear-client-session'
 
 export const fetchUser = createAsyncThunk('auth/fetchUser', async () => {
   await useAuthStore.persist.rehydrate()
@@ -34,7 +35,7 @@ export const fetchUser = createAsyncThunk('auth/fetchUser', async () => {
     return toCompatUser(ru)
   } catch (e) {
     if (e instanceof AppApiError && e.status === 401) {
-      useAuthStore.getState().clearAuth()
+      await clearClientSession()
       return null
     }
     // 403 or network: keep tokens; sync Redux from persisted / login user (GET /auth/me may be stricter).
@@ -76,7 +77,7 @@ export const signOut = createAsyncThunk('auth/signOut', async () => {
   } catch {
     // ignore network / server errors; always clear locally
   }
-  useAuthStore.getState().clearAuth()
+  await clearClientSession()
   void queryClient.clear()
 })
 

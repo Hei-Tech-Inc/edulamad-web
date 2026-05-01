@@ -1,4 +1,4 @@
-import { useEffect, Fragment, useRef } from 'react'
+import { Fragment } from 'react'
 import { useRouter } from 'next/router'
 import { useData } from '../contexts/DataContext'
 import { DataApiBanner } from './DataApiBanner'
@@ -7,28 +7,17 @@ import { SkeletonProfileHeader } from '@/components/ui/skeleton'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthStore } from '@/stores/auth.store'
 
+/**
+ * Guards UI until auth + hydration settle. Redirects to /login are handled only by AuthWrapper
+ * in `_app.js` to avoid duplicate navigations and login/dashboard oscillation.
+ */
 export default function ProtectedRoute({ children }) {
   const router = useRouter()
-  const redirected = useRef(false)
   const { user, loading, initialized } = useAuth()
   const hasHydrated = useAuthStore((s) => s._hasHydrated)
   const { error: dataError, loading: dataLoading, refreshStudyRows } = useData()
   const layoutShell = usesMainSidebarLayout(router.pathname)
   const standaloneDataError = !layoutShell && dataError ? dataError : ''
-
-  useEffect(() => {
-    if (!initialized || loading || !hasHydrated) return
-    if (!user && !redirected.current) {
-      redirected.current = true
-      const nextPath =
-        typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/dashboard'
-      const q =
-        nextPath !== '/login' && nextPath !== '/signup'
-          ? `?next=${encodeURIComponent(nextPath)}`
-          : ''
-      router.replace(`/login${q}`)
-    }
-  }, [initialized, loading, hasHydrated, user, router])
 
   if (!initialized || loading || !hasHydrated) {
     return (

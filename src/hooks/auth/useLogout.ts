@@ -3,6 +3,7 @@ import { apiClient } from '@/api/client';
 import API from '@/api/endpoints';
 import { useAuthStore } from '@/stores/auth.store';
 import { logoutOneSignal } from '@/lib/onesignal';
+import { clearClientSession } from '@/lib/clear-client-session';
 
 export function useLogout() {
   const queryClient = useQueryClient();
@@ -14,9 +15,9 @@ export function useLogout() {
         await apiClient.post(API.auth.logout, { refreshToken });
       }
     },
-    onSettled: () => {
+    onSettled: async () => {
       void logoutOneSignal();
-      useAuthStore.getState().clearAuth();
+      await clearClientSession();
       void queryClient.clear();
     },
   });

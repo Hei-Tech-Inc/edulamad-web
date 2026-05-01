@@ -6,7 +6,8 @@ import React, {
   useMemo,
   useState,
 } from 'react'
-import { signIn as nextAuthSignIn, signOut as nextAuthSignOut } from 'next-auth/react'
+import { signIn as nextAuthSignIn } from 'next-auth/react'
+import { clearClientSession } from '@/lib/clear-client-session'
 import { apiClient, apiClientPublic } from '@/api/client'
 import API from '@/api/endpoints'
 import {
@@ -208,13 +209,8 @@ export function AuthProvider({ children }) {
     } catch {
       // still clear local session
     }
-    try {
-      await nextAuthSignOut({ redirect: false })
-    } catch {
-      /* ignore */
-    }
     void logoutOneSignal()
-    useAuthStore.getState().clearAuth()
+    await clearClientSession()
     store.dispatch(resetState())
     void queryClient.clear()
     return { error: null }

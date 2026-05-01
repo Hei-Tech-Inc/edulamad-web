@@ -6,7 +6,7 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { useQuery } from '@tanstack/react-query'
-import { SessionProvider } from 'next-auth/react'
+import { SessionProvider, useSession } from 'next-auth/react'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { SettingsProvider } from '../contexts/SettingsContext'
@@ -98,7 +98,6 @@ function AppWrapper({ Component, pageProps }) {
           <ThemeProvider>
             <SettingsProvider>
               <AuthProvider>
-                <OAuthSessionSync />
                 <DataProvider>
                   <ToastProvider>
                     <NotificationProvider>
@@ -129,6 +128,7 @@ function AuthWrapper({ children }) {
   const { user, initialized, loading } = useAuth()
   const router = useRouter()
   const hasHydrated = useAuthStore((s) => s._hasHydrated)
+  const { status: nextAuthStatus, data: nextAuthSession } = useSession()
 
   const currentPath = router.pathname
   const onOnboardingRoute = currentPath === '/onboarding'
@@ -181,6 +181,11 @@ function AuthWrapper({ children }) {
 
     // If not logged in and trying to access protected route, redirect to login
     if (!user && !isPublicAuthRoute(currentPath) && !onShareableQuizRoute) {
+      // NextAuth session still hydrating after OAuth redirect — don't bounce to /login early.
+      if (nextAuthStatus === 'loading') return
+      // JWT cookie has API tokens but Zustand not synced yet (OAuthSessionSync runs same tick).
+      if (nextAuthStatus === 'authenticated' && nextAuthSession?.accessToken) return
+
       const nextPath =
         typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/dashboard'
       const target = `/login?next=${encodeURIComponent(nextPath)}`
@@ -234,6 +239,8 @@ function AuthWrapper({ children }) {
     profileGateQ.isLoading,
     router,
     router.query.next,
+    nextAuthStatus,
+    nextAuthSession?.accessToken,
   ])
 
   // Loading state
@@ -250,9 +257,10 @@ function AuthWrapper({ children }) {
     }
   }
 
-  // Render children
+  // Render children — OAuthSessionSync first so tokens copy into Zustand before nested layouts read auth.
   return (
     <>
+      <OAuthSessionSync />
       <OneSignalInit />
       {children}
       <PushPermissionPrompt enabled={Boolean(user && onboardingComplete && !onOnboardingRoute)} />

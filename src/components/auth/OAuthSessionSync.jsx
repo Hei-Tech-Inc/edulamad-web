@@ -21,6 +21,12 @@ export function OAuthSessionSync() {
   const appliedRef = useRef(null)
 
   useEffect(() => {
+    if (status === 'unauthenticated') {
+      appliedRef.current = null
+    }
+  }, [status])
+
+  useEffect(() => {
     if (status === 'loading') return
     if (status !== 'authenticated') return
     if (!session?.accessToken || !session?.backendUser) return

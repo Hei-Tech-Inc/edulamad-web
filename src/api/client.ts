@@ -12,6 +12,7 @@ import { getApiBaseURL } from '@/lib/api-base-url';
 import { AppApiError, parseApiErrorPayload } from '@/lib/api-error';
 import { isAbortError } from '@/lib/abort-handler';
 import { useAuthStore } from '@/stores/auth.store';
+import { clearClientSession } from '@/lib/clear-client-session';
 import { loadingBarActions } from '@/stores/loading-bar.store';
 
 declare module 'axios' {
@@ -272,7 +273,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       const ok = await refreshAccessTokenOnce();
       if (!ok) {
-        useAuthStore.getState().clearAuth();
+        await clearClientSession();
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
@@ -280,7 +281,7 @@ apiClient.interceptors.response.use(
       }
       const access = useAuthStore.getState().accessToken;
       if (!access) {
-        useAuthStore.getState().clearAuth();
+        await clearClientSession();
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
