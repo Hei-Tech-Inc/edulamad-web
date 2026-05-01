@@ -273,7 +273,11 @@ function CourseDetailContent() {
           ) : null}
             </>
           ) : (
-            <PracticeBankTab courseId={courseId} />
+            <PracticeBankTab
+              courseId={courseId}
+              courseName={courseName}
+              officialQuestionCount={questionCount}
+            />
           )}
         </section>
       ) : null}

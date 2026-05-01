@@ -69,8 +69,11 @@ function QuizHistoryContent() {
                   <p className="text-sm font-medium text-slate-900">{b.title}</p>
                   <p className="text-xs text-slate-500">Saved {new Date(b.savedAt).toLocaleString()}</p>
                 </div>
-                <Link href={b.href} className="text-sm font-semibold text-orange-700 hover:text-orange-800">
-                  Open
+                <Link
+                  href={b.href}
+                  className="inline-flex shrink-0 items-center rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-700"
+                >
+                  Resume quiz
                 </Link>
               </li>
             ))}

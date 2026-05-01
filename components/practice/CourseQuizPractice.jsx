@@ -22,6 +22,8 @@ import {
   Sparkles,
   ThumbsUp,
   Trash2,
+  UserRound,
+  GraduationCap,
 } from 'lucide-react'
 import { useCourseQuestions } from '@/hooks/questions/useCourseQuestions'
 import { useQuestionSolutions } from '@/hooks/questions/useQuestionSolutions'
@@ -54,6 +56,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import { apiClient } from '@/api/client'
 import API from '@/api/endpoints'
+import { useAuth } from '../../contexts/AuthContext'
 
 function optionLetter(index) {
   if (index < 0 || index > 25) return String(index + 1)
@@ -117,7 +120,17 @@ function parseQuery(router) {
       : Number.isFinite(minsFromPayload)
         ? minsFromPayload
         : 15,
+    sharedByName: fromValue('sharedByName'),
   }
+}
+
+function getShareDisplayName(user) {
+  if (!user) return ''
+  const name = user.user_metadata?.full_name?.trim()
+  if (name) return name
+  const email = user.email?.trim()
+  if (email && email.includes('@')) return email.split('@')[0] ?? ''
+  return ''
 }
 
 function formatCountdown(totalSec) {
@@ -390,8 +403,108 @@ function QuestionHint({ questionId, inlineHint, blockRemoteHint }) {
   )
 }
 
+function QuizShareLanding({
+  courseTitle,
+  sharedByName,
+  year,
+  level,
+  sourceLabel,
+  questionCount,
+  poolTotal,
+  timerMins,
+  onStart,
+  courseId,
+}) {
+  const sessionMeta = [
+    year ? `Academic year ${year}/${Number(year) + 1}` : null,
+    level ? `Level ${level}` : null,
+    sourceLabel || null,
+  ].filter(Boolean)
+
+  const timerCopy =
+    timerMins != null && Number.isFinite(timerMins) && timerMins > 0
+      ? `${timerMins}-minute timer · auto-submits at 00:00`
+      : 'No timer · work at your own pace'
+
+  const qc = Number.isFinite(questionCount) ? Math.floor(questionCount) : 0
+
+  return (
+    <div className="-mx-4 -my-6 min-h-[calc(100vh-5rem)] bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-10 sm:-mx-6 sm:px-6">
+      <div className="mx-auto max-w-lg">
+        <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_20px_50px_-24px_rgba(15,23,42,0.25)]">
+          <div className="border-b border-teal-100 bg-gradient-to-r from-teal-700 to-teal-600 px-6 py-5 text-white">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100">Shared quiz</p>
+            <h1 className="mt-1 text-xl font-bold tracking-tight">
+              {sharedByName ? `${sharedByName} shared a quiz with you` : 'Someone shared a quiz with you'}
+            </h1>
+          </div>
+          <div className="space-y-5 px-6 py-6">
+            <div className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-800">
+                <GraduationCap className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Course</p>
+                <p className="mt-0.5 text-base font-semibold leading-snug text-slate-900">{courseTitle}</p>
+                {sessionMeta.length ? (
+                  <p className="mt-1 text-sm text-slate-600">{sessionMeta.join(' · ')}</p>
+                ) : null}
+              </div>
+            </div>
+
+            {sharedByName ? (
+              <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                <UserRound className="h-9 w-9 shrink-0 text-slate-400" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Shared by</p>
+                  <p className="truncate text-sm font-medium text-slate-900">{sharedByName}</p>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3 text-sm text-slate-700">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <Clock className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
+                <span>{timerCopy}</span>
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                {qc > 0
+                  ? `${Math.min(qc, poolTotal)} questions in this run (${poolTotal} loaded for this filter).`
+                  : `${poolTotal} questions loaded for this filter.`}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onStart}
+              className="w-full rounded-xl bg-teal-700 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-teal-800"
+            >
+              Start quiz
+            </button>
+            <p className="text-center text-xs leading-relaxed text-slate-500">
+              The timer starts only after you tap Start. While signed in, your answers may be saved on this device if you
+              leave and come back.
+            </p>
+            {courseId ? (
+              <p className="text-center">
+                <Link
+                  href={`/courses/${courseId}`}
+                  className="text-xs font-medium text-teal-700 underline-offset-2 hover:underline"
+                >
+                  View course page instead
+                </Link>
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CourseQuizPractice() {
   const router = useRouter()
+  const { user } = useAuth()
   const { showToast } = useToast()
   const ready = router.isReady
   const q0 = parseQuery(router)
@@ -408,6 +521,7 @@ export default function CourseQuizPractice() {
     count: urlCount,
     seed: urlSeed,
     mins: urlMins,
+    sharedByName,
   } = q0
 
   const questionsQ = useCourseQuestions({
@@ -440,6 +554,47 @@ export default function CourseQuizPractice() {
 
   const total = activeQuestions.length
   const isQuizSession = mode === 'quiz' && hasQuizParams
+
+  const existingDraftMeta = useMemo(() => {
+    if (!ready || !isQuizSession) {
+      return { skipGate: true }
+    }
+    const sk = quizDraftStorageKey({
+      courseId,
+      year,
+      level,
+      type,
+      count: urlCount,
+      seed: urlSeed,
+    })
+    const d = loadQuizDraft(sk)
+    const hasProgress =
+      d?.submitted === true ||
+      (d?.mcqAnswers && Object.keys(d.mcqAnswers).length > 0) ||
+      (d?.essayDraft &&
+        Object.values(d.essayDraft).some((t) => String(t ?? '').trim().length > 0))
+    return { skipGate: hasProgress }
+  }, [ready, isQuizSession, courseId, year, level, type, urlCount, urlSeed])
+
+  const [shareGateDismissed, setShareGateDismissed] = useState(false)
+
+  useEffect(() => {
+    setShareGateDismissed(false)
+  }, [courseId, year, level, urlCount, urlSeed])
+
+  const sharerTrim = (sharedByName || '').trim()
+  const selfShareName = getShareDisplayName(user)
+  const shareFromSomeoneElse = Boolean(
+    sharerTrim &&
+      (!selfShareName || sharerTrim.toLowerCase() !== selfShareName.toLowerCase()),
+  )
+
+  const quizPlayStarted =
+    !isQuizSession ||
+    existingDraftMeta.skipGate ||
+    shareGateDismissed ||
+    !shareFromSomeoneElse
+
   const activeIdsKey = activeQuestions.map((q) => q.id).join(',')
   const questionIds = useMemo(() => activeQuestions.map((q) => q.id), [activeIdsKey])
 
@@ -516,7 +671,8 @@ export default function CourseQuizPractice() {
     }
   }, [poolTotal])
 
-  const timerMinutes = mode === 'quiz' && hasQuizParams ? Math.max(0, urlMins) : 0
+  const timerMinutes =
+    mode === 'quiz' && hasQuizParams && Number.isFinite(urlMins) ? Math.max(0, urlMins) : 0
 
   useEffect(() => {
     if (!ready) {
@@ -535,6 +691,16 @@ export default function CourseQuizPractice() {
       setFrozenTimerSec(null)
       setTimeLeftSec(null)
       draftReadyRef.current = true
+      return
+    }
+
+    if (!quizPlayStarted) {
+      setMcqAnswers({})
+      setEssayDraft({})
+      setQuizSubmitted(false)
+      setFrozenTimerSec(null)
+      setTimeLeftSec(null)
+      draftReadyRef.current = false
       return
     }
 
@@ -565,10 +731,21 @@ export default function CourseQuizPractice() {
     }
 
     draftReadyRef.current = true
-  }, [ready, isQuizSession, courseId, year, level, type, urlCount, urlSeed, timerMinutes])
+  }, [
+    ready,
+    isQuizSession,
+    quizPlayStarted,
+    courseId,
+    year,
+    level,
+    type,
+    urlCount,
+    urlSeed,
+    timerMinutes,
+  ])
 
   useEffect(() => {
-    if (!ready || !isQuizSession || !draftReadyRef.current) return
+    if (!ready || !isQuizSession || !quizPlayStarted || !draftReadyRef.current) return
     const sk = quizDraftStorageKey({
       courseId,
       year,
@@ -589,6 +766,7 @@ export default function CourseQuizPractice() {
   }, [
     ready,
     isQuizSession,
+    quizPlayStarted,
     courseId,
     year,
     level,
@@ -607,15 +785,17 @@ export default function CourseQuizPractice() {
   }, [currentIndex, total])
 
   useEffect(() => {
+    if (!quizPlayStarted) return
     if (quizSubmitted) return
     if (timeLeftSec === null || timeLeftSec <= 0) return
     const id = setInterval(() => {
       setTimeLeftSec((s) => (s === null ? null : s <= 1 ? 0 : s - 1))
     }, 1000)
     return () => clearInterval(id)
-  }, [timeLeftSec, quizSubmitted])
+  }, [quizPlayStarted, timeLeftSec, quizSubmitted])
 
   useEffect(() => {
+    if (!quizPlayStarted) return
     if (quizSubmitted) return
     if (timeLeftSec !== 0) return
     if (!isQuizSession || timerMinutes <= 0) return
@@ -625,7 +805,7 @@ export default function CourseQuizPractice() {
     setTimeLeftSec(null)
     setQuizSubmitted(true)
     showToast("Time's up — quiz auto-submitted with your saved answers. Loading the key…", 'info')
-  }, [timeLeftSec, quizSubmitted, isQuizSession, timerMinutes, showToast])
+  }, [quizPlayStarted, timeLeftSec, quizSubmitted, isQuizSession, timerMinutes, showToast])
 
   const submitQuiz = useCallback(() => {
     if (timerMinutes > 0) {
@@ -799,6 +979,7 @@ export default function CourseQuizPractice() {
     const n = Number(setupCount)
     const c = Math.min(Math.max(1, Number.isFinite(n) ? n : 1), poolTotal)
     const newSeed = Math.floor(Math.random() * 2147483647)
+    const sharer = getShareDisplayName(user)
     const nextState = {
       courseId,
       year,
@@ -808,6 +989,7 @@ export default function CourseQuizPractice() {
       ...(sourceLabel ? { sourceLabel } : {}),
       ...(tagId ? { tagId } : {}),
       ...(courseName ? { courseName } : {}),
+      ...(sharer ? { sharedByName: sharer, shared: true } : {}),
       mode: 'quiz',
       count: String(c),
       seed: String(newSeed),
@@ -816,6 +998,7 @@ export default function CourseQuizPractice() {
     replaceQuizRoute(nextState)
   }, [
     replaceQuizRoute,
+    user,
     courseId,
     year,
     level,
@@ -861,13 +1044,33 @@ export default function CourseQuizPractice() {
 
   const copyShareLink = useCallback(async () => {
     try {
-      const url = typeof window !== 'undefined' ? window.location.href : ''
+      const sharer = getShareDisplayName(user)
+      const rawId = router.query.id
+      const base =
+        typeof rawId === 'string'
+          ? rawId
+          : Array.isArray(rawId) && typeof rawId[0] === 'string'
+            ? rawId[0]
+            : ''
+      let payload = {}
+      try {
+        if (base.trim()) payload = JSON.parse(decodeURIComponent(base))
+      } catch {
+        payload = {}
+      }
+      const merged = {
+        ...payload,
+        ...(sharer ? { sharedByName: sharer, shared: true } : { shared: true }),
+      }
+      const id = encodeURIComponent(JSON.stringify(merged))
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      const url = `${origin}/quiz/${id}`
       await navigator.clipboard.writeText(url)
       showToast('Link copied. Only signed-in users can open it.', 'success')
     } catch {
       showToast('Could not copy link', 'error')
     }
-  }, [showToast])
+  }, [showToast, user, router.query.id])
 
   const saveForLater = useCallback(() => {
     if (typeof window === 'undefined') return
@@ -998,6 +1201,23 @@ export default function CourseQuizPractice() {
           onAction={() => void router.push('/dashboard')}
         />
       </div>
+    )
+  }
+
+  if (isQuizSession && !quizPlayStarted) {
+    return (
+      <QuizShareLanding
+        courseTitle={(courseName || 'Past questions').trim() || 'Past questions'}
+        sharedByName={(sharedByName || '').trim()}
+        year={year}
+        level={level}
+        sourceLabel={sourceLabel}
+        questionCount={urlCount}
+        poolTotal={poolTotal}
+        timerMins={timerMinutes}
+        courseId={courseId}
+        onStart={() => setShareGateDismissed(true)}
+      />
     )
   }
 
