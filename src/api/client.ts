@@ -92,6 +92,46 @@ function unwrapEnvelope<T>(raw: unknown): T {
 
 /** No auth interceptor — used for token refresh only. */
 const refreshClient = axios.create(axiosDefaults);
+
+/**
+ * Single in-flight refresh so N parallel 401s don't each POST /auth/refresh (rate limits + broken rotation).
+ */
+let refreshAccessTokenPromise: Promise<boolean> | null = null;
+
+async function refreshAccessTokenOnce(): Promise<boolean> {
+  if (refreshAccessTokenPromise) {
+    return refreshAccessTokenPromise;
+  }
+
+  const run = async (): Promise<boolean> => {
+    const refreshToken = useAuthStore.getState().refreshToken;
+    if (!refreshToken) {
+      return false;
+    }
+    try {
+      const { data: raw } = await refreshClient.post(API.auth.refresh, {
+        refreshToken,
+      });
+      const body = unwrapEnvelope<{
+        accessToken: string;
+        refreshToken?: string;
+      }>(raw);
+      const access = body.accessToken;
+      const nextRefresh = body.refreshToken ?? refreshToken;
+      useAuthStore.getState().setTokens(access, nextRefresh);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  refreshAccessTokenPromise = run().finally(() => {
+    refreshAccessTokenPromise = null;
+  });
+
+  return refreshAccessTokenPromise;
+}
+
 let inflightLoadingBarRequests = 0;
 const loadingBarEnabled = process.env.NEXT_PUBLIC_ENABLE_TOP_LOADING_BAR === '1';
 
@@ -230,40 +270,29 @@ apiClient.interceptors.response.use(
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
-      const refreshToken = useAuthStore.getState().refreshToken;
-      if (!refreshToken) {
+      const ok = await refreshAccessTokenOnce();
+      if (!ok) {
         useAuthStore.getState().clearAuth();
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
         return Promise.reject(toAppError(error));
       }
-
-      try {
-        const { data: raw } = await refreshClient.post(API.auth.refresh, {
-          refreshToken,
-        });
-        const body = unwrapEnvelope<{
-          accessToken: string;
-          refreshToken?: string;
-        }>(raw);
-        const access = body.accessToken;
-        const nextRefresh = body.refreshToken ?? refreshToken;
-        useAuthStore.getState().setTokens(access, nextRefresh);
-        const headers = originalRequest.headers;
-        if (headers && typeof headers.set === 'function') {
-          headers.set('Authorization', `Bearer ${access}`);
-        } else {
-          originalRequest.headers.Authorization = `Bearer ${access}`;
-        }
-        return apiClient(originalRequest);
-      } catch {
+      const access = useAuthStore.getState().accessToken;
+      if (!access) {
         useAuthStore.getState().clearAuth();
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
         return Promise.reject(toAppError(error));
       }
+      const headers = originalRequest.headers;
+      if (headers && typeof headers.set === 'function') {
+        headers.set('Authorization', `Bearer ${access}`);
+      } else {
+        originalRequest.headers.Authorization = `Bearer ${access}`;
+      }
+      return apiClient(originalRequest);
     }
 
     return Promise.reject(toAppError(error));

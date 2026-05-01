@@ -54,14 +54,14 @@ export default function LoginPage() {
     void router.replace({ pathname: '/login', query: rest }, undefined, { shallow: true })
   }, [router, router.isReady, router.query.error])
 
-  useEffect(() => {
-    if (!router.isReady || !user) return
-    const dest = getSafeInternalPath(router.query.next) || '/dashboard'
-    void router.replace(dest)
-  }, [router, router.isReady, router.query.next, user])
-
   const hasReturnTo = Boolean(getSafeInternalPath(router.query.next))
-  if (user) return null
+  if (user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <p className="text-sm text-slate-600">Redirecting…</p>
+      </div>
+    )
+  }
 
   const onSubmit = async (e) => {
     e.preventDefault()

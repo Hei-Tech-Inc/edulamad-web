@@ -15,7 +15,7 @@ export function makeQueryClient() {
         throwOnError: false,
         retry: (failureCount, error) => {
           if (isBenignCancellation(error)) return false;
-          if (isApiError(error) && [401, 403, 404].includes(error.status)) {
+          if (isApiError(error) && [401, 403, 404, 429].includes(error.status)) {
             return false;
           }
           return failureCount < 2;

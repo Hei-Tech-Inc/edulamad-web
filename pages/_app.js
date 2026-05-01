@@ -1,6 +1,6 @@
 // pages/_app.js - Simplified without company registration flow
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -125,6 +125,7 @@ function AuthWrapper({ children }) {
   const { user, initialized, loading } = useAuth()
   const router = useRouter()
   const hasHydrated = useAuthStore((s) => s._hasHydrated)
+  const lastRedirectRef = useRef('')
 
   const currentPath = router.pathname
   const onOnboardingRoute = currentPath === '/onboarding'
@@ -139,7 +140,7 @@ function AuthWrapper({ children }) {
     queryKey: queryKeys.students.onboardingGate,
     enabled: Boolean(initialized && !loading && user),
     retry: false,
-    staleTime: 30_000,
+    staleTime: 60_000,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get(API.students.meProfile, { signal })
       return data
@@ -179,11 +180,16 @@ function AuthWrapper({ children }) {
     if (!user && !isPublicAuthRoute(currentPath) && !onShareableQuizRoute) {
       const nextPath =
         typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/dashboard'
-      router.replace(`/login?next=${encodeURIComponent(nextPath)}`)
+      const target = `/login?next=${encodeURIComponent(nextPath)}`
+      if (lastRedirectRef.current !== target) {
+        lastRedirectRef.current = target
+        router.replace(target)
+      }
     }
 
     if (!user) return
-    if (profileGateQ.isLoading || profileGateQ.isFetching) return
+    // Only block on first load — background refetches must not stall login → app redirects.
+    if (profileGateQ.isLoading) return
 
     // Fail-open: if profile gate request fails, keep users in app instead of looping them back to onboarding.
     const shouldEnforceOnboarding = profileGateQ.isSuccess && !onboardingComplete
@@ -204,7 +210,10 @@ function AuthWrapper({ children }) {
       const nextDest = currentPath === '/login' ? getSafeInternalPath(router.query.next) : null
       const dest =
         profileGateQ.isSuccess && !onboardingComplete ? '/onboarding' : nextDest || '/dashboard'
-      router.replace(dest)
+      if (lastRedirectRef.current !== dest) {
+        lastRedirectRef.current = dest
+        router.replace(dest)
+      }
     }
   }, [
     user,
@@ -220,7 +229,6 @@ function AuthWrapper({ children }) {
     profileGateQ.isSuccess,
     profileGateQ.isError,
     profileGateQ.isLoading,
-    profileGateQ.isFetching,
     router,
     router.query.next,
   ])
