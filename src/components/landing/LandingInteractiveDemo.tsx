@@ -506,11 +506,11 @@ export function LandingInteractiveDemo() {
                 className="border-b px-4 py-2 sm:px-5"
                 style={{ borderColor: 'var(--quiz-card-border)', background: 'var(--quiz-nav-header-bg)' }}
               >
-                <div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                <div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[color:var(--quiz-label)]">
                   <span>Your progress</span>
                   <span>{checked ? '1 / 1' : '0 / 1'}</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-[var(--border-default)]/80">
+                <div className="h-2 overflow-hidden rounded-full bg-slate-200/90">
                   <motion.div
                     className={`h-full rounded-full bg-gradient-to-r ${
                       checked
@@ -538,12 +538,14 @@ export function LandingInteractiveDemo() {
                     <GraduationCap className="h-4 w-4" strokeWidth={2} aria-hidden />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-text-primary">Practice question</p>
-                    <p className="truncate text-[11px] text-text-muted">{demo.meta}</p>
+                    <p className="truncate text-xs font-semibold text-[color:var(--quiz-heading)]">
+                      Practice question
+                    </p>
+                    <p className="truncate text-[11px] text-[color:var(--quiz-muted)]">{demo.meta}</p>
                   </div>
                 </div>
                 <span
-                  className="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-muted"
+                  className="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[color:var(--quiz-label)]"
                   style={{ borderColor: 'var(--quiz-card-border)' }}
                 >
                   Demo
@@ -575,6 +577,8 @@ export function LandingInteractiveDemo() {
                     const showResult = checked && hasAnswer;
                     const isCorrectOpt = opt.key === demo.correctKey;
                     const wrongPick = showResult && isSelected && !isCorrectOpt;
+                    /** Revealed distractors — keep light “paper” fills so `--quiz-body` never sits on dark surfaces. */
+                    const neutralRevealed = showResult && !isCorrectOpt && !wrongPick;
 
                     return (
                       <motion.button
@@ -592,12 +596,14 @@ export function LandingInteractiveDemo() {
                         onClick={() => !checked && setChoice(opt.key)}
                         className={`flex w-full items-start gap-3 rounded-xl border px-3.5 py-3 text-left text-sm leading-snug transition-colors sm:px-4 ${
                           showResult && isCorrectOpt
-                            ? 'border-emerald-500/55 bg-emerald-500/[0.12] shadow-[0_0_0_1px_rgba(16,185,129,0.2)] dark:border-emerald-400/45'
+                            ? 'border-emerald-400/60 bg-emerald-50 shadow-[0_0_0_1px_rgba(16,185,129,0.18)]'
                             : wrongPick
-                              ? 'border-red-500/55 bg-red-500/[0.11] shadow-[0_0_0_1px_rgba(239,68,68,0.22)] dark:border-red-400/45 dark:bg-red-950/[0.18]'
-                              : isSelected
-                                ? 'border-teal-500/50 bg-teal-500/[0.06] dark:border-teal-400/40'
-                                : 'border-[var(--border-default)] bg-bg-surface/80 hover:border-teal-500/30'
+                              ? 'border-rose-400/55 bg-rose-50 shadow-[0_0_0_1px_rgba(244,63,94,0.14)]'
+                              : neutralRevealed
+                                ? 'border-slate-200 bg-white shadow-sm'
+                                : isSelected
+                                  ? 'border-teal-400/55 bg-teal-50/95'
+                                  : 'border-slate-200/90 bg-white hover:border-teal-300/45 hover:bg-teal-50/40'
                         }`}
                       >
                         <span
@@ -605,15 +611,17 @@ export function LandingInteractiveDemo() {
                             showResult && isCorrectOpt
                               ? 'bg-[#58cc02] text-white shadow-sm'
                               : wrongPick
-                                ? 'bg-red-600 text-white shadow-sm dark:bg-red-500'
-                                : isSelected
-                                  ? 'bg-teal-600 text-white'
-                                  : 'border border-[var(--border-default)] bg-bg-raised text-text-secondary'
+                                ? 'bg-red-600 text-white shadow-sm'
+                                : neutralRevealed
+                                  ? 'border border-slate-300 bg-white text-slate-700 shadow-sm'
+                                  : isSelected
+                                    ? 'bg-teal-600 text-white'
+                                    : 'border border-slate-300 bg-slate-100 text-slate-700'
                           }`}
                         >
                           {opt.key}
                         </span>
-                        <span className="text-text-primary">{opt.text}</span>
+                        <span className={wrongPick ? 'text-slate-900' : 'text-slate-800'}>{opt.text}</span>
                         {showResult && isCorrectOpt ? (
                           <CheckCircle2
                             className="ml-auto mt-0.5 h-5 w-5 shrink-0 text-[#58cc02]"
@@ -622,7 +630,7 @@ export function LandingInteractiveDemo() {
                         ) : null}
                         {wrongPick ? (
                           <XCircle
-                            className="ml-auto mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400"
+                            className="ml-auto mt-0.5 h-5 w-5 shrink-0 text-red-600"
                             aria-hidden
                           />
                         ) : null}
@@ -643,7 +651,7 @@ export function LandingInteractiveDemo() {
                     >
                       Check answer
                     </motion.button>
-                    <p className="text-center text-xs text-text-muted sm:text-left">
+                    <p className="text-center text-xs text-[color:var(--quiz-label)] sm:text-left">
                       One decision away—your brain loves finishing loops this small.
                     </p>
                   </div>
@@ -661,7 +669,7 @@ export function LandingInteractiveDemo() {
                         className={
                           correct
                             ? `relative overflow-hidden rounded-2xl border-2 border-emerald-400/60 bg-gradient-to-br ${DUO_GREEN} px-4 py-4 text-white shadow-lg shadow-emerald-500/25 sm:px-5 sm:py-5`
-                            : 'relative overflow-hidden rounded-2xl border-2 border-rose-200/90 bg-gradient-to-br from-rose-50 via-white to-rose-100/95 px-4 py-4 text-rose-950 shadow-[0_14px_44px_-18px_rgba(190,18,60,0.18),inset_0_1px_0_0_rgba(255,255,255,0.9)] sm:px-5 sm:py-5 dark:border-red-500/45 dark:bg-gradient-to-br dark:from-red-950 dark:via-red-900 dark:to-rose-950 dark:text-white dark:shadow-[0_22px_56px_-22px_rgba(127,29,29,0.55)]'
+                            : 'relative overflow-hidden rounded-2xl border-2 border-rose-200/90 bg-gradient-to-br from-rose-50 via-white to-rose-100/95 px-4 py-4 text-rose-950 shadow-[0_14px_44px_-18px_rgba(190,18,60,0.18),inset_0_1px_0_0_rgba(255,255,255,0.9)] sm:px-5 sm:py-5'
                         }
                       >
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
@@ -669,7 +677,7 @@ export function LandingInteractiveDemo() {
                             className={
                               correct
                                 ? 'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm'
-                                : 'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-rose-600/12 text-rose-700 backdrop-blur-sm dark:bg-white/20 dark:text-white'
+                                : 'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 backdrop-blur-sm ring-1 ring-rose-200/80'
                             }
                             initial={reduceMotion ? false : { rotate: -12, scale: 0.8 }}
                             animate={{ rotate: 0, scale: 1 }}
@@ -678,13 +686,13 @@ export function LandingInteractiveDemo() {
                             {correct ? (
                               <PartyPopper className="h-8 w-8 text-white" strokeWidth={2} aria-hidden />
                             ) : (
-                              <XCircle className="h-8 w-8 text-rose-600 dark:text-white" strokeWidth={2} aria-hidden />
+                              <XCircle className="h-8 w-8 text-rose-600" strokeWidth={2} aria-hidden />
                             )}
                           </motion.div>
                           <div className="min-w-0 flex-1">
                             <p
                               className={`font-[Outfit,system-ui,sans-serif] text-xl font-bold tracking-tight ${
-                                correct ? '' : 'text-rose-900 dark:text-white'
+                                correct ? '' : 'text-rose-950'
                               }`}
                             >
                               {correct ? 'Nice!' : 'Not quite'}
@@ -695,19 +703,19 @@ export function LandingInteractiveDemo() {
                                   'That matches what examiners expect — nice work.'}
                               </p>
                             ) : choice ? (
-                              <div className="mt-2 space-y-2 text-sm font-medium leading-snug text-rose-900/95 dark:text-white/95">
+                              <div className="mt-2 space-y-2 text-sm font-medium leading-snug text-rose-900">
                                 <p>
-                                  <span className="text-rose-700/85 dark:text-white/80">Your answer: </span>
-                                  <span className="font-bold text-rose-950 dark:text-white">{choice}</span>
-                                  <span className="text-rose-900/90 dark:text-white/90">
+                                  <span className="text-rose-700">Your answer: </span>
+                                  <span className="font-bold text-rose-950">{choice}</span>
+                                  <span className="text-rose-900">
                                     {' '}
                                     — {optionTextFor(demo, choice)}
                                   </span>
                                 </p>
                                 <p>
-                                  <span className="text-rose-700/85 dark:text-white/80">Correct answer: </span>
-                                  <span className="font-bold text-rose-950 dark:text-white">{demo.correctKey}</span>
-                                  <span className="text-rose-900/90 dark:text-white/90">
+                                  <span className="text-rose-700">Correct answer: </span>
+                                  <span className="font-bold text-rose-950">{demo.correctKey}</span>
+                                  <span className="text-rose-900">
                                     {' '}
                                     — {optionTextFor(demo, demo.correctKey)}
                                   </span>
@@ -729,10 +737,10 @@ export function LandingInteractiveDemo() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.12 }}
-                                className="mt-3 text-xs font-medium text-rose-700/90 dark:text-white/85"
+                                className="mt-3 text-xs font-medium text-rose-800"
                               >
                                 Compare your pick with the key above—then tap{' '}
-                                <span className="font-semibold text-rose-900 dark:text-white">
+                                <span className="font-semibold text-rose-950">
                                   Show AI solution
                                 </span>{' '}
                                 when you’re ready.
@@ -748,30 +756,30 @@ export function LandingInteractiveDemo() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.08, duration: 0.35 }}
-                      className="rounded-xl border border-[var(--border-default)] bg-bg-raised/70 px-4 py-3 dark:bg-bg-surface/50"
+                      className="rounded-xl border border-slate-200/90 bg-slate-50 px-4 py-3 shadow-sm"
                       style={{ boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.04)' }}
                     >
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
                         Marking insight
                       </p>
-                      <p className="mt-2 text-sm leading-relaxed text-text-secondary">{demo.markingNote}</p>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-700">{demo.markingNote}</p>
                     </motion.div>
 
                     <div
-                      className="overflow-hidden rounded-2xl border border-teal-500/25 bg-gradient-to-br from-teal-500/[0.07] to-transparent dark:from-teal-950/45"
+                      className="overflow-hidden rounded-2xl border border-teal-200/70 bg-gradient-to-br from-teal-50/95 via-white to-sky-50/40"
                       role="region"
                       aria-label="AI solution"
                       aria-busy={
                         aiPanelOpen && aiTypingActive && !aiTypingComplete && !reduceMotion ? true : false
                       }
                     >
-                      <div className="flex items-start gap-3 border-b border-teal-500/15 px-4 py-3.5 sm:px-5">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-md shadow-teal-600/20 dark:bg-teal-500">
+                      <div className="flex items-start gap-3 border-b border-teal-200/60 bg-teal-50/70 px-4 py-3.5 sm:px-5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-md shadow-teal-600/25">
                           <Brain className="h-4 w-4" strokeWidth={2} aria-hidden />
                         </span>
                         <div className="min-w-0 flex-1 pt-0.5">
-                          <p className="text-sm font-semibold text-text-primary">AI solution</p>
-                          <p className="text-xs text-text-muted">Why the mark scheme picks this option</p>
+                          <p className="text-sm font-semibold text-teal-950">AI solution</p>
+                          <p className="text-xs text-teal-800">Why the mark scheme picks this option</p>
                         </div>
                         {aiPanelOpen ? (
                           <motion.button
@@ -779,7 +787,7 @@ export function LandingInteractiveDemo() {
                             onClick={collapseAiPanel}
                             whileHover={reduceMotion ? undefined : { scale: 1.03 }}
                             whileTap={reduceMotion ? undefined : { scale: 0.97 }}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-teal-500/25 bg-teal-500/[0.06] px-2.5 py-1.5 text-xs font-semibold text-teal-800 transition hover:bg-teal-500/[0.12] dark:border-teal-500/30 dark:text-teal-200 dark:hover:bg-teal-950/60"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-teal-300/60 bg-white/90 px-2.5 py-1.5 text-xs font-semibold text-teal-900 transition hover:bg-teal-50"
                             aria-expanded={aiPanelOpen}
                           >
                             Hide
@@ -795,12 +803,12 @@ export function LandingInteractiveDemo() {
                             onClick={openAiPanel}
                             whileHover={reduceMotion ? undefined : { scale: 1.01 }}
                             whileTap={reduceMotion ? undefined : { scale: 0.99 }}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-teal-500/35 bg-teal-500/[0.08] px-4 py-3 text-sm font-semibold text-teal-900 shadow-sm transition hover:bg-teal-500/[0.14] dark:border-teal-500/30 dark:bg-teal-950/50 dark:text-teal-100 dark:hover:bg-teal-900/55"
+                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-teal-400/45 bg-white px-4 py-3 text-sm font-semibold text-teal-900 shadow-sm transition hover:bg-teal-50"
                           >
                             <Sparkles className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
                             {aiWalkthroughComplete ? 'Show AI solution again' : 'Show AI solution'}
                           </motion.button>
-                          <p className="mt-2 text-center text-[11px] text-text-muted sm:text-left">
+                          <p className="mt-2 text-center text-[11px] text-teal-800 sm:text-left">
                             {aiWalkthroughComplete
                               ? 'Reopens instantly with the full walkthrough.'
                               : 'Opens a typed walkthrough—on your timing.'}
@@ -824,21 +832,21 @@ export function LandingInteractiveDemo() {
                               className="space-y-4"
                             >
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-500/25 bg-teal-500/[0.08] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300">
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-300/60 bg-teal-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-teal-900">
                                   <Sparkles className="h-3.5 w-3.5" aria-hidden />
                                   {demo.aiExplanation.title}
                                 </span>
                               </div>
                               {!aiTypingActive ? (
                                 <div
-                                  className="flex min-h-[6.5rem] flex-col justify-center rounded-xl border border-dashed border-teal-500/20 bg-teal-500/[0.03] px-4 py-6 dark:bg-teal-950/25"
+                                  className="flex min-h-[6.5rem] flex-col justify-center rounded-xl border border-dashed border-teal-300/50 bg-teal-50/40 px-4 py-6"
                                   aria-hidden
                                 >
                                   <div className="mx-auto flex gap-1">
                                     {[0, 1, 2].map((d) => (
                                       <motion.span
                                         key={d}
-                                        className="h-1.5 w-1.5 rounded-full bg-teal-500/60 dark:bg-teal-400/70"
+                                        className="h-1.5 w-1.5 rounded-full bg-teal-500"
                                         animate={
                                           reduceMotion ? undefined : { opacity: [0.25, 1, 0.25], y: [0, -3, 0] }
                                         }
@@ -856,9 +864,12 @@ export function LandingInteractiveDemo() {
                                 <>
                                   <ul className="space-y-3">
                                     {demo.aiExplanation.bullets.map((_, i) => (
-                                      <li key={i} className="flex gap-3 text-sm leading-relaxed text-text-secondary">
+                                      <li
+                                        key={i}
+                                        className="flex gap-3 text-sm leading-relaxed text-slate-800"
+                                      >
                                         <CheckCircle2
-                                          className="mt-0.5 h-4 w-4 shrink-0 text-teal-600 opacity-80 dark:text-teal-400"
+                                          className="mt-0.5 h-4 w-4 shrink-0 text-teal-600 opacity-90"
                                           strokeWidth={2}
                                           aria-hidden
                                         />
@@ -870,7 +881,7 @@ export function LandingInteractiveDemo() {
                                           activeAiSegment === i ? (
                                             <motion.span
                                               aria-hidden
-                                              className="ml-px inline-block h-[1.1em] w-0.5 translate-y-px bg-teal-600 align-middle dark:bg-teal-400"
+                                              className="ml-px inline-block h-[1.1em] w-0.5 translate-y-px bg-teal-600 align-middle"
                                               animate={{ opacity: [1, 0.15, 1] }}
                                               transition={{
                                                 duration: 0.85,
@@ -883,8 +894,8 @@ export function LandingInteractiveDemo() {
                                       </li>
                                     ))}
                                   </ul>
-                                  <p className="rounded-lg border border-dashed border-teal-500/25 bg-teal-500/[0.04] px-3 py-2.5 text-xs leading-relaxed text-text-secondary dark:bg-teal-950/30">
-                                    <span className="font-semibold text-text-primary">Exam shortcut: </span>
+                                  <p className="rounded-lg border border-dashed border-teal-300/55 bg-teal-50/60 px-3 py-2.5 text-xs leading-relaxed text-slate-800">
+                                    <span className="font-semibold text-slate-900">Exam shortcut: </span>
                                     {shortcutPartial}
                                     {aiTypingActive &&
                                     !aiTypingComplete &&
@@ -892,7 +903,7 @@ export function LandingInteractiveDemo() {
                                     activeAiSegment === demo.aiExplanation.bullets.length ? (
                                       <motion.span
                                         aria-hidden
-                                        className="ml-px inline-block h-[1.1em] w-0.5 translate-y-px bg-teal-600 align-middle dark:bg-teal-400"
+                                        className="ml-px inline-block h-[1.1em] w-0.5 translate-y-px bg-teal-600 align-middle"
                                         animate={{ opacity: [1, 0.15, 1] }}
                                         transition={{
                                           duration: 0.85,
@@ -915,7 +926,7 @@ export function LandingInteractiveDemo() {
                       onClick={reset}
                       whileHover={reduceMotion ? undefined : { scale: 1.01 }}
                       whileTap={reduceMotion ? undefined : { scale: 0.99 }}
-                      className="w-full rounded-xl border border-[var(--border-default)] bg-transparent py-2.5 text-sm font-medium text-text-secondary transition hover:bg-bg-raised/80"
+                      className="w-full rounded-xl border border-[var(--quiz-card-border)] bg-transparent py-2.5 text-sm font-medium text-[color:var(--quiz-label)] transition hover:bg-slate-100/90"
                     >
                       Try again
                     </motion.button>
@@ -925,12 +936,12 @@ export function LandingInteractiveDemo() {
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.06, duration: 0.35 }}
-                      className="rounded-2xl border border-orange-500/25 bg-gradient-to-br from-orange-500/[0.08] to-transparent p-4 dark:from-orange-950/40 sm:p-5"
+                      className="rounded-2xl border border-orange-200/90 bg-gradient-to-br from-orange-50 to-amber-50/70 p-4 shadow-sm sm:p-5"
                     >
-                      <p className="text-sm font-semibold text-text-primary">
+                      <p className="text-sm font-semibold text-slate-900">
                         Ready for thousands of exam-style questions?
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-text-secondary">
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">
                         Create a free account to unlock full past-paper banks, AI walkthroughs, and progress across
                         your courses.
                       </p>

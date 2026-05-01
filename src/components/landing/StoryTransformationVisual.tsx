@@ -271,25 +271,90 @@ export function StoryTransformationVisual({ brand }: StoryTransformationVisualPr
         </div>
         </div>
 
-        {/* Step 2 — connector (arrow first on mobile for scan-to-app flow) */}
-        <div className="flex flex-col items-center justify-center gap-4 md:max-w-[13rem] md:gap-5">
+        {/* Step 2 — connector (arrow travels into the gap between the two cards) */}
+        <div className="flex flex-col items-center justify-center gap-4 md:max-w-[13rem] md:gap-5 md:self-center">
           <StepLabel
             step={2}
             variant="middle"
             title="We structure it"
             subtitle="Question stem and A–D choices are extracted from the scan—no more squinting at bars."
           />
-          <div className="flex flex-col items-center gap-2">
-            <span className="relative order-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-teal-500/40 bg-gradient-to-br from-teal-500/[0.18] to-cyan-500/[0.08] text-teal-900 shadow-[0_6px_28px_-8px_rgba(13,148,136,0.5)] md:order-2 dark:border-teal-400/35 dark:from-teal-500/25 dark:to-cyan-500/12 dark:text-teal-50 dark:shadow-[0_8px_32px_-10px_rgba(45,212,191,0.35)]">
+          <div className="relative flex flex-col items-center gap-2">
+            <div className="relative order-1 flex items-center justify-center md:order-2">
+              {/* Horizontal trail (md+): grows from the PDF side into the connector */}
               {!reduceMotion ? (
-                <span
-                  className="pointer-events-none absolute inset-0 rounded-full bg-teal-400/20 blur-md dark:bg-teal-400/12"
+                <motion.div
+                  className="pointer-events-none absolute right-full top-1/2 z-0 mr-2 hidden h-[3px] w-[min(112px,28vw)] -translate-y-1/2 rounded-full bg-gradient-to-r from-transparent via-teal-400/55 to-teal-500/30 md:block dark:via-teal-400/45 dark:to-teal-400/18"
                   aria-hidden
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  whileInView={{ scaleX: 1, opacity: 1 }}
+                  viewport={{ once: true, amount: 0.35, margin: '-40px' }}
+                  transition={{
+                    duration: 0.72,
+                    delay: 0.06,
+                    ease: [0.22, 1, 0.36, 1] as const,
+                  }}
+                  style={{ transformOrigin: 'right center' }}
                 />
               ) : null}
-              <ArrowDown className="relative h-6 w-6 md:hidden" aria-hidden />
-              <ArrowRight className="relative hidden h-6 w-6 md:block" aria-hidden />
-            </span>
+              {/* Vertical trail (mobile): grows down from the PDF card toward the button */}
+              {!reduceMotion ? (
+                <motion.div
+                  className="pointer-events-none absolute bottom-full left-1/2 z-0 mb-2 h-[min(56px,14vw)] w-[3px] -translate-x-1/2 rounded-full bg-gradient-to-b from-transparent via-teal-400/55 to-teal-500/35 md:hidden dark:via-teal-400/45 dark:to-teal-400/20"
+                  aria-hidden
+                  initial={{ scaleY: 0, opacity: 0 }}
+                  whileInView={{ scaleY: 1, opacity: 1 }}
+                  viewport={{ once: true, amount: 0.35, margin: '-40px' }}
+                  transition={{
+                    duration: 0.65,
+                    delay: 0.05,
+                    ease: [0.22, 1, 0.36, 1] as const,
+                  }}
+                  style={{ transformOrigin: 'bottom center' }}
+                />
+              ) : null}
+              <motion.span
+                className="relative z-[1] flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-teal-500/40 bg-gradient-to-br from-teal-500/[0.18] to-cyan-500/[0.08] text-teal-900 shadow-[0_6px_28px_-8px_rgba(13,148,136,0.5)] dark:border-teal-400/35 dark:from-teal-500/25 dark:to-cyan-500/12 dark:text-teal-50 dark:shadow-[0_8px_32px_-10px_rgba(45,212,191,0.35)]"
+                initial={reduceMotion ? false : { x: -92, y: 18, opacity: 0.4, scale: 0.8 }}
+                whileInView={reduceMotion ? undefined : { x: 0, y: 0, opacity: 1, scale: 1 }}
+                viewport={{ once: true, amount: 0.35, margin: '-40px' }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 56,
+                  damping: 12,
+                  mass: 0.88,
+                }}
+              >
+                {!reduceMotion ? (
+                  <span
+                    className="pointer-events-none absolute inset-0 rounded-full bg-teal-400/20 blur-md dark:bg-teal-400/12"
+                    aria-hidden
+                  />
+                ) : null}
+                <motion.span
+                  className="relative flex items-center justify-center"
+                  aria-hidden
+                  initial={false}
+                  animate={
+                    reduceMotion
+                      ? false
+                      : {
+                          x: [0, 6, 0],
+                          y: [0, 4, 0],
+                        }
+                  }
+                  transition={{
+                    duration: 2.3,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                    repeatDelay: 4.2,
+                  }}
+                >
+                  <ArrowDown className="h-6 w-6 md:hidden" />
+                  <ArrowRight className="hidden h-6 w-6 md:block" />
+                </motion.span>
+              </motion.span>
+            </div>
             <span className="order-2 max-w-[17rem] text-center text-xs font-bold uppercase tracking-[0.14em] text-teal-900 dark:text-teal-100 md:order-1 md:text-[11px] md:leading-snug md:tracking-[0.2em] md:text-teal-800 md:dark:text-teal-200">
               Extract &amp; practise
             </span>

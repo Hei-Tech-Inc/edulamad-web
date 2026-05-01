@@ -16,6 +16,7 @@ import { LandingTestimonials } from '@/components/landing/LandingTestimonials'
 import { StoryTransformationVisual } from '@/components/landing/StoryTransformationVisual'
 import { LandingWorkspaceGrid } from '@/components/landing/LandingWorkspaceGrid'
 import { HeroRotatingEmphasis } from '@/components/landing/HeroRotatingEmphasis'
+import { GridSphereLayer } from '@/components/ui/background-decorations'
 import {
   ArrowRight,
   Building2,
@@ -714,13 +715,14 @@ export default function LandingPage() {
             aria-labelledby="hero-heading"
           >
             <div ref={heroSectionRef} className="relative">
+            <GridSphereLayer className="z-0 opacity-[0.38] dark:opacity-[0.22]" />
             <motion.div
-              className="pointer-events-none absolute left-1/2 top-[-8%] h-[min(520px,70vh)] w-[min(880px,120%)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,92,0,0.11),transparent_72%)]"
+              className="pointer-events-none absolute left-1/2 top-[-8%] z-[1] h-[min(520px,70vh)] w-[min(880px,120%)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,92,0,0.11),transparent_72%)]"
               aria-hidden
               style={reduceMotion ? undefined : { y: heroOrbY }}
             />
             <div
-              className="pointer-events-none absolute -right-[18%] top-[10%] h-[min(380px,50vh)] w-[min(480px,65vw)] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.07),transparent_70%)]"
+              className="pointer-events-none absolute -right-[18%] top-[10%] z-[1] h-[min(380px,50vh)] w-[min(480px,65vw)] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.07),transparent_70%)]"
               aria-hidden
             />
 

@@ -65,7 +65,7 @@ export function QuizShowcase() {
   return (
     <div
       ref={rootRef}
-      className="relative mx-auto flex min-h-[min(400px,68vw)] w-full max-w-2xl flex-col items-center justify-center sm:min-h-[440px] lg:max-w-none lg:min-h-[min(480px,70vh)] lg:justify-end xl:min-h-[500px]"
+      className="relative mx-auto flex min-h-[min(400px,68vw)] w-full max-w-2xl flex-col items-center justify-center px-1 sm:min-h-[440px] sm:px-0 lg:max-w-none lg:min-h-[min(480px,70vh)] lg:justify-end xl:min-h-[500px]"
     >
       {/* Ambient glow — breathing */}
       <motion.div
@@ -256,11 +256,11 @@ export function QuizShowcase() {
       </motion.div>
 
       <motion.div
-        className="absolute left-[min(52%,200px)] top-[10%] z-[2] sm:left-[56%] lg:left-[min(52%,228px)]"
+        className="absolute left-3 right-3 top-[10%] z-[2] flex justify-center sm:inset-x-auto sm:block sm:left-[56%] sm:right-auto lg:left-[min(52%,228px)]"
         style={{ y: floatY }}
       >
         <motion.div
-          className="w-[min(calc(100vw-2rem),260px)] sm:w-[260px]"
+          className="w-full max-w-[260px] sm:w-[260px]"
           initial={reduceMotion ? false : { opacity: 0, x: 24, scale: 0.92 }}
           whileInView={{ opacity: 1, x: 0, scale: 1 }}
           viewport={springView}
@@ -302,11 +302,11 @@ export function QuizShowcase() {
       </motion.div>
 
       <motion.div
-        className="absolute bottom-[5%] left-[min(42%,160px)] z-[2] sm:bottom-[7%] sm:left-[48%]"
+        className="absolute bottom-[5%] left-3 right-3 z-[2] flex justify-center sm:inset-x-auto sm:bottom-[7%] sm:left-[48%] sm:right-auto sm:block"
         style={{ y: floatY2 }}
       >
         <motion.div
-          className="w-[min(calc(100vw-2rem),268px)] sm:w-[268px]"
+          className="w-full max-w-[268px] sm:w-[268px]"
           initial={reduceMotion ? false : { opacity: 0, x: -20, scale: 0.94 }}
           whileInView={{ opacity: 1, x: 0, scale: 1 }}
           viewport={springView}

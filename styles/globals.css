@@ -671,7 +671,7 @@ textarea:focus {
 
   --landing-feature-eyebrow: #5eead4;
 
-  /* Quiz landing mock — “exam paper” (same in dark/light for readability) */
+  /* Quiz landing mock — light “paper” chrome. Use --quiz-* ink vars inside it; avoid --text-* here because theme --text-* assumes the page background (dark), not the paper card. */
   --quiz-card-bg: #f8fafc;
   --quiz-card-border: #e2e8f0;
   --quiz-nav-header-bg: #f1f5f9;
