@@ -256,35 +256,39 @@ export function QuizShowcase() {
       </motion.div>
 
       <motion.div
-        className="absolute left-[min(56%,220px)] top-[10%] z-[2] sm:left-[58%] lg:left-[min(54%,240px)]"
+        className="absolute left-[min(52%,200px)] top-[10%] z-[2] sm:left-[56%] lg:left-[min(52%,228px)]"
         style={{ y: floatY }}
       >
         <motion.div
-          className="w-[min(48%,180px)] sm:w-[188px] lg:w-[200px]"
+          className="w-[min(calc(100vw-2rem),260px)] sm:w-[260px]"
           initial={reduceMotion ? false : { opacity: 0, x: 24, scale: 0.92 }}
           whileInView={{ opacity: 1, x: 0, scale: 1 }}
           viewport={springView}
           transition={{ duration: 0.55, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
         >
           <div
-            className={`rounded-2xl border-2 border-teal-400/25 bg-bg-surface p-4 shadow-[var(--shadow-float)] dark:border-teal-500/20 ${reduceMotion ? '' : 'quiz-showcase-chip-float'}`}
+            className={`rounded-2xl border-2 border-teal-400/25 bg-bg-surface px-3.5 py-3 shadow-[var(--shadow-float)] dark:border-teal-500/20 sm:px-4 sm:py-3.5 ${reduceMotion ? '' : 'quiz-showcase-chip-float'}`}
           >
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-text-secondary">
-              XP earned
-            </p>
-            <motion.p
-              className="font-mono text-3xl font-bold tabular-nums sm:text-4xl"
-              style={{ color: 'var(--brand-orange)' }}
-              initial={false}
-              animate={reduceMotion ? {} : { scale: [1, 1.06, 1] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              +45
-            </motion.p>
-            <p className="mt-1 text-[11px] font-medium text-text-secondary">
-              3 correct · Level 12
-            </p>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-bg-raised">
+            <div className="flex items-end justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+                  XP earned
+                </p>
+                <p className="mt-1 text-[11px] font-medium leading-snug text-text-secondary">
+                  3 correct · Level 12
+                </p>
+              </div>
+              <motion.p
+                className="shrink-0 font-mono text-[1.65rem] font-bold leading-none tabular-nums sm:text-[1.85rem]"
+                style={{ color: 'var(--brand-orange)' }}
+                initial={false}
+                animate={reduceMotion ? {} : { scale: [1, 1.05, 1] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                +45
+              </motion.p>
+            </div>
+            <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-bg-raised ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-teal-600 to-cyan-500"
                 initial={{ width: 0 }}

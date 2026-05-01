@@ -1,5 +1,7 @@
 'use client';
 
+import { useCallback, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { getMarketingBrandName } from '@/lib/landing-brand';
 import {
   TestimonialsMarqueeSection,
@@ -14,7 +16,6 @@ function testimonialAvatar(seed: string): string {
     seed,
     size: '128',
   });
-  // SVG: small payload; avatars render with <img> (not next/image) so the optimizer never calls DiceBear.
   return `https://api.dicebear.com/9.x/notionists/svg?${q.toString()}`;
 }
 
@@ -76,26 +77,105 @@ export const LANDING_MARQUEE_TESTIMONIALS: PortraitTestimonial[] = [
   },
 ];
 
+/** Phrases revealed through the spotlight veil (move the pointer over the section). */
+const spotlightHints: readonly { label: string; top: string; left: string }[] = [
+  { label: 'Timed exam mode — hall pressure, on screen', top: '12%', left: '5%' },
+  { label: 'Every answer labeled: official · community · AI', top: '38%', left: '8%' },
+  { label: 'Past papers by school, course & session', top: '20%', left: '58%' },
+  { label: 'Weak-topic radar — revise where you leak marks', top: '58%', left: '10%' },
+  { label: 'Reps & faculties upload into one catalog', top: '72%', left: '50%' },
+];
+
 export function LandingTestimonials() {
+  const reduceMotion = useReducedMotion();
+  const [spot, setSpot] = useState<{ x: number; y: number } | null>(null);
+
+  const updateSpot = useCallback(
+    (clientX: number, clientY: number, el: HTMLElement) => {
+      if (reduceMotion) return;
+      const r = el.getBoundingClientRect();
+      const x = ((clientX - r.left) / Math.max(r.width, 1)) * 100;
+      const y = ((clientY - r.top) / Math.max(r.height, 1)) * 100;
+      setSpot({ x, y });
+    },
+    [reduceMotion],
+  );
+
+  const onPointerLeave = useCallback(() => {
+    setSpot(null);
+  }, []);
+
   return (
     <section
       id="testimonials"
       aria-labelledby="testimonials-marquee-heading"
       className="relative scroll-mt-28 overflow-hidden border-y border-[var(--border-subtle)] bg-gradient-to-b from-bg-base via-bg-surface/80 to-bg-base"
+      onMouseMove={(e) => updateSpot(e.clientX, e.clientY, e.currentTarget)}
+      onMouseLeave={onPointerLeave}
+      onTouchMove={(e) => {
+        const t = e.touches[0];
+        if (t) updateSpot(t.clientX, t.clientY, e.currentTarget);
+      }}
+      onTouchEnd={onPointerLeave}
     >
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_50%_100%,rgba(45,212,191,0.09),transparent_60%)]"
         aria-hidden
       />
-      <TestimonialsMarqueeSection
-        embedded
-        items={LANDING_MARQUEE_TESTIMONIALS}
-        eyebrow="Testimonials"
-        title="Trusted where exams actually happen"
-        description="From reps keeping banks coherent to students sitting timed practice — voices from campuses using one surface for papers, answers, and revision signals."
-        columnDurations={[15, 19, 17]}
-        className="bg-transparent py-20 sm:py-24"
-      />
+
+      {!reduceMotion ? (
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] overflow-hidden"
+            aria-hidden
+          >
+            <div
+              className="absolute inset-0 opacity-[0.2] dark:opacity-[0.12]"
+              style={{
+                backgroundImage: `radial-gradient(circle at 1px 1px, var(--border-default) 1px, transparent 0)`,
+                backgroundSize: '28px 28px',
+              }}
+            />
+            {spotlightHints.map((h) => (
+              <p
+                key={h.label}
+                className="absolute max-w-[13rem] font-[Outfit,system-ui,sans-serif] text-[13px] font-semibold leading-snug text-teal-800/95 dark:text-teal-200/95 sm:max-w-[15rem] sm:text-sm"
+                style={{ top: h.top, left: h.left }}
+              >
+                {h.label}
+              </p>
+            ))}
+          </div>
+          <div
+            className="pointer-events-none absolute inset-0 z-[2]"
+            style={
+              spot
+                ? {
+                    backgroundColor: 'var(--bg-base)',
+                    opacity: 0.93,
+                    maskImage: `radial-gradient(ellipse min(340px, 48vw) min(260px, 38vw) at ${spot.x}% ${spot.y}%, transparent 0%, black 68%)`,
+                    WebkitMaskImage: `radial-gradient(ellipse min(340px, 48vw) min(260px, 38vw) at ${spot.x}% ${spot.y}%, transparent 0%, black 68%)`,
+                  }
+                : {
+                    backgroundColor: 'var(--bg-base)',
+                    opacity: 0.94,
+                  }
+            }
+          />
+        </>
+      ) : null}
+
+      <div className="relative z-10">
+        <TestimonialsMarqueeSection
+          embedded
+          items={LANDING_MARQUEE_TESTIMONIALS}
+          eyebrow="Testimonials"
+          title="Trusted where exams actually happen"
+          description="From reps keeping banks coherent to students sitting timed practice — voices from campuses using one surface for papers, answers, and revision signals."
+          columnDurations={[15, 19, 17]}
+          className="bg-transparent py-20 sm:py-24"
+        />
+      </div>
     </section>
   );
 }

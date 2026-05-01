@@ -13,6 +13,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LandingFeatureShowcase } from '@/components/landing/LandingFeatureShowcase'
 import { LandingInteractiveDemo } from '@/components/landing/LandingInteractiveDemo'
 import { LandingTestimonials } from '@/components/landing/LandingTestimonials'
+import { StoryTransformationVisual } from '@/components/landing/StoryTransformationVisual'
 import { LandingWorkspaceGrid } from '@/components/landing/LandingWorkspaceGrid'
 import { HeroRotatingEmphasis } from '@/components/landing/HeroRotatingEmphasis'
 import {
@@ -916,6 +917,8 @@ export default function LandingPage() {
                 </p>
               </motion.div>
 
+              <StoryTransformationVisual brand={BRAND} />
+
               <motion.div
                 {...sectionMotion(0.08)}
                 className="mt-14 overflow-hidden rounded-3xl border border-[var(--border-default)] bg-bg-surface/90 shadow-[0_24px_80px_-30px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:bg-bg-surface/70 dark:shadow-[0_28px_90px_-35px_rgba(0,0,0,0.55)] sm:rounded-[1.75rem]"
@@ -1181,7 +1184,7 @@ export default function LandingPage() {
                   >
                     {i < steps.length - 1 ? (
                       <motion.div
-                        className="absolute left-[1.35rem] top-[3.25rem] hidden h-[calc(100%+0.25rem)] w-px origin-top bg-gradient-to-b from-teal-500/60 via-cyan-500/35 to-transparent sm:block"
+                        className="absolute left-[22px] top-[3.25rem] z-0 h-[calc(100%+0.25rem)] w-[2.5px] origin-top -translate-x-1/2 bg-gradient-to-b from-teal-500/80 via-cyan-500/50 to-transparent dark:from-teal-400/60 dark:via-cyan-400/45 dark:to-transparent sm:left-6 sm:top-[3.5rem] sm:w-px sm:from-teal-500/65 sm:via-cyan-500/35 sm:to-transparent sm:dark:from-teal-400/48 sm:dark:via-cyan-400/38 sm:dark:to-transparent"
                         aria-hidden
                         initial={reduceMotion ? false : { scaleY: 0 }}
                         whileInView={{ scaleY: 1 }}
@@ -1200,17 +1203,17 @@ export default function LandingPage() {
                     </div>
                     <div className="min-w-0 flex-1 rounded-2xl border border-[var(--border-default)] bg-bg-surface/90 p-5 shadow-sm backdrop-blur-sm transition hover:border-teal-500/20 dark:bg-bg-surface/50 sm:p-6">
                       <div className="flex items-center gap-2">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-teal-500/20 bg-teal-500/[0.08] text-teal-700 dark:text-teal-400">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-teal-500/25 bg-teal-500/[0.08] text-teal-700 dark:border-teal-400/35 dark:bg-teal-400/[0.12] dark:text-teal-300">
                           <StepIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
                         </span>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-teal-700 dark:text-teal-400">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-teal-700 dark:text-teal-300">
                           Step {i + 1}
                         </p>
                       </div>
                       <h3 className="mt-2 font-[Outfit,system-ui,sans-serif] text-lg font-semibold text-text-primary sm:text-xl">
                         {s.title}
                       </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-text-secondary sm:text-[0.9375rem]">
+                      <p className="mt-2 text-sm leading-relaxed text-text-secondary dark:text-white/80 sm:text-[0.9375rem]">
                         {s.body}
                       </p>
                     </div>
