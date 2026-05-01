@@ -1,6 +1,6 @@
 // pages/_app.js - Simplified without company registration flow
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -81,7 +81,11 @@ function AppWrapper({ Component, pageProps }) {
   }, [router.events, loadingBarEnabled])
 
   return (
-    <SessionProvider session={session}>
+    <SessionProvider
+      session={session}
+      refetchInterval={0}
+      refetchOnWindowFocus={false}
+    >
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
           <Head>
@@ -125,7 +129,6 @@ function AuthWrapper({ children }) {
   const { user, initialized, loading } = useAuth()
   const router = useRouter()
   const hasHydrated = useAuthStore((s) => s._hasHydrated)
-  const lastRedirectRef = useRef('')
 
   const currentPath = router.pathname
   const onOnboardingRoute = currentPath === '/onboarding'
@@ -181,8 +184,8 @@ function AuthWrapper({ children }) {
       const nextPath =
         typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/dashboard'
       const target = `/login?next=${encodeURIComponent(nextPath)}`
-      if (lastRedirectRef.current !== target) {
-        lastRedirectRef.current = target
+      const here = router.asPath.split('#')[0]
+      if (here !== target) {
         router.replace(target)
       }
     }
@@ -210,8 +213,8 @@ function AuthWrapper({ children }) {
       const nextDest = currentPath === '/login' ? getSafeInternalPath(router.query.next) : null
       const dest =
         profileGateQ.isSuccess && !onboardingComplete ? '/onboarding' : nextDest || '/dashboard'
-      if (lastRedirectRef.current !== dest) {
-        lastRedirectRef.current = dest
+      const herePath = router.asPath.split('?')[0]
+      if (herePath !== dest) {
         router.replace(dest)
       }
     }
