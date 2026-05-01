@@ -50,7 +50,8 @@ function CreatePromoCodeForm({
         <input
           value={form.code}
           onChange={(e) => setForm((s) => ({ ...s, code: e.target.value.toUpperCase() }))}
-          className="mt-1 h-10 w-full rounded-lg border border-white/[0.08] bg-bg-surface px-3 font-mono text-sm text-text-primary focus:border-brand/50 focus:outline-none"
+          placeholder="e.g. UNI50BONUS"
+          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand/50 focus:outline-none"
         />
       </label>
       <label className="text-xs text-text-muted">
@@ -58,7 +59,7 @@ function CreatePromoCodeForm({
         <select
           value={form.type}
           onChange={(e) => setForm((s) => ({ ...s, type: e.target.value }))}
-          className="mt-1 h-10 w-full rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
+          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-brand/50 focus:outline-none"
         >
           <option value="question_credits">Question credits</option>
           <option value="plan_unlock">Plan unlock</option>
@@ -70,7 +71,7 @@ function CreatePromoCodeForm({
         <input
           value={form.creditAmount}
           onChange={(e) => setForm((s) => ({ ...s, creditAmount: e.target.value }))}
-          className="mt-1 h-10 w-full rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
+          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-brand/50 focus:outline-none"
         />
       </label>
       <label className="text-xs text-text-muted">
@@ -78,7 +79,7 @@ function CreatePromoCodeForm({
         <input
           value={form.maxRedemptions}
           onChange={(e) => setForm((s) => ({ ...s, maxRedemptions: e.target.value }))}
-          className="mt-1 h-10 w-full rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
+          className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-brand/50 focus:outline-none"
         />
       </label>
       {error ? <p className="text-xs text-danger">{error}</p> : null}
@@ -105,17 +106,13 @@ export function UniversityPromoCodesTab({
   const q = useQuery({
     queryKey: ['admin', 'university', universityId, 'promo-codes'],
     queryFn: async ({ signal }) => {
-      try {
-        const data = (await adminApi.universityPromoCodes(universityId, signal)) as any;
-        const rows = Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.promoCodes)
-            ? data.promoCodes
-            : [];
-        return { ...(data ?? {}), data: rows, total: Number(data?.total ?? rows.length), mocked: false };
-      } catch {
-        return { data: [] as Row[], total: 0, mocked: true };
-      }
+      const data = (await adminApi.universityPromoCodes(universityId, signal)) as any;
+      const rows = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.promoCodes)
+          ? data.promoCodes
+          : [];
+      return { ...(data ?? {}), data: rows, total: Number(data?.total ?? rows.length) };
     },
   });
 
@@ -169,9 +166,9 @@ export function UniversityPromoCodesTab({
 
   return (
     <div className="flex flex-col gap-4">
-      {q.data?.mocked ? (
-        <Card className="border-warning/30 bg-warning/10 text-xs text-warning">
-          Live promo-code endpoint is unavailable; showing scaffold mode until the backend route is enabled.
+      {q.isError ? (
+        <Card className="border-danger/30 bg-danger/10 text-xs text-danger">
+          Failed to load promo codes. Please retry.
         </Card>
       ) : null}
       {q.isFetching && !q.isLoading ? (

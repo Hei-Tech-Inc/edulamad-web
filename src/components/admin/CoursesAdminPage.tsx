@@ -68,11 +68,13 @@ export function CoursesAdminPage() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-white/65">
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-slate-700">
           Pick a department to list courses. The URL updates with{' '}
-          <code className="rounded bg-white/10 px-1 font-mono text-xs">departmentId</code> so you
-          can bookmark or share. From{' '}
+          <code className="rounded bg-slate-100 px-1 font-mono text-xs text-slate-700">
+            departmentId
+          </code>{' '}
+          so you can bookmark or share. From{' '}
           <Link href="/admin/institutions" className="text-brand hover:underline">
             Institutions
           </Link>
@@ -91,24 +93,34 @@ export function CoursesAdminPage() {
         )}
       </div>
 
-      <Card className="flex flex-col gap-3 p-4">
-        <p className="text-xs font-semibold tracking-wider text-white/45 uppercase">
+      <Card className="flex flex-col gap-3 border-slate-200 bg-white p-4 shadow-sm">
+        <p className="text-xs font-semibold tracking-wider text-slate-600 uppercase">
           Filter catalog
         </p>
         {deptParam && hierarchyQ.isLoading ? (
-          <p className="text-sm text-white/55">Loading department context…</p>
+          <p className="text-sm text-slate-500">Loading department context…</p>
         ) : null}
         {deptParam && hierarchyQ.isError ? (
-          <p className="text-sm text-danger">
-            Could not load hierarchy for this department — pick university and college manually
-            below.
+          <p className="text-sm text-amber-800">
+            Department lookup failed. Use the filters below to choose university, then college, then
+            department.
+          </p>
+        ) : null}
+        {deptParam &&
+        hierarchyQ.isFetched &&
+        !hierarchyQ.isLoading &&
+        !hierarchyQ.data &&
+        !hierarchyQ.isError ? (
+          <p className="text-sm text-amber-800">
+            This department is not in the active catalog under any university. Check the id or pick
+            university, college, and department below.
           </p>
         ) : null}
         <div className="grid gap-3 md:grid-cols-3">
-          <label className="text-xs text-white/55">
+          <label className="text-xs text-slate-500">
             University
             <select
-              className="mt-1 flex h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm text-text-primary"
+              className="mt-1 flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
               value={univId ?? ''}
               onChange={(e) => {
                 const v = e.target.value || null;
@@ -127,10 +139,10 @@ export function CoursesAdminPage() {
               ))}
             </select>
           </label>
-          <label className="text-xs text-white/55">
+          <label className="text-xs text-slate-500">
             College
             <select
-              className="mt-1 flex h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm text-text-primary disabled:opacity-40"
+              className="mt-1 flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 disabled:opacity-40"
               disabled={!univId}
               value={collegeId ?? ''}
               onChange={(e) => {
@@ -148,11 +160,11 @@ export function CoursesAdminPage() {
               ))}
             </select>
           </label>
-          <label className="text-xs text-white/55">
+          <label className="text-xs text-slate-500">
             Department
             <select
               className={cn(
-                'mt-1 flex h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm text-text-primary disabled:opacity-40',
+                'mt-1 flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 disabled:opacity-40',
                 deptId && 'border-brand/30 ring-1 ring-brand/15',
               )}
               disabled={!collegeId}
@@ -177,7 +189,7 @@ export function CoursesAdminPage() {
             Selected: <span className="font-medium">{selectedDeptName}</span>
           </p>
         ) : null}
-        <label className="text-xs text-white/55">
+        <label className="text-xs text-slate-500">
           Search in department
           <Input
             className="mt-1"
@@ -190,7 +202,7 @@ export function CoursesAdminPage() {
       </Card>
 
       {!deptId ? (
-        <Card className="border-dashed p-8 text-center text-sm text-white/55">
+        <Card className="border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
           Select a department to list courses, or open{' '}
           <Link href="/admin/institutions" className="text-brand hover:underline">
             Institutions
@@ -198,9 +210,9 @@ export function CoursesAdminPage() {
           and click a department to create a course with that department pre-filled.
         </Card>
       ) : coursesQ.isLoading ? (
-        <p className="text-sm text-white/55">Loading courses…</p>
+        <p className="text-sm text-slate-500">Loading courses…</p>
       ) : (coursesQ.data?.length ?? 0) === 0 ? (
-        <Card className="border-dashed p-8 text-center text-sm text-white/55">
+        <Card className="border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
           No courses match.{' '}
           <Link
             href={`/admin/courses/new?departmentId=${encodeURIComponent(deptId)}`}
@@ -217,7 +229,7 @@ export function CoursesAdminPage() {
               <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <p className="font-mono text-sm font-semibold text-brand">{c.code || '—'}</p>
-                  <p className="truncate text-sm text-text-primary">{c.name}</p>
+                  <p className="truncate text-sm text-slate-900">{c.name}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Link href={`/admin/courses/${encodeURIComponent(c.id)}`}>

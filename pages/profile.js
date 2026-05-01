@@ -8,6 +8,16 @@ import { useProfileStudyLabels } from '@/hooks/institutions/useProfileStudyLabel
 import { STUDENT_CATEGORIES } from '@/api/types/student-profile.types'
 import { getCurrentAcademicYearLabel } from '@/lib/onboarding/academic-years'
 import { LottieMotion } from '@/components/ui/LottieMotion'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
+
+const PROFILE_NAV_ITEMS = [
+  { href: '/activity',       emoji: '📊', label: 'Activity',         desc: 'Your study history and streaks'     },
+  { href: '/leaderboard',    emoji: '🏆', label: 'Leaderboard',      desc: 'How you rank in your department'   },
+  { href: '/quiz/history',   emoji: '⚡', label: 'Quiz history',     desc: 'All your past attempts and scores' },
+  { href: '/notifications',  emoji: '🔔', label: 'Notifications',    desc: 'View all notifications'            },
+  { href: '/quiz/discover',  emoji: '🔍', label: 'Discover quizzes', desc: 'Browse all available quiz sets'    },
+  { href: '/profile/credits',emoji: '💳', label: 'Credits',          desc: 'Your credit balance and history'   },
+]
 
 function studentTypeLabel(studentCategory, otherStudentCategory) {
   if (studentCategory === 'other' && otherStudentCategory?.trim()) {
@@ -161,40 +171,33 @@ function ProfileContent() {
             />
           </div>
         </div>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link
-            href="/activity"
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-          >
-            Activity tracker
-          </Link>
-          <Link
-            href="/quiz/history"
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-          >
-            Quiz history
-          </Link>
-          <Link
-            href="/quiz/discover"
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-          >
-            Discover quizzes
-          </Link>
-          <Link href="/settings/account" className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white">
+        {/* Secondary navigation hub */}
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          {PROFILE_NAV_ITEMS.map((item) => (
+            <Link key={item.href} href={item.href}>
+              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 transition-transform active:scale-[0.98] hover:border-slate-300 hover:bg-slate-50">
+                <span className="text-xl">{item.emoji}</span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-800">{item.label}</p>
+                  <p className="truncate text-xs text-slate-500">{item.desc}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Settings */}
+        <div className="mt-4 flex flex-col gap-2">
+          <Link href="/settings/account" className="rounded-xl bg-orange-600 px-4 py-3 text-sm font-semibold text-white text-center hover:bg-orange-700">
             Account settings
           </Link>
-          <Link
-            href="/profile/credits"
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-          >
-            Credits
-          </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-          >
-            Home dashboard
-          </Link>
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+            <div>
+              <p className="text-sm font-medium text-slate-800">Appearance</p>
+              <p className="text-xs text-slate-500">Toggle light or dark mode</p>
+            </div>
+            <ThemeToggle size="sm" />
+          </div>
         </div>
       </section>
     </div>

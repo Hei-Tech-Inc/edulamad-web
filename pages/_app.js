@@ -2,9 +2,11 @@
 
 import { useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { useQuery } from '@tanstack/react-query'
+import { SessionProvider } from 'next-auth/react'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { SettingsProvider } from '../contexts/SettingsContext'
@@ -28,6 +30,7 @@ import { SkeletonProfileHeader } from '@/components/ui/skeleton'
 import { AppErrorBoundary } from '@/components/providers/AppErrorBoundary'
 import { PushPermissionPrompt } from '@/components/notifications/PushPermissionPrompt'
 import { OneSignalInit } from '@/components/notifications/OneSignalInit'
+import { OAuthSessionSync } from '@/components/auth/OAuthSessionSync'
 import '../styles/globals.css'
 
 const ReactQueryDevtools = dynamic(
@@ -41,6 +44,7 @@ function AppWrapper({ Component, pageProps }) {
   const router = useRouter()
   const loadingBarEnabled = process.env.NEXT_PUBLIC_ENABLE_TOP_LOADING_BAR === '1'
   const queryClient = getQueryClient()
+  const { session, ...restPageProps } = pageProps ?? {}
 
   useEffect(() => {
     return installAbortHandler()
@@ -77,33 +81,42 @@ function AppWrapper({ Component, pageProps }) {
   }, [router.events, loadingBarEnabled])
 
   return (
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        {loadingBarEnabled ? <TopLoadingBar /> : null}
-        <ThemeProvider>
-          <SettingsProvider>
-            <AuthProvider>
-              <DataProvider>
-                <ToastProvider>
-                  <NotificationProvider>
-                    <AnalyticsProvider>
-                      <AuthWrapper>
-                        <AppErrorBoundary>
-                          <Component {...pageProps} />
-                        </AppErrorBoundary>
-                      </AuthWrapper>
-                    </AnalyticsProvider>
-                  </NotificationProvider>
-                </ToastProvider>
-              </DataProvider>
-            </AuthProvider>
-          </SettingsProvider>
-        </ThemeProvider>
-        {process.env.NODE_ENV === 'development' ? (
-          <ReactQueryDevtools initialIsOpen={false} />
-        ) : null}
-      </QueryClientProvider>
-    </Provider>
+    <SessionProvider session={session}>
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <Head>
+            <meta
+              name="viewport"
+              content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+            />
+          </Head>
+          {loadingBarEnabled ? <TopLoadingBar /> : null}
+          <ThemeProvider>
+            <SettingsProvider>
+              <AuthProvider>
+                <OAuthSessionSync />
+                <DataProvider>
+                  <ToastProvider>
+                    <NotificationProvider>
+                      <AnalyticsProvider>
+                        <AuthWrapper>
+                          <AppErrorBoundary>
+                            <Component {...restPageProps} />
+                          </AppErrorBoundary>
+                        </AuthWrapper>
+                      </AnalyticsProvider>
+                    </NotificationProvider>
+                  </ToastProvider>
+                </DataProvider>
+              </AuthProvider>
+            </SettingsProvider>
+          </ThemeProvider>
+          {process.env.NODE_ENV === 'development' ? (
+            <ReactQueryDevtools initialIsOpen={false} />
+          ) : null}
+        </QueryClientProvider>
+      </Provider>
+    </SessionProvider>
   )
 }
 

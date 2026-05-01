@@ -2,11 +2,19 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 
 const ThemeContext = createContext()
 
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme)
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}
+
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('light')
   const [systemTheme, setSystemTheme] = useState('light')
 
-  // Check system theme preference
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     setSystemTheme(mediaQuery.matches ? 'dark' : 'light')
@@ -19,28 +27,23 @@ export function ThemeProvider({ children }) {
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
-  // Load saved theme preference
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme')
-    if (savedTheme) {
-      setTheme(savedTheme)
-    } else {
-      setTheme(systemTheme)
-    }
-  }, [systemTheme])
+    const resolved = savedTheme || 'light'
+    setTheme(resolved)
+    applyTheme(resolved)
+  }, [])
 
-  // Update theme
   const updateTheme = (newTheme) => {
     setTheme(newTheme)
     localStorage.setItem('theme', newTheme)
+    applyTheme(newTheme)
   }
 
-  // Toggle between light and dark
   const toggleTheme = () => {
     updateTheme(theme === 'light' ? 'dark' : 'light')
   }
 
-  // Use system theme
   const useSystemTheme = () => {
     updateTheme(systemTheme)
   }
@@ -50,7 +53,7 @@ export function ThemeProvider({ children }) {
     systemTheme,
     updateTheme,
     toggleTheme,
-    useSystemTheme
+    useSystemTheme,
   }
 
   return (
@@ -66,4 +69,4 @@ export const useTheme = () => {
     throw new Error('useTheme must be used within a ThemeProvider')
   }
   return context
-} 
+}

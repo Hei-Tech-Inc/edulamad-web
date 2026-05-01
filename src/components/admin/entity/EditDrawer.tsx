@@ -46,16 +46,16 @@ export function EditDrawer({
       <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       <div
-        className={`fixed top-0 right-0 bottom-0 z-50 flex w-full ${widths[width]} animate-slide-in-right flex-col overflow-hidden border-l border-white/[0.08] bg-bg-base`}
+        className={`fixed top-0 right-0 bottom-0 z-50 flex w-full ${widths[width]} animate-slide-in-right flex-col overflow-hidden border-l border-slate-200 bg-white`}
       >
-        <div className="flex shrink-0 items-start justify-between border-b border-white/[0.06] px-6 py-5">
+        <div className="flex shrink-0 items-start justify-between border-b border-slate-200 px-6 py-5">
           <div>
-            <h2 className="text-base font-semibold text-text-primary">{title}</h2>
-            {subtitle ? <p className="mt-0.5 text-xs text-text-muted">{subtitle}</p> : null}
+            <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+            {subtitle ? <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p> : null}
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-lg text-text-muted transition-colors hover:bg-bg-raised hover:text-text-primary"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
           >
             ×
           </button>

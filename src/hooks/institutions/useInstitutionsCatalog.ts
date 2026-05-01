@@ -228,7 +228,32 @@ export type DepartmentHierarchy = {
   universityId: string;
 };
 
-export async function fetchDepartmentHierarchy(
+function coerceEntityId(v: unknown): string | null {
+  if (typeof v === 'string' && v.trim()) return v.trim();
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+  return null;
+}
+
+/** Backend may use camelCase, snake_case, or nested refs for foreign keys. */
+function parseCollegeIdFromDepartment(dr: Record<string, unknown>): string | null {
+  let raw: unknown = dr.collegeId ?? dr.college_id;
+  if (!raw && dr.college && typeof dr.college === 'object') {
+    const c = asRecord(dr.college);
+    if (c) raw = c.id ?? c._id;
+  }
+  return coerceEntityId(raw);
+}
+
+function parseUniversityIdFromCollege(cr: Record<string, unknown>): string | null {
+  let raw: unknown = cr.universityId ?? cr.university_id;
+  if (!raw && cr.university && typeof cr.university === 'object') {
+    const u = asRecord(cr.university);
+    if (u) raw = u.id ?? u._id;
+  }
+  return coerceEntityId(raw);
+}
+
+async function fetchDepartmentHierarchyDirect(
   deptId: string,
   signal?: AbortSignal,
 ): Promise<DepartmentHierarchy | null> {
@@ -239,11 +264,7 @@ export async function fetchDepartmentHierarchy(
   const dr = asRecord(dept);
   if (!dr) return null;
 
-  let collegeIdRaw: unknown = dr.collegeId;
-  if (!collegeIdRaw && dr.college && typeof dr.college === 'object') {
-    collegeIdRaw = asRecord(dr.college)?.id;
-  }
-  const collegeId = typeof collegeIdRaw === 'string' ? collegeIdRaw : null;
+  const collegeId = parseCollegeIdFromDepartment(dr);
   if (!collegeId) return null;
 
   const { data: college } = await apiClient.get<unknown>(
@@ -253,14 +274,73 @@ export async function fetchDepartmentHierarchy(
   const cr = asRecord(college);
   if (!cr) return null;
 
-  let universityIdRaw: unknown = cr.universityId;
-  if (!universityIdRaw && cr.university && typeof cr.university === 'object') {
-    universityIdRaw = asRecord(cr.university)?.id;
-  }
-  const universityId = typeof universityIdRaw === 'string' ? universityIdRaw : null;
+  const universityId = parseUniversityIdFromCollege(cr);
   if (!universityId) return null;
 
   return { departmentId: deptId, collegeId, universityId };
+}
+
+/**
+ * When GET /departments/:id or nested college detail fails or omits IDs, locate the
+ * department under GET universities → colleges → departments (same idea as profile label fallback).
+ */
+async function fetchDepartmentHierarchyFallback(
+  deptId: string,
+  signal?: AbortSignal,
+): Promise<DepartmentHierarchy | null> {
+  const { data } = await apiClient.get<unknown>(API.institutions.universities.list, {
+    params: { activeOnly: true },
+    signal,
+  });
+  const universities = normalizeEntities(data);
+
+  type Pair = { universityId: string; collegeId: string };
+  const pairs: Pair[] = [];
+  await Promise.all(
+    universities.map(async (uni) => {
+      const { data: colData } = await apiClient.get<unknown>(
+        API.institutions.universities.colleges(uni.id),
+        { params: { activeOnly: true }, signal },
+      );
+      const colleges = normalizeEntities(colData);
+      for (const col of colleges) {
+        pairs.push({ universityId: uni.id, collegeId: col.id });
+      }
+    }),
+  );
+
+  const hits = await Promise.all(
+    pairs.map(async ({ universityId, collegeId }) => {
+      const { data: deptData } = await apiClient.get<unknown>(
+        API.institutions.colleges.departments(collegeId),
+        { params: { activeOnly: true }, signal },
+      );
+      const depts = normalizeEntities(deptData);
+      if (depts.some((d) => d.id === deptId)) {
+        return { departmentId: deptId, collegeId, universityId } satisfies DepartmentHierarchy;
+      }
+      return null;
+    }),
+  );
+
+  return hits.find((h): h is DepartmentHierarchy => h !== null) ?? null;
+}
+
+export async function fetchDepartmentHierarchy(
+  deptId: string,
+  signal?: AbortSignal,
+): Promise<DepartmentHierarchy | null> {
+  try {
+    const direct = await fetchDepartmentHierarchyDirect(deptId, signal);
+    if (direct) return direct;
+  } catch {
+    // Missing department detail, 404, or broken FK chain — try catalog scan.
+  }
+  try {
+    return await fetchDepartmentHierarchyFallback(deptId, signal);
+  } catch {
+    return null;
+  }
 }
 
 export function useDepartmentHierarchy(deptId: string | null) {

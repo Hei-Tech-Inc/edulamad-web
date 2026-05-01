@@ -17,6 +17,7 @@ export function CollegeForm({
   onSubmit: (payload: {
     name: string;
     code?: string;
+    dean?: string;
     universityId: string;
     isActive: boolean;
   }) => Promise<void>;
@@ -24,9 +25,12 @@ export function CollegeForm({
 }) {
   const [name, setName] = useState(initial?.name ?? '');
   const [code, setCode] = useState(initial?.code ?? '');
+  const [dean, setDean] = useState('');
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
+  const inputClassName =
+    'mt-1 border-slate-300 bg-white text-slate-900 placeholder:text-slate-400';
 
   const save = async () => {
     setError('');
@@ -39,6 +43,7 @@ export function CollegeForm({
       await onSubmit({
         name: name.trim(),
         code: code.trim() || undefined,
+        dean: dean.trim() || undefined,
         universityId,
         isActive,
       });
@@ -57,16 +62,53 @@ export function CollegeForm({
 
   return (
     <div className="flex max-w-lg flex-col gap-4">
-      <label className="text-sm text-text-secondary">
-        College name *
-        <Input className="mt-1" value={name} onChange={(e) => setName(e.target.value)} />
+      <label className="text-sm text-slate-700">
+        <span className="flex items-center gap-2">
+          College name
+          <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-rose-700 uppercase">
+            Required
+          </span>
+        </span>
+        <Input
+          className={inputClassName}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. College of Engineering"
+        />
       </label>
-      <label className="text-sm text-text-secondary">
-        Code (optional)
-        <Input className="mt-1 font-mono" value={code} onChange={(e) => setCode(e.target.value)} />
+      <label className="text-sm text-slate-700">
+        <span className="flex items-center gap-2">
+          Code
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-600 uppercase">
+            Optional
+          </span>
+        </span>
+        <Input
+          className={`${inputClassName} font-mono`}
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="e.g. COE"
+        />
       </label>
-      <div className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-3">
-        <span className="text-sm text-text-primary">Active</span>
+      <label className="text-sm text-slate-700">
+        <span className="flex items-center gap-2">
+          Dean
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-600 uppercase">
+            Optional
+          </span>
+        </span>
+        <Input
+          className={inputClassName}
+          value={dean}
+          onChange={(e) => setDean(e.target.value)}
+          placeholder="e.g. Prof. Ama Mensah"
+        />
+      </label>
+      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-3">
+        <div>
+          <p className="text-sm font-medium text-slate-900">Active</p>
+          <p className="text-xs text-slate-500">Inactive hides this college from active pickers</p>
+        </div>
         <Toggle checked={isActive} onChange={setIsActive} />
       </div>
       {error ? <p className="text-sm text-danger">{error}</p> : null}
@@ -98,6 +140,8 @@ export function DepartmentForm({
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
+  const inputClassName =
+    'mt-1 border-slate-300 bg-white text-slate-900 placeholder:text-slate-400';
 
   const save = async () => {
     setError('');
@@ -128,16 +172,39 @@ export function DepartmentForm({
 
   return (
     <div className="flex max-w-lg flex-col gap-4">
-      <label className="text-sm text-text-secondary">
-        Department name *
-        <Input className="mt-1" value={name} onChange={(e) => setName(e.target.value)} />
+      <label className="text-sm text-slate-700">
+        <span className="flex items-center gap-2">
+          Department name
+          <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-rose-700 uppercase">
+            Required
+          </span>
+        </span>
+        <Input
+          className={inputClassName}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Computer Science"
+        />
       </label>
-      <label className="text-sm text-text-secondary">
-        Code (optional)
-        <Input className="mt-1 font-mono" value={code} onChange={(e) => setCode(e.target.value)} />
+      <label className="text-sm text-slate-700">
+        <span className="flex items-center gap-2">
+          Code
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-600 uppercase">
+            Optional
+          </span>
+        </span>
+        <Input
+          className={`${inputClassName} font-mono`}
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="e.g. CS"
+        />
       </label>
-      <div className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-3">
-        <span className="text-sm text-text-primary">Active</span>
+      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-3">
+        <div>
+          <p className="text-sm font-medium text-slate-900">Active</p>
+          <p className="text-xs text-slate-500">Inactive hides this department from active pickers</p>
+        </div>
         <Toggle checked={isActive} onChange={setIsActive} />
       </div>
       {error ? <p className="text-sm text-danger">{error}</p> : null}

@@ -4,11 +4,14 @@ export default function Document() {
   return (
     <Html lang="en" data-scroll-behavior="smooth">
       <Head>
-        <meta
-          name="viewport"
-          content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+        {/* Anti-flash: applies saved theme before React hydrates to prevent white flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme');var theme=t||'light';document.documentElement.setAttribute('data-theme',theme);if(theme==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');}catch(e){document.documentElement.setAttribute('data-theme','light');document.documentElement.classList.remove('dark');}`,
+          }}
         />
-        <meta name="theme-color" content="#0F0F0F" />
+        <meta name="theme-color" content="#0F0F0F" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#F8F7F4" media="(prefers-color-scheme: light)" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta

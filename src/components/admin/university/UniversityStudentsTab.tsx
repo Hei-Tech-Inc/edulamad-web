@@ -18,27 +18,18 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
   const q = useQuery({
     queryKey: ['admin', 'university', universityId, 'students', { search, plan, level, deptId, page }],
     queryFn: async ({ signal }) => {
-      try {
-        const data = (await adminApi.universityStudents(
-          universityId,
-          { search, plan, level, deptId: deptId || undefined, page, limit: 25 },
-          signal,
-        )) as any;
-        const rows = Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.students)
-            ? data.students
-            : [];
-        const total = Number(data?.total ?? data?.meta?.total ?? rows.length);
-        return { ...data, data: rows, total, mocked: false };
-      } catch {
-        return {
-          data: [] as Row[],
-          total: 0,
-          byPlan: { free: 0, basic: 0, pro: 0 },
-          mocked: true,
-        };
-      }
+      const data = (await adminApi.universityStudents(
+        universityId,
+        { search, plan, level, deptId: deptId || undefined, page, limit: 25 },
+        signal,
+      )) as any;
+      const rows = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.students)
+          ? data.students
+          : [];
+      const total = Number(data?.total ?? data?.meta?.total ?? rows.length);
+      return { ...data, data: rows, total };
     },
   });
 
@@ -96,9 +87,9 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
 
   return (
     <div className="flex flex-col gap-4">
-      {q.data?.mocked ? (
-        <Card className="border-warning/30 bg-warning/10 text-xs text-warning">
-          Live students endpoint is unavailable; showing scaffold mode until the backend route is enabled.
+      {q.isError ? (
+        <Card className="border-danger/30 bg-danger/10 text-xs text-danger">
+          Failed to load students data. Please retry.
         </Card>
       ) : null}
       {q.isFetching && !q.isLoading ? (
@@ -113,8 +104,8 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
           { label: 'Total', value: q.data?.total ?? 0 },
         ].map((s) => (
           <Card key={s.label} className="items-center gap-1 py-3 text-center">
-            <p className="font-mono text-xl font-bold text-text-primary">{s.value}</p>
-            <p className="text-xs text-text-muted">{s.label}</p>
+            <p className="font-mono text-xl font-bold text-slate-900">{s.value}</p>
+            <p className="text-xs text-slate-500">{s.label}</p>
           </Card>
         ))}
       </div>
@@ -123,13 +114,13 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search students..."
-          className="h-9 min-w-[220px] flex-1 rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand/50 focus:outline-none"
+          placeholder="Search by name or email"
+          className="h-9 min-w-[220px] flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand/50 focus:outline-none"
         />
         <select
           value={plan}
           onChange={(e) => setPlan(e.target.value)}
-          className="h-9 rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
+          className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-brand/50 focus:outline-none"
         >
           <option value="">All plans</option>
           <option value="free">Free</option>
@@ -139,7 +130,7 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
         <select
           value={level}
           onChange={(e) => setLevel(e.target.value)}
-          className="h-9 rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
+          className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-brand/50 focus:outline-none"
         >
           <option value="">All levels</option>
           {[100, 200, 300, 400, 500].map((l) => (
@@ -152,7 +143,7 @@ export function UniversityStudentsTab({ universityId }: { universityId: string }
           value={deptId}
           onChange={(e) => setDeptId(e.target.value)}
           placeholder="Department id (optional)"
-          className="h-9 rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand/50 focus:outline-none"
+          className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand/50 focus:outline-none"
         />
       </div>
 

@@ -91,13 +91,13 @@ export function PricingCards({
       ) : null}
 
       {context === 'page' && !showComparisonAndFaq ? (
-        <div className="mt-10 flex flex-col items-center gap-2 border-t border-slate-200 pt-8 text-center dark:border-slate-700">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+        <div className="mt-10 flex flex-col items-center gap-3 border-t border-[var(--border-default)] pt-8 text-center">
+          <p className="text-sm font-medium text-text-secondary">
             Need the full feature matrix or billing FAQs?
           </p>
           <Link
             href="/pricing"
-            className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-bg-raised px-5 py-2.5 text-sm font-semibold text-text-primary shadow-sm transition hover:border-teal-500/30 hover:bg-bg-hover dark:hover:border-teal-500/25"
           >
             View full pricing page
             <ArrowRight className="h-4 w-4" aria-hidden />

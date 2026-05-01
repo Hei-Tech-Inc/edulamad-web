@@ -21,9 +21,12 @@ function parseDepartmentDetail(raw: unknown): { name: string | null; collegeId: 
   if (!r) return { name: null, collegeId: null };
   const name = pickName(raw);
   let collegeId: string | null = null;
-  if (typeof r.collegeId === 'string' && r.collegeId.trim()) collegeId = r.collegeId.trim();
+  const rawC = r.collegeId ?? r.college_id;
+  if (typeof rawC === 'string' && rawC.trim()) collegeId = rawC.trim();
+  if (typeof rawC === 'number' && Number.isFinite(rawC)) collegeId = String(rawC);
   const college = asRecord(r.college);
   if (!collegeId && typeof college?.id === 'string') collegeId = college.id.trim();
+  if (!collegeId && typeof college?._id === 'string') collegeId = college._id.trim();
   return { name, collegeId };
 }
 

@@ -31,7 +31,7 @@ export function AssessmentTypeSelector({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label className="mb-1.5 block text-xs text-text-muted">Assessment type *</label>
+        <label className="mb-1.5 block text-xs text-slate-600">Assessment type *</label>
         <div className="grid grid-cols-2 gap-2">
           {ASSESSMENT_TYPES.map((t) => (
             <button
@@ -41,7 +41,7 @@ export function AssessmentTypeSelector({
               className={`rounded-lg border px-3 py-2.5 text-left transition-all ${
                 value === t.value
                   ? 'border-brand/40 bg-brand/15 text-brand'
-                  : 'border-white/[0.08] bg-bg-surface text-text-secondary'
+                  : 'border-slate-300 bg-white text-slate-700'
               }`}
             >
               <p className="text-xs font-medium">{t.label}</p>
@@ -53,11 +53,11 @@ export function AssessmentTypeSelector({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs text-text-muted">Number *</label>
+          <label className="mb-1 block text-xs text-slate-600">Number *</label>
           <select
             value={number}
             onChange={(e) => onChange(value, Number.parseInt(e.target.value, 10), customLabel ?? '')}
-            className="h-10 w-full appearance-none rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
+            className="h-10 w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-brand/50 focus:outline-none"
           >
             {[1, 2, 3].map((n) => (
               <option key={n} value={n}>
@@ -68,21 +68,21 @@ export function AssessmentTypeSelector({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-text-muted">
-            Custom label <span className="ml-1 text-text-muted/60">(optional)</span>
+          <label className="mb-1 block text-xs text-slate-600">
+            Custom label <span className="ml-1 text-slate-400">(optional)</span>
           </label>
           <input
             type="text"
             placeholder={`e.g. ${generateAssessmentLabel(value, number)}`}
             value={customLabel ?? ''}
             onChange={(e) => onChange(value, number, e.target.value)}
-            className="h-10 w-full rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-muted/50 focus:border-brand/50 focus:outline-none"
+            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand/50 focus:outline-none"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-bg-raised px-3 py-2">
-        <span className="text-xs text-text-muted">Preview:</span>
+      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <span className="text-xs text-slate-500">Preview:</span>
         <span className="text-xs font-medium text-brand">{preview}</span>
       </div>
     </div>

@@ -59,7 +59,7 @@ function CollegeDetailContent() {
   ];
 
   if (!id) return <p className="text-sm text-danger">Missing college id.</p>;
-  if (detailQ.isLoading) return <p className="text-sm text-text-muted">Loading college…</p>;
+  if (detailQ.isLoading) return <p className="text-sm text-slate-500">Loading college…</p>;
   if (detailQ.isError || !college) return <p className="text-sm text-danger">College not found.</p>;
 
   const universityId = valueString(college, 'universityId');
@@ -109,7 +109,7 @@ function CollegeDetailContent() {
       ) : null}
 
       {tab === 'overview' ? (
-        <Card className="text-sm text-text-muted">
+        <Card className="border-slate-200 bg-white text-sm text-slate-600">
           College overview stats are partially available from bundled endpoints.
         </Card>
       ) : null}
@@ -123,10 +123,10 @@ function CollegeDetailContent() {
           addLabel="Add department"
           search
           renderItem={(dept) => (
-            <div className="flex items-center gap-3 rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-3">
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-text-primary">{valueName(dept)}</p>
-                <p className="text-xs text-text-muted">{valueCode(dept) || 'No code'}</p>
+                <p className="text-sm font-medium text-slate-900">{valueName(dept)}</p>
+                <p className="text-xs text-slate-500">{valueCode(dept) || 'No code'}</p>
               </div>
               <Link
                 href={`/admin/institutions/departments/${encodeURIComponent(valueId(dept))}`}
@@ -136,7 +136,7 @@ function CollegeDetailContent() {
               </Link>
               <button
                 type="button"
-                className="text-xs text-text-muted hover:text-brand"
+                className="text-xs text-slate-500 hover:text-brand"
                 onClick={() => setEditDeptId(valueId(dept))}
               >
                 Edit
@@ -147,7 +147,7 @@ function CollegeDetailContent() {
       ) : null}
 
       {tab === 'courses' ? (
-        <Card className="text-sm text-text-muted">
+        <Card className="border-slate-200 bg-white text-sm text-slate-600">
           Use department detail pages to manage courses in this college.
         </Card>
       ) : null}
@@ -307,7 +307,7 @@ function CollegeDetailContent() {
           }
         }}
         title="Delete college"
-        message="Delete endpoint is unavailable in bundled OpenAPI, so this action performs a soft-delete (set inactive)."
+        message="This action performs a soft-delete by setting the college inactive."
         confirmLabel="Deactivate as delete"
         variant="danger"
         isLoading={updateCollege.isPending}

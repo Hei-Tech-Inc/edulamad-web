@@ -138,32 +138,32 @@ export function CourseOfferingsAdminPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <nav className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
-        <Link href="/admin/courses" className="hover:text-text-primary">
+      <nav className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+        <Link href="/admin/courses" className="hover:text-slate-900">
           Courses
         </Link>
         <span aria-hidden>›</span>
-        <span className="text-text-primary">
+        <span className="text-slate-900">
           {courseCode || courseId || '…'} {courseName ? `— ${courseName}` : ''}
         </span>
       </nav>
 
       {detailQ.isLoading ? (
-        <p className="text-sm text-text-muted">Loading course…</p>
+        <p className="text-sm text-slate-500">Loading course…</p>
       ) : detailQ.isError ? (
         <p className="text-sm text-danger">Could not load course.</p>
       ) : null}
 
-      <Card className="space-y-4 p-4">
-        <h2 className="text-sm font-semibold text-text-primary">New offering</h2>
-        <p className="text-xs text-text-muted">
+      <Card className="space-y-4 border-slate-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-slate-900">New offering</h2>
+        <p className="text-xs text-slate-500">
           POST {API.content.offerings} — academic year, semester, and level for this course run.
         </p>
         <div className="grid gap-3 sm:grid-cols-3">
-          <label className="text-xs text-text-secondary">
+          <label className="text-xs text-slate-600">
             Academic year
             <select
-              className="mt-1 flex h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm"
+              className="mt-1 flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
               value={academicYear}
               onChange={(e) => setAcademicYear(e.target.value)}
             >
@@ -174,7 +174,7 @@ export function CourseOfferingsAdminPage() {
               ))}
             </select>
           </label>
-          <label className="text-xs text-text-secondary">
+          <label className="text-xs text-slate-600">
             Semester
             <div className="mt-1 grid grid-cols-2 gap-1">
               {([1, 2] as const).map((s) => (
@@ -185,7 +185,7 @@ export function CourseOfferingsAdminPage() {
                   className={`h-10 rounded-lg border text-sm font-medium ${
                     semester === s
                       ? 'border-brand bg-brand text-white'
-                      : 'border-white/10 bg-bg-surface text-text-muted'
+                      : 'border-slate-300 bg-white text-slate-600'
                   }`}
                 >
                   {s}
@@ -193,10 +193,10 @@ export function CourseOfferingsAdminPage() {
               ))}
             </div>
           </label>
-          <label className="text-xs text-text-secondary">
+          <label className="text-xs text-slate-600">
             Level
             <select
-              className="mt-1 flex h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm"
+              className="mt-1 flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
               value={level}
               onChange={(e) =>
                 setLevel(Number(e.target.value) as 100 | 200 | 300 | 400 | 500)
@@ -220,13 +220,13 @@ export function CourseOfferingsAdminPage() {
       </Card>
 
       <section>
-        <h2 className="mb-2 text-xs font-semibold tracking-wider text-text-secondary uppercase">
+        <h2 className="mb-2 text-xs font-semibold tracking-wider text-slate-600 uppercase">
           Existing offerings
         </h2>
         {offeringsQ.isLoading ? (
-          <p className="text-sm text-text-muted">Loading…</p>
+          <p className="text-sm text-slate-500">Loading…</p>
         ) : (offeringsQ.data?.length ?? 0) === 0 ? (
-          <Card className="border-dashed p-6 text-center text-sm text-text-muted">
+          <Card className="border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
             No offerings yet for this course.
           </Card>
         ) : (
@@ -235,7 +235,7 @@ export function CourseOfferingsAdminPage() {
               <li key={String((raw as { _id?: unknown })._id ?? (raw as { id?: unknown }).id ?? i)}>
                 <Card className="p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-text-primary">{offeringLabel(raw)}</p>
+                    <p className="text-sm font-medium text-slate-900">{offeringLabel(raw)}</p>
                     <button
                       type="button"
                       className="text-xs text-brand hover:underline"
@@ -315,19 +315,13 @@ function OfferingCard({
     queryKey: ['offering-assessments', offeringId],
     enabled: Boolean(offeringId),
     queryFn: async ({ signal }) => {
-      // TODO(api): `/content/offerings/{offeringId}/assessments` is missing in current OpenAPI;
-      // keep UI shape and fallback to empty list until backend route is available.
-      try {
-        const { data } = await assessmentsApi.getByOffering(offeringId, signal);
-        const arr = Array.isArray((data as { data?: unknown[] })?.data)
-          ? (data as { data: unknown[] }).data
-          : Array.isArray(data)
-            ? data
-            : [];
-        return { items: arr as Record<string, unknown>[], mocked: false };
-      } catch {
-        return { items: [] as Record<string, unknown>[], mocked: true };
-      }
+      const { data } = await assessmentsApi.getByOffering(offeringId, signal);
+      const arr = Array.isArray((data as { data?: unknown[] })?.data)
+        ? (data as { data: unknown[] }).data
+        : Array.isArray(data)
+          ? data
+          : [];
+      return { items: arr as Record<string, unknown>[] };
     },
   });
 
@@ -353,10 +347,10 @@ function OfferingCard({
   const practiceCount = 0;
 
   return (
-    <div className="mt-3 flex flex-col gap-4 rounded-lg border border-white/[0.06] bg-black/20 p-3">
-      {assessmentsQ.data?.mocked ? (
-        <p className="text-xs text-warning">
-          TODO: assessments-by-offering endpoint is missing; displaying skeleton/mock list.
+    <div className="mt-3 flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+      {assessmentsQ.isError ? (
+        <p className="text-xs text-danger">
+          Failed to load assessments for this offering.
         </p>
       ) : null}
 
@@ -366,13 +360,13 @@ function OfferingCard({
       <AssessmentRow title="Class Tests" items={grouped.class_test} sourceType="class_test" />
       <AssessmentRow title="Assignments" items={grouped.assignment} sourceType="assignment" />
 
-      <div className="rounded-lg border border-brand/20 bg-brand/10 px-3 py-2 text-xs text-brand">
+      <div className="rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-xs text-brand">
         Practice bank questions: {practiceCount} {' '}
-        <span className="text-white/70">(linked in student course Practice tab)</span>
+        <span className="text-slate-600">(linked in student course Practice tab)</span>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border border-white/[0.08] bg-bg-surface p-3">
-        <p className="text-xs font-semibold tracking-wide text-text-secondary uppercase">
+      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3">
+        <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
           Add paper / assessment
         </p>
         <AssessmentTypeSelector
@@ -387,7 +381,7 @@ function OfferingCard({
           error={paperYearError}
           useDropdown
         />
-        <p className="text-xs text-text-muted">
+        <p className="text-xs text-slate-500">
           This will be labelled:{' '}
           <span className="font-medium text-brand">
             {generateAssessmentLabel(assessmentType, assessmentNumber, customLabel)}
@@ -419,11 +413,11 @@ function AssessmentRow({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-text-secondary">{title}</p>
-        <span className="text-xs text-text-muted">{items.length}</span>
+        <p className="text-xs font-semibold text-slate-600">{title}</p>
+        <span className="text-xs text-slate-500">{items.length}</span>
       </div>
       {items.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-white/[0.08] px-3 py-2 text-xs text-text-muted">
+        <div className="rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-xs text-slate-500">
           No records
         </div>
       ) : (
@@ -431,12 +425,12 @@ function AssessmentRow({
           {items.map((item, i) => (
             <div
               key={`${String(item._id ?? item.id ?? i)}`}
-              className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-bg-raised px-3 py-2"
+              className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2"
             >
-              <p className="text-xs text-text-primary">
+              <p className="text-xs text-slate-900">
                 {typeof item.label === 'string' ? item.label : `${source.label} ${i + 1}`}
               </p>
-              <span className="text-[10px] text-text-muted">
+              <span className="text-[10px] text-slate-500">
                 {typeof item.academicYear === 'string' ? item.academicYear : '—'}
               </span>
             </div>

@@ -19,9 +19,9 @@ export function AdminQuickStats({ stats }: { stats: AdminStatItem[] }) {
           <div
             key={stat.label}
             className={cn(
-              'flex flex-col gap-2 rounded-xl border border-white/[0.08]',
-              'bg-gradient-to-b from-white/[0.04] to-transparent p-4',
-              'shadow-sm shadow-black/20 transition-colors hover:border-brand/25 hover:from-brand/[0.06]',
+              'flex flex-col gap-2 rounded-xl border border-white/10',
+              'bg-gradient-to-b from-[#15284d] to-[#101f3f] p-4',
+              'shadow-sm shadow-slate-900/40 transition-colors hover:border-brand/35',
             )}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/12 text-brand ring-1 ring-brand/15">
@@ -32,7 +32,7 @@ export function AdminQuickStats({ stats }: { stats: AdminStatItem[] }) {
                 ? stat.value.toLocaleString()
                 : stat.value}
             </p>
-            <p className="text-[13px] leading-snug text-white/60">{stat.label}</p>
+            <p className="text-[13px] leading-snug text-slate-200/90">{stat.label}</p>
           </div>
         );
       })}

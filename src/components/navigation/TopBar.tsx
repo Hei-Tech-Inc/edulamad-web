@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface TopBarProps {
   title?: string;
@@ -46,6 +47,7 @@ export function TopBar({
 
         <div className="flex items-center gap-2">
           {rightElement}
+          <ThemeToggle size="sm" />
           {showActions && (
             <Link
               href="/notifications"

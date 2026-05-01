@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
-import { ChevronRight, Pencil } from 'lucide-react';
+import { ChevronRight, Pencil, Building2, Landmark, GraduationCap } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
@@ -39,30 +39,33 @@ function EntityRow({
         }
       }}
       className={cn(
-        'group flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 transition-colors',
+        'group flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 transition-colors',
         selected
-          ? 'border-brand/40 bg-brand/10'
-          : 'border-white/[0.08] bg-bg-surface hover:border-white/20',
+          ? 'border-brand/40 bg-brand/10 shadow-sm'
+          : 'border-slate-200 bg-white hover:border-brand/25 hover:bg-brand/[0.03]',
       )}
     >
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-text-primary">{entity.name}</p>
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+        <Building2 className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <p className="truncate text-sm font-semibold text-slate-900">{entity.name}</p>
         {entity.code ? (
-          <p className="truncate text-xs text-text-muted">{entity.code}</p>
+          <p className="truncate text-xs text-slate-500">{entity.code}</p>
         ) : null}
       </div>
-      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex shrink-0 items-center gap-1">
         <Link
           href={openHref}
           onClick={(e) => e.stopPropagation()}
-          className="rounded px-1.5 py-1 text-xs text-brand hover:underline"
+          className="rounded border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
         >
           Open
         </Link>
         <Link
           href={editHref}
           onClick={(e) => e.stopPropagation()}
-          className="rounded p-1 text-text-muted hover:text-brand"
+          className="rounded border border-slate-200 p-1 text-slate-500 hover:bg-slate-50 hover:text-brand"
           aria-label="Edit"
         >
           <Pencil className="h-4 w-4" />
@@ -85,9 +88,33 @@ export function InstitutionsAdminPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-text-secondary">
-          Universities → colleges → departments. Select a row to drill down.
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card className="gap-2 border-slate-200 bg-white shadow-sm">
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
+            <Building2 className="h-4 w-4" />
+          </div>
+          <p className="font-mono text-2xl font-bold text-slate-900">{universities.length}</p>
+          <p className="text-xs text-slate-500">Universities</p>
+        </Card>
+        <Card className="gap-2 border-slate-200 bg-white shadow-sm">
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
+            <Landmark className="h-4 w-4" />
+          </div>
+          <p className="font-mono text-2xl font-bold text-slate-900">{colQ.data?.length ?? 0}</p>
+          <p className="text-xs text-slate-500">Colleges in selection</p>
+        </Card>
+        <Card className="gap-2 border-slate-200 bg-white shadow-sm">
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
+            <GraduationCap className="h-4 w-4" />
+          </div>
+          <p className="font-mono text-2xl font-bold text-slate-900">{deptQ.data?.length ?? 0}</p>
+          <p className="text-xs text-slate-500">Departments in selection</p>
+        </Card>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-slate-700">
+          Browse from university to department, then open detail pages or create new courses.
         </p>
         <Link href="/admin/institutions/universities/new">
           <Button type="button">Add university</Button>
@@ -95,15 +122,15 @@ export function InstitutionsAdminPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold tracking-wider text-text-secondary uppercase">
+        <Card className="flex flex-col gap-3 border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <p className="text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
               Universities
             </p>
-            <span className="text-xs text-text-muted">{universities.length}</span>
+            <span className="text-xs text-slate-500">{universities.length}</span>
           </div>
           {uniQ.isLoading ? (
-            <p className="text-sm text-text-muted">Loading…</p>
+            <p className="text-sm text-slate-500">Loading…</p>
           ) : (
             <>
               {universities.map((u) => (
@@ -120,17 +147,17 @@ export function InstitutionsAdminPage() {
                 />
               ))}
               <Link href="/admin/institutions/universities/new">
-                <Card className="border-dashed border-white/15 p-3 text-center text-xs text-text-muted hover:border-brand/30 hover:text-brand">
+                <Card className="border-dashed border-slate-300 bg-slate-50 p-3 text-center text-xs text-slate-600 hover:border-brand/30 hover:text-brand">
                   + Add university
                 </Card>
               </Link>
             </>
           )}
-        </div>
+        </Card>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold tracking-wider text-text-secondary uppercase">
+        <Card className="flex flex-col gap-3 border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <p className="text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
               Colleges
             </p>
             {univId ? (
@@ -143,18 +170,18 @@ export function InstitutionsAdminPage() {
             ) : null}
           </div>
           {!univId ? (
-            <Card className="flex min-h-[12rem] items-center justify-center border-dashed p-4">
-              <p className="text-center text-xs text-text-muted">
+            <Card className="flex min-h-[12rem] items-center justify-center border-dashed border-slate-300 bg-slate-50 p-4">
+              <p className="text-center text-xs text-slate-500">
                 Select a university to see colleges
               </p>
             </Card>
           ) : colQ.isLoading ? (
-            <p className="text-sm text-text-muted">Loading colleges…</p>
+            <p className="text-sm text-slate-500">Loading colleges…</p>
           ) : (colQ.data?.length ?? 0) === 0 ? (
             <Link
               href={`/admin/institutions/colleges/new?universityId=${encodeURIComponent(univId)}`}
             >
-              <Card className="border-dashed p-4 text-center text-xs text-text-muted hover:border-brand/30">
+              <Card className="border-dashed border-slate-300 bg-slate-50 p-4 text-center text-xs text-slate-600 hover:border-brand/30">
                 + Add first college
               </Card>
             </Link>
@@ -170,11 +197,11 @@ export function InstitutionsAdminPage() {
               />
             ))
           )}
-        </div>
+        </Card>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold tracking-wider text-text-secondary uppercase">
+        <Card className="flex flex-col gap-3 border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <p className="text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
               Departments
             </p>
             {collegeId ? (
@@ -187,18 +214,18 @@ export function InstitutionsAdminPage() {
             ) : null}
           </div>
           {!collegeId ? (
-            <Card className="flex min-h-[12rem] items-center justify-center border-dashed p-4">
-              <p className="text-center text-xs text-text-muted">
+            <Card className="flex min-h-[12rem] items-center justify-center border-dashed border-slate-300 bg-slate-50 p-4">
+              <p className="text-center text-xs text-slate-500">
                 Select a college to see departments
               </p>
             </Card>
           ) : deptQ.isLoading ? (
-            <p className="text-sm text-text-muted">Loading departments…</p>
+            <p className="text-sm text-slate-500">Loading departments…</p>
           ) : (deptQ.data?.length ?? 0) === 0 ? (
             <Link
               href={`/admin/institutions/departments/new?collegeId=${encodeURIComponent(collegeId)}`}
             >
-              <Card className="border-dashed p-4 text-center text-xs text-text-muted hover:border-brand/30">
+              <Card className="border-dashed border-slate-300 bg-slate-50 p-4 text-center text-xs text-slate-600 hover:border-brand/30">
                 + Add first department
               </Card>
             </Link>
@@ -208,7 +235,7 @@ export function InstitutionsAdminPage() {
                 key={d.id}
                 role="button"
                 tabIndex={0}
-                className="group flex cursor-pointer items-center gap-2 rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-2.5 transition-colors hover:border-brand/35 hover:bg-brand/[0.06]"
+                className="group flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 transition-colors hover:border-brand/35 hover:bg-brand/[0.04]"
                 onClick={() =>
                   void router.push(
                     `/admin/courses/new?departmentId=${encodeURIComponent(d.id)}`,
@@ -224,9 +251,9 @@ export function InstitutionsAdminPage() {
                 }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-text-primary">{d.name}</p>
+                  <p className="truncate text-sm font-semibold text-slate-900">{d.name}</p>
                   {d.code ? (
-                    <p className="truncate text-xs text-text-muted">{d.code}</p>
+                    <p className="truncate text-xs text-slate-500">{d.code}</p>
                   ) : null}
                   <p className="mt-1 text-[11px] font-medium text-brand/90">
                     New course
@@ -253,7 +280,7 @@ export function InstitutionsAdminPage() {
                   </Link>
                   <Link
                     href={`/admin/institutions/departments/${encodeURIComponent(d.id)}/edit`}
-                    className="rounded p-1 text-text-muted hover:text-brand"
+                    className="rounded border border-slate-200 p-1 text-slate-500 hover:bg-slate-50 hover:text-brand"
                     onClick={(e) => e.stopPropagation()}
                     aria-label="Edit department"
                   >
@@ -263,7 +290,7 @@ export function InstitutionsAdminPage() {
               </div>
             ))
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

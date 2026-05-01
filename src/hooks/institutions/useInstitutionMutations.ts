@@ -76,7 +76,10 @@ export function useUpdateDepartment() {
   });
 }
 
-/** Matches Nest/class-validator expectations alongside universityId / collegeId on sibling creates. */
+/**
+ * Form uses `name` / `departmentId`; POST body sends canonical CreateCourseDto fields
+ * `title` / `deptId` so class-validator sees required strings (aliases alone can fail if merge runs after validation).
+ */
 export type CreateCoursePayload = {
   name: string;
   departmentId: string;
@@ -88,9 +91,11 @@ export function useCreateCourse() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateCoursePayload) => {
+      const title = payload.name.trim();
+      const deptId = payload.departmentId.trim();
       const body: Record<string, unknown> = {
-        name: payload.name.trim(),
-        departmentId: payload.departmentId.trim(),
+        title,
+        deptId,
         isActive: payload.isActive,
       };
       const code = payload.code?.trim();

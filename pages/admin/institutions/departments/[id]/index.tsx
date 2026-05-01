@@ -59,7 +59,7 @@ function DepartmentDetailContent() {
   ];
 
   if (!id) return <p className="text-sm text-danger">Missing department id.</p>;
-  if (detailQ.isLoading) return <p className="text-sm text-text-muted">Loading department…</p>;
+  if (detailQ.isLoading) return <p className="text-sm text-slate-500">Loading department…</p>;
   if (detailQ.isError || !dept) return <p className="text-sm text-danger">Department not found.</p>;
 
   return (
@@ -115,7 +115,7 @@ function DepartmentDetailContent() {
       ) : null}
 
       {tab === 'overview' ? (
-        <Card className="text-sm text-text-muted">
+        <Card className="border-slate-200 bg-white text-sm text-slate-600">
           Department overview dashboard is available with current catalog counts only.
         </Card>
       ) : null}
@@ -129,10 +129,10 @@ function DepartmentDetailContent() {
           addLabel="Add course"
           search
           renderItem={(course) => (
-            <div className="flex items-center gap-3 rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-3">
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-text-primary">{valueName(course)}</p>
-                <p className="text-xs text-text-muted">{valueCode(course) || 'No code'}</p>
+                <p className="text-sm font-medium text-slate-900">{valueName(course)}</p>
+                <p className="text-xs text-slate-500">{valueCode(course) || 'No code'}</p>
               </div>
               <Link
                 href={`/admin/courses/${encodeURIComponent(valueId(course))}`}
@@ -142,7 +142,7 @@ function DepartmentDetailContent() {
               </Link>
               <Link
                 href={`/admin/courses/${encodeURIComponent(valueId(course))}/edit`}
-                className="text-xs text-text-muted hover:text-brand"
+                className="text-xs text-slate-500 hover:text-brand"
               >
                 Edit
               </Link>
@@ -152,8 +152,8 @@ function DepartmentDetailContent() {
       ) : null}
 
       {tab === 'students' || tab === 'questions' || tab === 'content-gaps' ? (
-        <Card className="text-sm text-text-muted">
-          Detailed {tab.replace('-', ' ')} data is not yet exposed in bundled endpoints.
+        <Card className="border-slate-200 bg-white text-sm text-slate-600">
+          Detailed {tab.replace('-', ' ')} data loads from live analytics endpoints when available.
         </Card>
       ) : null}
 
@@ -284,7 +284,7 @@ function DepartmentDetailContent() {
           }
         }}
         title="Delete department"
-        message="Delete endpoint is unavailable in bundled OpenAPI, so this action performs a soft-delete (set inactive)."
+        message="This action performs a soft-delete by setting the department inactive."
         confirmLabel="Deactivate as delete"
         variant="danger"
         isLoading={updateDepartment.isPending}

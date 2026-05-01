@@ -92,15 +92,15 @@ export default function ResetPasswordPage() {
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
                 New password
               </span>
-              <span className="flex h-11 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 sm:h-12">
-                <Lock className="h-4 w-4 text-slate-500" />
+              <span className="auth-input-shell group flex h-11 items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.06] px-3 transition-[border-color,box-shadow] focus-within:border-orange-400/55 focus-within:shadow-[0_0_0_3px_rgba(234,88,12,0.22)] sm:h-12 sm:px-3.5">
+                <Lock className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 8 characters"
-                  className="h-full w-full bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
+                  className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-white placeholder:text-white/35 outline-none ring-0"
                 />
                 <button
                   type="button"

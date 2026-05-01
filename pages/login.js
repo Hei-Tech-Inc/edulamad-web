@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getSafeInternalPath } from '@/lib/safe-next-path'
 import { getMarketingBrandName } from '@/lib/landing-brand'
 import AuthSplitLayout from '../components/marketing/AuthSplitLayout'
+import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons'
 
 const BRAND = getMarketingBrandName()
 function mapSignInError(message) {
@@ -34,6 +35,24 @@ export default function LoginPage() {
     const fromQuery = typeof raw === 'string' ? raw.trim() : ''
     if (fromQuery) setEmail(fromQuery)
   }, [router.isReady, router.query.email])
+
+  useEffect(() => {
+    if (!router.isReady) return
+    const raw = router.query.error
+    if (typeof raw !== 'string' || !raw.trim()) return
+    const code = raw.trim()
+    const human =
+      code === 'OAuthSignin' || code === 'OAuthCallback'
+        ? 'Social sign-in failed. Confirm POST /auth/oauth/exchange on your API and OAuth env vars (NEXTAUTH_URL, GOOGLE_CLIENT_ID, NEXTAUTH_SECRET).'
+        : code === 'Configuration'
+          ? 'OAuth is misconfigured. Check NEXTAUTH_SECRET and provider credentials.'
+          : code.toLowerCase().includes('exchange') || code.toLowerCase().includes('oauth')
+            ? `Social sign-in failed: ${code}`
+            : `Sign-in error: ${code}`
+    setError(human)
+    const { error: _omit, ...rest } = router.query
+    void router.replace({ pathname: '/login', query: rest }, undefined, { shallow: true })
+  }, [router, router.isReady, router.query.error])
 
   useEffect(() => {
     if (!router.isReady || !user) return
@@ -67,36 +86,51 @@ export default function LoginPage() {
       </Head>
       <AuthSplitLayout
         title={`Welcome back to ${BRAND}`}
-        subtitle="Sign in to continue your practice streak, review difficult topics, and track exam-readiness."
+        subtitle="Pick up your streak, review hard topics, and see how ready you are for exams—all in one place."
         points={[
-          'Practice with past questions by course and level',
-          'Keep streaks with focused daily revision',
-          'Track weak topics and improve faster',
-          'Continue exactly where you left off',
+          'Past questions organised by course and level',
+          'Short sessions that build a revision streak',
+          'Spot weak topics and revise where it counts',
+          'Continue right where you stopped',
         ]}
       >
-        <div className="rounded-2xl border border-white/10 bg-[#0b101a]/95 p-4 text-slate-100 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-7">
+        <div className="rounded-2xl border border-[var(--border-default)] bg-bg-raised/95 p-4 text-text-primary shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur-sm dark:shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:p-7">
           <div className="mb-4 text-center sm:mb-6">
-            <Link href="/" className="hidden items-center gap-2 text-white sm:inline-flex">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-300">
+            <Link
+              href="/"
+              className="hidden items-center justify-center gap-2 text-text-primary sm:inline-flex"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-400/30 bg-orange-500/10 text-orange-600 dark:text-orange-300">
                 <GraduationCap className="h-4 w-4" />
               </span>
               <span className="font-semibold">{BRAND}</span>
             </Link>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-100 sm:mt-5 sm:text-3xl">Welcome back</h1>
-            <p className="mt-1 text-sm text-slate-400">Sign in to continue studying</p>
+            <h1 className="mt-2 font-[Outfit,system-ui,sans-serif] text-2xl font-semibold tracking-tight text-text-primary sm:mt-5 sm:text-3xl">
+              Welcome back
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">Sign in to continue studying</p>
             {hasReturnTo ? (
-              <p className="mt-3 text-xs text-orange-300">You will continue where you left off.</p>
+              <p className="mt-3 text-xs font-medium text-orange-700 dark:text-orange-300">
+                You will continue where you left off.
+              </p>
             ) : null}
+          </div>
+
+          <SocialAuthButtons className="mb-5" />
+
+          <div className="mb-5 flex items-center gap-3 text-xs font-medium text-text-muted">
+            <div className="h-px flex-1 bg-[var(--border-default)]" />
+            <span className="shrink-0">or use email</span>
+            <div className="h-px flex-1 bg-[var(--border-default)]" />
           </div>
 
           <form onSubmit={onSubmit} className="space-y-3 sm:space-y-4">
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-muted">
                     Email
                   </span>
-                  <span className="flex h-11 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 sm:h-12">
-                    <Mail className="h-4 w-4 text-slate-500" />
+                  <span className="auth-input-shell group flex h-11 items-center gap-2.5 rounded-xl border border-[var(--border-default)] bg-bg-surface px-3 transition-[border-color,box-shadow] focus-within:border-orange-500/55 focus-within:shadow-[0_0_0_3px_rgba(234,88,12,0.14)] dark:focus-within:border-orange-400/55 dark:focus-within:shadow-[0_0_0_3px_rgba(234,88,12,0.22)] sm:h-12 sm:px-3.5">
+                    <Mail className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
                     <input
                       type="email"
                       autoComplete="email"
@@ -105,17 +139,23 @@ export default function LoginPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={loading}
                       placeholder="you@example.com"
-                      className="h-full w-full bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none disabled:opacity-70"
+                      className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none ring-0 disabled:opacity-70"
                     />
                   </span>
                 </label>
 
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-text-muted">
                     Password
                   </span>
-                  <span className={`flex h-11 items-center gap-2 rounded-lg border bg-white/[0.06] px-3 sm:h-12 ${error ? 'border-red-500' : 'border-white/10'}`}>
-                    <Lock className="h-4 w-4 text-slate-500" />
+                  <span
+                    className={`auth-input-shell group flex h-11 items-center gap-2.5 rounded-xl border bg-bg-surface px-3 transition-[border-color,box-shadow] sm:h-12 sm:px-3.5 ${
+                      error
+                        ? 'border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.12)] dark:border-red-500'
+                        : 'border-[var(--border-default)] focus-within:border-orange-500/55 focus-within:shadow-[0_0_0_3px_rgba(234,88,12,0.14)] dark:focus-within:border-orange-400/55 dark:focus-within:shadow-[0_0_0_3px_rgba(234,88,12,0.22)]'
+                    }`}
+                  >
+                    <Lock className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       autoComplete="current-password"
@@ -124,12 +164,12 @@ export default function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={loading}
                       placeholder="••••••••"
-                      className="h-full w-full bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none disabled:opacity-70"
+                      className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none ring-0 disabled:opacity-70"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
-                      className="rounded p-1 text-slate-400 hover:bg-white/10"
+                      className="rounded p-1 text-text-muted transition hover:bg-bg-hover"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -138,14 +178,17 @@ export default function LoginPage() {
                 </label>
 
                 {error ? (
-                  <p className="flex items-center gap-2 text-sm text-red-300" role="alert">
-                    <AlertCircle className="h-4 w-4" />
+                  <p className="flex items-center gap-2 text-sm text-red-600 dark:text-red-300" role="alert">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
                     {error}
                   </p>
                 ) : null}
 
                 <div className="text-right text-sm">
-                  <Link href="/forgot-password" className="text-slate-300 hover:text-white">
+                  <Link
+                    href="/forgot-password"
+                    className="text-text-secondary transition hover:text-orange-600 dark:hover:text-orange-300"
+                  >
                     Forgot password?
                   </Link>
                 </div>
@@ -153,20 +196,23 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary-sweep w-full rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white disabled:opacity-60"
+                  className="btn-primary-sweep w-full rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 px-4 py-3 font-semibold text-white shadow-[0_8px_28px_rgba(234,88,12,0.25)] disabled:opacity-60 dark:from-orange-500 dark:to-amber-500"
                 >
                   {loading ? 'Signing in...' : 'Sign in'}
                 </button>
           </form>
 
-          <div className="my-3 flex items-center gap-3 text-xs text-slate-500 sm:my-5">
-            <div className="h-px flex-1 bg-white/10" />
+          <div className="my-3 flex items-center gap-3 text-xs text-text-muted sm:my-5">
+            <div className="h-px flex-1 bg-[var(--border-default)]" />
             or
-            <div className="h-px flex-1 bg-white/10" />
+            <div className="h-px flex-1 bg-[var(--border-default)]" />
           </div>
 
-          <p className="text-center text-sm text-slate-300">
-            <Link href="/register" className="font-semibold text-orange-300 hover:text-orange-200">
+          <p className="text-center text-sm text-text-secondary">
+            <Link
+              href="/register"
+              className="font-semibold text-orange-600 transition hover:text-orange-500 dark:text-orange-400 dark:hover:text-orange-300"
+            >
               Create a free account →
             </Link>
           </p>

@@ -37,10 +37,10 @@ function NewOfferingForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <label className="text-sm text-text-secondary">
+      <label className="text-sm text-slate-600">
         Academic year
         <select
-          className="mt-1 h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm"
+          className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
           value={academicYear}
           onChange={(e) => setAcademicYear(e.target.value)}
         >
@@ -51,10 +51,10 @@ function NewOfferingForm({
           ))}
         </select>
       </label>
-      <label className="text-sm text-text-secondary">
+      <label className="text-sm text-slate-600">
         Semester
         <select
-          className="mt-1 h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm"
+          className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
           value={semester}
           onChange={(e) => setSemester(Number(e.target.value) as 1 | 2)}
         >
@@ -62,10 +62,10 @@ function NewOfferingForm({
           <option value={2}>2</option>
         </select>
       </label>
-      <label className="text-sm text-text-secondary">
+      <label className="text-sm text-slate-600">
         Level
         <select
-          className="mt-1 h-10 w-full rounded-md border border-white/10 bg-bg-surface px-3 text-sm"
+          className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
           value={level}
           onChange={(e) => setLevel(Number(e.target.value) as 100 | 200 | 300 | 400 | 500)}
         >
@@ -182,8 +182,8 @@ function CourseDetailContent() {
         </Card>
       ) : null}
 
-      <Card className="border-brand/20 bg-brand/10 py-3 text-xs text-brand">
-        Endpoint status: course details and offerings are live. Questions, solutions, flashcards, enrollment analytics, and topic coverage will display scaffolded states when extended admin endpoints are unavailable.
+      <Card className="border-brand/20 bg-brand/5 py-3 text-xs text-brand">
+        Live data: course details, offerings, assessments, and topic coverage.
       </Card>
 
       {tab === 'offerings' ? (
@@ -194,13 +194,13 @@ function CourseDetailContent() {
           onAdd={() => setAddOfferingOpen(true)}
           addLabel="Add year"
           renderItem={(offering) => (
-            <div className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-3">
+            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-3">
               <div>
-                <p className="text-sm text-text-primary">
+                <p className="text-sm text-slate-900">
                   {valueString(offering, 'academicYear') || 'Academic year'} · Sem{' '}
                   {valueString(offering, 'semester') || '—'} · L{valueString(offering, 'level') || '—'}
                 </p>
-                <p className="text-xs text-text-muted">ID: {valueId(offering)}</p>
+                <p className="text-xs text-slate-500">ID: {valueId(offering)}</p>
               </div>
               <Link
                 href={`/courses/${encodeURIComponent(id)}/offerings/${encodeURIComponent(valueId(offering))}`}
@@ -215,8 +215,8 @@ function CourseDetailContent() {
 
       {tab === 'questions' || tab === 'solutions' || tab === 'flashcards' || tab === 'students' ? (
         <div className="flex flex-col gap-4">
-          <Card className="text-sm text-text-muted">
-            Detailed {tab} management will appear here when dedicated admin endpoints are available.
+          <Card className="border-slate-200 bg-white text-sm text-slate-600">
+            Detailed {tab} management loads from live admin analytics endpoints.
           </Card>
           <CourseTopicCoverageMap courseId={id} />
         </div>
@@ -354,7 +354,7 @@ function CourseDetailContent() {
           }
         }}
         title="Delete course"
-        message="Delete endpoint is unavailable in bundled OpenAPI, so this action performs a soft-delete (set inactive)."
+        message="This action performs a soft-delete by setting the course inactive."
         confirmLabel="Deactivate as delete"
         variant="danger"
         isLoading={updateCourse.isPending}

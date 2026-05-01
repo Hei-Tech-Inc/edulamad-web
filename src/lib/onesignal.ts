@@ -2,9 +2,70 @@
 
 import { notificationsApi } from '@/lib/api/notifications.api';
 
-async function getOneSignal() {
-  const mod = await import('react-onesignal');
-  return mod.default;
+type OneSignalSdk = {
+  init: (options: Record<string, unknown>) => Promise<void>;
+  login: (userId: string) => Promise<void>;
+  logout: () => Promise<void>;
+  Notifications: { requestPermission: () => Promise<void> };
+  User: {
+    PushSubscription: {
+      id: string | null;
+      addEventListener: (
+        event: 'change',
+        listener: (event: { current?: { id?: string | null } }) => void | Promise<void>,
+      ) => void;
+    };
+  };
+};
+
+let oneSignalPromise: Promise<OneSignalSdk | null> | null = null;
+
+function isChunkLoadError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /ChunkLoadError|Loading chunk .* failed/i.test(message);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function loadOneSignalWithRetry(): Promise<OneSignalSdk | null> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const mod = await import('react-onesignal');
+      return mod.default as unknown as OneSignalSdk;
+    } catch (err) {
+      lastError = err;
+      if (!isChunkLoadError(err)) break;
+      if (attempt < 2) await sleep(250);
+    }
+  }
+
+  if (typeof window !== 'undefined' && isChunkLoadError(lastError)) {
+    try {
+      const k = '__onesignal_chunk_retry_reload__';
+      const hasReloaded = window.sessionStorage.getItem(k) === '1';
+      if (!hasReloaded) {
+        window.sessionStorage.setItem(k, '1');
+        window.location.reload();
+      }
+    } catch {
+      // ignore storage access issues
+    }
+  }
+
+  console.warn('[OneSignal] Failed to load SDK chunk.', lastError);
+  return null;
+}
+
+async function getOneSignal(): Promise<OneSignalSdk | null> {
+  if (!oneSignalPromise) {
+    oneSignalPromise = loadOneSignalWithRetry().finally(() => {
+      oneSignalPromise = null;
+    });
+  }
+  return oneSignalPromise;
 }
 
 let sdkInitialized = false;
@@ -35,6 +96,7 @@ async function ensureSdkInitialized(): Promise<void> {
   if (!initPromise) {
     initPromise = (async () => {
       const OneSignal = await getOneSignal();
+      if (!OneSignal) return;
       try {
         await OneSignal.init({
           appId,
@@ -62,6 +124,7 @@ export async function initOneSignal(userId?: string): Promise<void> {
   if (!appId) return;
 
   const OneSignal = await getOneSignal();
+  if (!OneSignal) return;
 
   if (userId && userId !== lastSyncedUserId) {
     if (!identitySyncPromise) {
@@ -131,6 +194,7 @@ export async function requestPushPermission(): Promise<boolean> {
 
   try {
     const OneSignal = await getOneSignal();
+    if (!OneSignal) return false;
     await OneSignal.Notifications.requestPermission();
     const permissionAfterPrompt = window.Notification.permission as NotificationPermission;
     return permissionAfterPrompt === 'granted';
@@ -148,6 +212,7 @@ export async function logoutOneSignal(): Promise<void> {
   if (typeof window === 'undefined') return;
   try {
     const OneSignal = await getOneSignal();
+    if (!OneSignal) return;
     await OneSignal.logout();
     lastSyncedUserId = null;
   } catch {

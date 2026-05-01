@@ -2,10 +2,15 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is([data-theme="dark"] *));
 @config '../tailwind.config.ts';
 
 @layer base {
+  /* Framer Motion useScroll measures document scroll; `html` must not be `position: static`. */
+  html {
+    position: relative;
+  }
+
   html,
   body {
     overflow-x: hidden;
@@ -201,6 +206,110 @@ body {
     52px 52px;
 }
 
+[data-theme='light'] .edulamad-mesh {
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(255, 92, 0, 0.12), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 90% 70%, rgba(255, 92, 0, 0.06), transparent 50%),
+    linear-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(255, 92, 0, 0.07) 1px, transparent 1.5px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    52px 52px,
+    52px 52px,
+    52px 52px;
+}
+
+[data-theme='light'] .landing-glass {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(252, 250, 247, 0.9) 48%,
+    rgba(248, 245, 240, 0.92) 100%
+  );
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.04),
+    0 16px 48px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 92, 0, 0.06);
+  backdrop-filter: blur(28px) saturate(1.45);
+  -webkit-backdrop-filter: blur(28px) saturate(1.45);
+}
+
+[data-theme='light'] .landing-glass-chip {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 246, 242, 0.88) 100%
+  );
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.75),
+    0 8px 28px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+}
+
+[data-theme='light'] .dashboard-card {
+  background: #e8e8ea;
+}
+
+[data-theme='light'] .dashboard-card::after {
+  background: radial-gradient(ellipse at center, rgba(249, 115, 22, 0.14) 0%, transparent 70%);
+}
+
+/* Landing header — softer elevation in light mode */
+[data-theme='light'] header.landing-glass {
+  box-shadow:
+    0 1px 0 0 rgba(15, 23, 42, 0.06),
+    0 12px 40px rgba(15, 23, 42, 0.07) !important;
+}
+
+/* Feature showcase band — scroll-safe clipping for ambient gradients */
+.landing-features-showcase {
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes quiz-showcase-chip-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes quiz-showcase-chip-float-delayed {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(7px);
+  }
+}
+
+.quiz-showcase-chip-float {
+  animation: quiz-showcase-chip-float 3.2s ease-in-out infinite;
+}
+
+.quiz-showcase-chip-float-delayed {
+  animation: quiz-showcase-chip-float-delayed 3.8s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-showcase-chip-float,
+  .quiz-showcase-chip-float-delayed {
+    animation: none;
+  }
+}
+
 /*
  * Landing header: mirror Tailwind `md` (48rem) without relying on utilities alone.
  * If the CSS chunk fails or utilities are missing, `hidden` / `md:flex` / `md:hidden`
@@ -311,6 +420,27 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(3, 105, 161, 0.2);
 }
 
+/* Icon-leading fields (login/register): border + focus ring live on the shell only.
+   Otherwise global input:focus stacks with the wrapper and reads as a “double box”. */
+.auth-input-shell input:not([type='checkbox']):not([type='radio']),
+.auth-input-shell select,
+.auth-input-shell textarea {
+  background-color: transparent;
+  border-width: 0;
+  box-shadow: none;
+}
+
+.auth-input-shell input:not([type='checkbox']):not([type='radio']):focus,
+.auth-input-shell input:not([type='checkbox']):not([type='radio']):focus-visible,
+.auth-input-shell select:focus,
+.auth-input-shell select:focus-visible,
+.auth-input-shell textarea:focus,
+.auth-input-shell textarea:focus-visible {
+  border-color: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #020617;
@@ -392,7 +522,7 @@ textarea:focus {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-.dark {
+[data-theme="dark"] {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -485,29 +615,180 @@ textarea:focus {
   initial-value: 0deg;
 }
 
-:root {
-  --brand-orange: #F97316;
-  --brand-orange-dim: rgba(249, 115, 22, 0.12);
+/* ── Dark theme (default) ──────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  /* Backgrounds — Tailwind token classes (bg-bg-base etc.) read these */
+  --bg-base:    #0F0F0F;
+  --bg-surface: #1A1A1A;
+  --bg-raised:  #242424;
+  --bg-hover:   #2E2E2E;
+
+  /* Borders */
+  --border-subtle:   rgba(255, 255, 255, 0.06);
+  --border-default:  rgba(255, 255, 255, 0.10);
+  --border-emphasis: rgba(255, 255, 255, 0.18);
+
+  /* Text */
+  --text-primary:   #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-muted:     rgba(255, 255, 255, 0.35);
+  --text-disabled:  rgba(255, 255, 255, 0.20);
+
+  /* Brand */
+  --brand-orange:      #F97316;
+  --brand-orange-dim:  rgba(249, 115, 22, 0.12);
   --brand-orange-glow: rgba(249, 115, 22, 0.25);
-  --brand-amber: #FBBF24;
+  --brand-amber:       #FBBF24;
+
+  /* Status */
+  --status-green:      #22c55e;
+  --status-green-dim:  rgba(34, 197, 94, 0.12);
+  --status-amber:      #FBBF24;
+  --status-amber-dim:  rgba(251, 191, 36, 0.12);
+  --status-orange:     #F97316;
+  --status-orange-dim: rgba(249, 115, 22, 0.12);
+
+  /* Shadows */
+  --shadow-card:   0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-float:  0 8px 32px rgba(0, 0, 0, 0.6);
+
+  /* Legacy surface aliases */
   --surface-0: #0a0a0a;
   --surface-1: #111111;
   --surface-2: #1a1a1a;
   --surface-3: #242424;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.10);
-  --border-emphasis: rgba(255, 255, 255, 0.18);
-  --text-primary: #FFFFFF;
-  --text-secondary: rgba(255, 255, 255, 0.65);
-  --text-muted: rgba(255, 255, 255, 0.35);
-  --status-green: #22c55e;
-  --status-green-dim: rgba(34, 197, 94, 0.12);
-  --status-amber: #FBBF24;
-  --status-amber-dim: rgba(251, 191, 36, 0.12);
-  --status-orange: #F97316;
-  --status-orange-dim: rgba(249, 115, 22, 0.12);
+
+  /* Landing feature rows — cool spotlight panel (teal/sky, no orange wash) */
+  --landing-showcase-panel: linear-gradient(
+    125deg,
+    rgba(15, 118, 110, 0.18) 0%,
+    rgba(6, 182, 212, 0.09) 42%,
+    rgba(15, 23, 42, 0.42) 100%
+  );
+  --landing-showcase-panel-edge: rgba(45, 212, 191, 0.14);
+
+  --landing-feature-eyebrow: #5eead4;
+
+  /* Quiz landing mock — “exam paper” (same in dark/light for readability) */
+  --quiz-card-bg: #f8fafc;
+  --quiz-card-border: #e2e8f0;
+  --quiz-nav-header-bg: #f1f5f9;
+  --quiz-heading: #0f172a;
+  --quiz-body: #1e293b;
+  --quiz-label: #64748b;
+  --quiz-muted: #64748b;
+  --quiz-nav-muted: #ffffff;
+  --quiz-nav-muted-fg: #64748b;
+  --quiz-nav-border: #e2e8f0;
+  --quiz-flag-bg: #fef9c3;
+  --quiz-flag-fg: #854d0e;
+  --quiz-flag-border: #fde68a;
+  --quiz-flag-dot: #ca8a04;
+  --quiz-current-bg: #0f766e;
+  --quiz-current-fg: #ffffff;
+  --quiz-answered-bg: #e0f2fe;
+  --quiz-answered-fg: #0369a1;
+  --quiz-answered-border: #7dd3fc;
+  --quiz-opt-selected-bg: rgba(15, 118, 110, 0.09);
+  --quiz-opt-selected-border: #0f766e;
+
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  color-scheme: dark;
+}
+
+/* ── Light theme ────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-base:    #F8F7F4;
+  --bg-surface: #FFFFFF;
+  --bg-raised:  #F1EFF9;
+  --bg-hover:   #E8E6F0;
+
+  --border-subtle:   rgba(0, 0, 0, 0.06);
+  --border-default:  rgba(0, 0, 0, 0.11);
+  --border-emphasis: rgba(0, 0, 0, 0.18);
+
+  /* Strong contrast on cream — marketing body stays readable */
+  --text-primary:   #070707;
+  --text-secondary: rgba(15, 23, 42, 0.9);
+  --text-muted:     rgba(15, 23, 42, 0.66);
+  --text-disabled:  rgba(15, 23, 42, 0.42);
+
+  /* Feature showcase eyebrows — readable on cool panels */
+  --landing-feature-eyebrow: #0f766e;
+
+  --brand-orange:      #F97316;
+  --brand-orange-dim:  rgba(249, 115, 22, 0.10);
+  --brand-orange-glow: rgba(249, 115, 22, 0.20);
+  --brand-amber:       #FBBF24;
+
+  --status-green:      #16A34A;
+  --status-green-dim:  rgba(22, 163, 74, 0.10);
+  --status-amber:      #CA8A04;
+  --status-amber-dim:  rgba(202, 138, 4, 0.10);
+  --status-orange:     #F97316;
+  --status-orange-dim: rgba(249, 115, 22, 0.10);
+
+  --shadow-card:   0 1px 4px rgba(0, 0, 0, 0.08);
+  --shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-float:  0 8px 32px rgba(0, 0, 0, 0.14);
+
+  --surface-0: #F8F7F4;
+  --surface-1: #FFFFFF;
+  --surface-2: #F1EFF9;
+  --surface-3: #E8E6F0;
+
+  --surface-void: #ebe8e0;
+
+  --landing-showcase-panel: linear-gradient(
+    125deg,
+    #f8fafc 0%,
+    #e0f2fe 44%,
+    #ecfeff 100%
+  );
+  --landing-showcase-panel-edge: rgba(100, 116, 139, 0.18);
+
+  --quiz-card-bg: #ffffff;
+  --quiz-card-border: #e2e8f0;
+  --quiz-nav-header-bg: #f8fafc;
+  --quiz-heading: #0f172a;
+  --quiz-body: #1e293b;
+  --quiz-label: #475569;
+  --quiz-muted: #64748b;
+  --quiz-nav-muted: #ffffff;
+  --quiz-nav-muted-fg: #475569;
+  --quiz-nav-border: #e2e8f0;
+  --quiz-flag-bg: #fef9c3;
+  --quiz-flag-fg: #713f12;
+  --quiz-flag-border: #fde047;
+  --quiz-flag-dot: #ca8a04;
+  --quiz-current-bg: #0f766e;
+  --quiz-current-fg: #ffffff;
+  --quiz-answered-bg: #e0f2fe;
+  --quiz-answered-fg: #0369a1;
+  --quiz-answered-border: #7dd3fc;
+  --quiz-opt-selected-bg: rgba(15, 118, 110, 0.08);
+  --quiz-opt-selected-border: #0f766e;
+
+  color-scheme: light;
+}
+
+/* ── Light mode overrides for quiz/nav elements ─────────── */
+[data-theme="light"] .quiz-option {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+}
+[data-theme="light"] .quiz-option.selected {
+  background: rgba(15, 118, 110, 0.06);
+  border-color: #0f766e;
+}
+[data-theme="light"] .q-nav-num {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
 }
 
 /* --- Keyframes --- */

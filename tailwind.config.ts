@@ -9,27 +9,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Backgrounds
+        // Backgrounds — resolved from CSS vars so both themes work
         bg: {
-          base: '#0F0F0F',
-          surface: '#1A1A1A',
-          raised: '#242424',
-          hover: '#2E2E2E',
+          base: 'var(--bg-base)',
+          surface: 'var(--bg-surface)',
+          raised: 'var(--bg-raised)',
+          hover: 'var(--bg-hover)',
         },
-        // Brand
+        // Brand — same hue in both themes
         brand: {
-          DEFAULT: '#F97316',
-          dim: 'rgba(249,115,22,0.15)',
-          glow: 'rgba(249,115,22,0.30)',
+          DEFAULT: 'var(--brand-orange)',
+          dim: 'var(--brand-orange-dim)',
+          glow: 'var(--brand-orange-glow)',
           hover: '#EA6C0D',
           light: '#FB923C',
         },
-        // Text
+        // Text — resolved from CSS vars
         text: {
-          primary: '#FFFFFF',
-          secondary: 'rgba(255,255,255,0.65)',
-          muted: 'rgba(255,255,255,0.35)',
-          disabled: 'rgba(255,255,255,0.20)',
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
+          disabled: 'var(--text-disabled)',
         },
         // Semantic
         success: '#22C55E',

@@ -8,18 +8,8 @@ export function CourseTopicCoverageMap({ courseId }: { courseId: string }) {
   const q = useQuery({
     queryKey: ['admin', 'topic-coverage', courseId],
     queryFn: async ({ signal }) => {
-      // TODO(api): topic coverage endpoint missing in current OpenAPI.
-      try {
-        const data = (await adminApi.topicCoverage(courseId, signal)) as any;
-        return { ...data, mocked: false };
-      } catch {
-        return {
-          topics: [] as Array<{ tagId: string; tagName: string; totalCount: number }>,
-          coveredTopics: 0,
-          totalTopics: 0,
-          mocked: true,
-        };
-      }
+      const data = (await adminApi.topicCoverage(courseId, signal)) as any;
+      return data;
     },
   });
 
@@ -27,12 +17,20 @@ export function CourseTopicCoverageMap({ courseId }: { courseId: string }) {
     return <div className="h-48 animate-pulse rounded-lg bg-white/10" />;
   }
 
-  if (!q.data?.topics?.length) {
-    return q.data?.mocked ? (
-      <Card className="border-warning/30 bg-warning/10 text-xs text-warning">
-        TODO: Topic coverage endpoint is missing in current OpenAPI. Coverage map will populate when route is available.
+  if (q.isError) {
+    return (
+      <Card className="border-danger/30 bg-danger/10 text-xs text-danger">
+        Failed to load topic coverage map.
       </Card>
-    ) : null;
+    );
+  }
+
+  if (!q.data?.topics?.length) {
+    return (
+      <Card className="border-slate-200 bg-white text-xs text-slate-600">
+        No topic coverage data for this course yet.
+      </Card>
+    );
   }
 
   const sortedTopics = [...q.data.topics].sort(

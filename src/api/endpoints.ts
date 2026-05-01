@@ -55,6 +55,8 @@ const API = {
     myActive: '/promo/my-active',
   },
   auth: {
+    /** POST — OAuth code→session (NextAuth server calls this). Body: see `OAuthExchangeRequestBody`. */
+    oauthExchange: '/auth/oauth/exchange',
     register: '/auth/register',
     login: '/auth/login',
     refresh: '/auth/refresh',

@@ -27,12 +27,71 @@ function statusFallbackMessage(status: number): string {
 }
 
 function joinValidationDetails(details: ValidationErrorDetail[]): string {
-  return details.map((d) => `${d.field}: ${d.message}`).join(' ');
+  return details
+    .map((d) => {
+      const f = typeof d.field === 'string' && d.field.trim() ? d.field.trim() : '';
+      const m = typeof d.message === 'string' && d.message.trim() ? d.message.trim() : '';
+      if (f && m) return `${f}: ${m}`;
+      return f || m || '';
+    })
+    .filter(Boolean)
+    .join(' ');
 }
 
 /** Best-effort extraction for NestJS, Express, RFC 7807-style, and wrapped envelopes. */
 function pickString(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined;
+}
+
+function isGenericTopLevelMessage(message: string | undefined): boolean {
+  if (!message) return false;
+  return /^(convex mutation error|internal server error|request failed|unknown error|validation failed)\.?$/i.test(
+    message.trim(),
+  );
+}
+
+function extractDeepMessage(
+  value: unknown,
+  depth = 0,
+  seen: WeakSet<object> = new WeakSet(),
+): string | undefined {
+  if (depth > 4 || value == null) return undefined;
+  if (typeof value === 'string') return pickString(value);
+  if (typeof value !== 'object') return undefined;
+  if (seen.has(value as object)) return undefined;
+  seen.add(value as object);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = extractDeepMessage(item, depth + 1, seen);
+      if (found) return found;
+    }
+    return undefined;
+  }
+
+  const rec = value as Record<string, unknown>;
+  const primaryKeys = [
+    'userMessage',
+    'publicMessage',
+    'message',
+    'detail',
+    'reason',
+    'description',
+    'errorMessage',
+  ] as const;
+
+  for (const key of primaryKeys) {
+    const candidate = pickString(rec[key]);
+    if (candidate && !isGenericTopLevelMessage(candidate)) return candidate;
+  }
+
+  const nestedKeys = ['data', 'error', 'cause', 'meta', 'details', 'errors'] as const;
+  for (const key of nestedKeys) {
+    const found = extractDeepMessage(rec[key], depth + 1, seen);
+    if (found) return found;
+  }
+
+  return undefined;
 }
 
 export function parseApiErrorPayload(
@@ -52,6 +111,9 @@ export function parseApiErrorPayload(
   ) {
     const wrap = data as Record<string, unknown>;
     envelopeMessage = pickString(wrap.message);
+    if (typeof wrap.code === 'string' && wrap.code.trim()) {
+      code = wrap.code.trim();
+    }
     const inner = wrap.data;
     const err = wrap.error;
     if (inner && typeof inner === 'object') {
@@ -60,12 +122,13 @@ export function parseApiErrorPayload(
       return {
         message: envelopeMessage ?? err.trim(),
         code,
-        details,
+        details: undefined,
       };
     } else if (err && typeof err === 'object') {
       data = err;
-    } else if (envelopeMessage) {
-      return { message: envelopeMessage, code, details };
+    } else {
+      /** Top-level `details` / `requestId` live on the envelope (e.g. VALIDATION_ERROR from Nest). */
+      data = wrap;
     }
   }
 
@@ -128,7 +191,31 @@ export function parseApiErrorPayload(
   }
 
   if (Array.isArray(rec.details)) {
-    details = rec.details as ValidationErrorDetail[];
+    details = (rec.details as unknown[]).map((item): ValidationErrorDetail | null => {
+      if (!item || typeof item !== 'object') return null;
+      const o = item as Record<string, unknown>;
+      const fieldRaw =
+        typeof o.field === 'string'
+          ? o.field
+          : typeof o.property === 'string'
+            ? o.property
+            : typeof o.path === 'string'
+              ? o.path
+              : '';
+      let messageRaw = typeof o.message === 'string' ? o.message : '';
+      if (!messageRaw && Array.isArray(o.constraints)) {
+        const strs = o.constraints.filter((x): x is string => typeof x === 'string');
+        if (strs.length) messageRaw = strs.join(', ');
+      } else if (!messageRaw && o.constraints && typeof o.constraints === 'object') {
+        const c = o.constraints as Record<string, unknown>;
+        const first = Object.values(c).find((v): v is string => typeof v === 'string');
+        if (first) messageRaw = first;
+      }
+      const field = fieldRaw.trim();
+      const message = messageRaw.trim();
+      if (!field && !message) return null;
+      return { field: field || 'request', message: message || field };
+    }).filter((d): d is ValidationErrorDetail => d !== null);
   }
 
   if (!message && rec.errors && typeof rec.errors === 'object' && !Array.isArray(rec.errors)) {
@@ -150,7 +237,31 @@ export function parseApiErrorPayload(
     message = joinValidationDetails(details);
   }
 
+  if (isGenericTopLevelMessage(message)) {
+    const deep = extractDeepMessage(rec);
+    if (deep) message = deep;
+  }
+
   let finalMessage = (message?.trim() || statusFallbackMessage(status)).trim();
+
+  /** Nest/class-validator often sends message "Validation failed" plus a `details` array — prefer field messages. */
+  if (details?.length) {
+    const fromDetails = joinValidationDetails(details);
+    if (!fromDetails) {
+      /* keep finalMessage */
+    } else if (code === 'VALIDATION_ERROR') {
+      /** Avoid duplicating the same lines when API sets message to one constraint and details lists all. */
+      finalMessage = fromDetails;
+    } else if (
+      isGenericTopLevelMessage(finalMessage) ||
+      /^validation failed\.?$/i.test(finalMessage) ||
+      finalMessage === statusFallbackMessage(422)
+    ) {
+      finalMessage = fromDetails;
+    } else if (!finalMessage.includes(fromDetails.slice(0, 12))) {
+      finalMessage = `${finalMessage} — ${fromDetails}`;
+    }
+  }
 
   if (code === 'ORG_NOT_AVAILABLE') {
     finalMessage =
@@ -168,7 +279,11 @@ export function parseApiErrorPayload(
     finalMessage = statusFallbackMessage(401);
   }
 
-  const requestId = pickString(rec.requestId);
+  const requestId =
+    pickString(rec.requestId) ??
+    pickString(rec.requestID) ??
+    pickString(rec.request_id) ??
+    pickString((rec.meta as Record<string, unknown> | undefined)?.requestId);
   if (requestId && !finalMessage.includes(requestId)) {
     finalMessage = `${finalMessage}\n\nRequest ID: ${requestId}`;
   }

@@ -2012,8 +2012,10 @@ export default function Dashboard() {
                       setCatalogStatus('Course updated.')
                     } else {
                       await createCourseM.mutateAsync({
-                        ...payload,
-                        departmentId: courseFormState.deptId || departmentId,
+                        title: courseFormState.name.trim(),
+                        deptId: courseFormState.deptId || departmentId,
+                        isActive: courseFormState.isActive,
+                        ...(trimmedCode ? { code: trimmedCode } : {}),
                       })
                       setCatalogStatus('Course created.')
                     }

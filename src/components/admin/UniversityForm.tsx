@@ -37,6 +37,8 @@ export function UniversityForm({
   });
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
+  const inputClassName =
+    'mt-1 border-slate-300 bg-white text-slate-900 placeholder:text-slate-400';
 
   const save = async () => {
     setError('');
@@ -77,39 +79,59 @@ export function UniversityForm({
 
   return (
     <div className="flex max-w-lg flex-col gap-4">
-      <label className="text-sm text-text-secondary">
-        Full name *
+      <label className="text-sm text-slate-700">
+        <span className="flex items-center gap-2">
+          Full name
+          <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-rose-700 uppercase">
+            Required
+          </span>
+        </span>
         <Input
-          className="mt-1"
+          className={inputClassName}
           value={form.name}
           onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
-          placeholder="Kwame Nkrumah University of Science and Technology"
+          placeholder="e.g. Kwame Nkrumah University of Science and Technology"
         />
       </label>
       <div className="grid grid-cols-2 gap-3">
-        <label className="text-sm text-text-secondary">
-          Acronym *
+        <label className="text-sm text-slate-700">
+          <span className="flex items-center gap-2">
+            Acronym
+            <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-rose-700 uppercase">
+              Required
+            </span>
+          </span>
           <Input
-            className="mt-1 font-mono"
+            className={`${inputClassName} font-mono`}
             value={form.acronym}
             onChange={(e) =>
               setForm((s) => ({ ...s, acronym: e.target.value.toUpperCase() }))
             }
-            placeholder="KNUST"
+            placeholder="e.g. KNUST"
           />
         </label>
-        <label className="text-sm text-text-secondary">
-          Location *
+        <label className="text-sm text-slate-700">
+          <span className="flex items-center gap-2">
+            Location
+            <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-rose-700 uppercase">
+              Required
+            </span>
+          </span>
           <Input
-            className="mt-1"
+            className={inputClassName}
             value={form.location}
             onChange={(e) => setForm((s) => ({ ...s, location: e.target.value }))}
-            placeholder="Kumasi"
+            placeholder="e.g. Kumasi"
           />
         </label>
       </div>
       <div>
-        <p className="mb-2 text-sm text-text-secondary">Type *</p>
+        <p className="mb-2 flex items-center gap-2 text-sm text-slate-700">
+          Type
+          <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-rose-700 uppercase">
+            Required
+          </span>
+        </p>
         <div className="grid grid-cols-2 gap-2">
           {(['public', 'private'] as const).map((t) => (
             <button
@@ -119,7 +141,7 @@ export function UniversityForm({
               className={`rounded-lg border py-3 text-sm font-medium capitalize transition-colors ${
                 form.type === t
                   ? 'border-brand/50 bg-brand/15 text-brand'
-                  : 'border-white/[0.08] bg-bg-surface text-text-muted hover:border-white/20'
+                  : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400'
               }`}
             >
               {t}
@@ -127,28 +149,38 @@ export function UniversityForm({
           ))}
         </div>
       </div>
-      <label className="text-sm text-text-secondary">
-        Website URL
+      <label className="text-sm text-slate-700">
+        <span className="flex items-center gap-2">
+          Website URL
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-600 uppercase">
+            Optional
+          </span>
+        </span>
         <Input
-          className="mt-1"
+          className={inputClassName}
           value={form.websiteUrl}
           onChange={(e) => setForm((s) => ({ ...s, websiteUrl: e.target.value }))}
-          placeholder="https://…"
+          placeholder="e.g. https://www.knust.edu.gh"
         />
       </label>
-      <label className="text-sm text-text-secondary">
-        Logo key (optional)
+      <label className="text-sm text-slate-700">
+        <span className="flex items-center gap-2">
+          Logo key
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-600 uppercase">
+            Optional
+          </span>
+        </span>
         <Input
-          className="mt-1 font-mono text-xs"
+          className={`${inputClassName} font-mono text-xs`}
           value={form.logoKey}
           onChange={(e) => setForm((s) => ({ ...s, logoKey: e.target.value }))}
-          placeholder="files/…"
+          placeholder="e.g. files/universities/knust/logo.png"
         />
       </label>
-      <div className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-3">
+      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-3">
         <div>
-          <p className="text-sm font-medium text-text-primary">Active</p>
-          <p className="text-xs text-text-muted">Inactive hides this university from pickers</p>
+          <p className="text-sm font-medium text-slate-900">Active</p>
+          <p className="text-xs text-slate-500">Inactive hides this university from pickers</p>
         </div>
         <Toggle checked={form.isActive} onChange={(v) => setForm((s) => ({ ...s, isActive: v }))} />
       </div>

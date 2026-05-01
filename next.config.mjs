@@ -32,6 +32,20 @@ const apiProxyTarget = resolveApiProxyTarget()
 
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+    ],
+  },
   async headers() {
     return [
       {

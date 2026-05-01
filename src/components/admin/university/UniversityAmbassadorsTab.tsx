@@ -18,26 +18,18 @@ export function UniversityAmbassadorsTab({ universityId }: { universityId: strin
   const q = useQuery({
     queryKey: ['admin', 'university', universityId, 'ambassadors', status],
     queryFn: async ({ signal }) => {
-      try {
-        const { data } = await ambassadorsApi.getByUniversity(
-          universityId,
-          { status: status || undefined },
-          signal,
-        );
-        const payload = data as Record<string, unknown>;
-        const ambassadors = Array.isArray(payload?.ambassadors)
-          ? payload.ambassadors
-          : Array.isArray(payload?.data)
-            ? payload.data
-            : [];
-        return { ...(payload as any), ambassadors, mocked: false };
-      } catch {
-        return {
-          ambassadors: [] as Row[],
-          stats: { active: 0, pending: 0, totalReferrals: 0, creditsEarned: 0 },
-          mocked: true,
-        };
-      }
+      const { data } = await ambassadorsApi.getByUniversity(
+        universityId,
+        { status: status || undefined },
+        signal,
+      );
+      const payload = data as Record<string, unknown>;
+      const ambassadors = Array.isArray(payload?.ambassadors)
+        ? payload.ambassadors
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
+      return { ...(payload as any), ambassadors };
     },
   });
 
@@ -86,9 +78,9 @@ export function UniversityAmbassadorsTab({ universityId }: { universityId: strin
 
   return (
     <div className="flex flex-col gap-4">
-      {q.data?.mocked ? (
-        <Card className="border-warning/30 bg-warning/10 text-xs text-warning">
-          Live ambassador endpoint is unavailable; showing scaffold mode until the backend route is enabled.
+      {q.isError ? (
+        <Card className="border-danger/30 bg-danger/10 text-xs text-danger">
+          Failed to load ambassadors data. Please retry.
         </Card>
       ) : null}
       {q.isFetching && !q.isLoading ? (
@@ -103,8 +95,8 @@ export function UniversityAmbassadorsTab({ universityId }: { universityId: strin
           { label: 'Credits', value: q.data?.stats?.creditsEarned ?? 0 },
         ].map((s) => (
           <Card key={s.label} className="items-center gap-1 py-3 text-center">
-            <p className="font-mono text-xl font-bold text-text-primary">{s.value}</p>
-            <p className="text-xs text-text-muted">{s.label}</p>
+            <p className="font-mono text-xl font-bold text-slate-900">{s.value}</p>
+            <p className="text-xs text-slate-500">{s.label}</p>
           </Card>
         ))}
       </div>
@@ -112,7 +104,7 @@ export function UniversityAmbassadorsTab({ universityId }: { universityId: strin
       <select
         value={status}
         onChange={(e) => setStatus(e.target.value)}
-        className="h-9 w-fit rounded-lg border border-white/[0.08] bg-bg-surface px-3 text-sm text-text-primary focus:border-brand/50 focus:outline-none"
+        className="h-9 w-fit rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-brand/50 focus:outline-none"
       >
         <option value="">All ambassadors</option>
         <option value="active">Active</option>

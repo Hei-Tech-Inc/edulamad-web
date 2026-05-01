@@ -119,11 +119,11 @@ export function AdminTable<T>({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-bg-surface">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.06]">
+              <tr className="border-b border-slate-200 bg-slate-50/70">
                 {selectable ? (
                   <th className="w-10 px-4 py-3 text-left">
                     <input
@@ -140,6 +140,7 @@ export function AdminTable<T>({
                     style={{ width: col.width }}
                     className={cn(
                       'px-4 py-3 text-left text-xs font-semibold tracking-wider text-text-secondary uppercase',
+                      'text-slate-600',
                       col.sortable && onSort
                         ? 'cursor-pointer select-none hover:text-text-primary'
                         : '',
@@ -166,23 +167,23 @@ export function AdminTable<T>({
             <tbody>
               {isLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={`sk-${i}`} className="border-b border-white/[0.04]">
+                    <tr key={`sk-${i}`} className="border-b border-slate-100">
                       {selectable ? (
                         <td className="px-4 py-3">
-                          <div className="h-4 w-4 animate-pulse rounded bg-white/10" />
+                          <div className="h-4 w-4 animate-pulse rounded bg-slate-200" />
                         </td>
                       ) : null}
                       {columns.map((col) => (
                         <td key={col.key} className="px-4 py-3">
                           <div
-                            className="h-4 animate-pulse rounded bg-white/10"
+                            className="h-4 animate-pulse rounded bg-slate-200"
                             style={{ width: col.width ?? '80%' }}
                           />
                         </td>
                       ))}
                       {hasRowActions ? (
                         <td className="px-4 py-3">
-                          <div className="h-4 w-16 animate-pulse rounded bg-white/10" />
+                          <div className="h-4 w-16 animate-pulse rounded bg-slate-200" />
                         </td>
                       ) : null}
                     </tr>
@@ -208,7 +209,7 @@ export function AdminTable<T>({
                       return (
                         <tr
                           key={rid || JSON.stringify(row)}
-                          className="group border-b border-white/[0.04] transition-colors hover:bg-bg-raised"
+                          className="group border-b border-slate-100 transition-colors hover:bg-slate-50"
                         >
                           {selectable ? (
                             <td className="px-4 py-3">
@@ -232,7 +233,7 @@ export function AdminTable<T>({
                           ))}
                           {hasRowActions ? (
                             <td className="px-4 py-3">
-                              <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                              <div className="flex items-center gap-1 opacity-100 transition-opacity">
                                 {onView ? (
                                   <button
                                     type="button"
@@ -271,7 +272,7 @@ export function AdminTable<T>({
         </div>
 
         {!isLoading && totalPages > 1 ? (
-          <div className="flex items-center justify-between border-t border-white/[0.06] px-4 py-3">
+          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
             <p className="text-xs text-text-muted">
               Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of{' '}
               {total.toLocaleString()}
@@ -281,7 +282,7 @@ export function AdminTable<T>({
                 type="button"
                 onClick={() => onPageChange(page - 1)}
                 disabled={page <= 1}
-                className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs text-text-muted transition-colors hover:bg-bg-raised disabled:opacity-30"
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-text-muted transition-colors hover:bg-slate-50 disabled:opacity-30"
               >
                 ← Prev
               </button>
@@ -292,7 +293,7 @@ export function AdminTable<T>({
                 type="button"
                 onClick={() => onPageChange(page + 1)}
                 disabled={page >= totalPages}
-                className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs text-text-muted transition-colors hover:bg-bg-raised disabled:opacity-30"
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-text-muted transition-colors hover:bg-slate-50 disabled:opacity-30"
               >
                 Next →
               </button>

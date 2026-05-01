@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react'
+import { signIn as nextAuthSignIn, signOut as nextAuthSignOut } from 'next-auth/react'
 import { apiClient, apiClientPublic } from '@/api/client'
 import API from '@/api/endpoints'
 import {
@@ -92,13 +93,20 @@ export function AuthProvider({ children }) {
     return { data, error: null }
   }
 
-  const signInWithGoogle = async () => {
-    return {
-      data: null,
-      error: {
-        message:
-          `Google sign-in is not available for ${process.env.NEXT_PUBLIC_APP_NAME?.trim() || 'Edulamad'} yet. Use email and password.`,
-      },
+  /**
+   * OAuth (Google/GitHub) via NextAuth — completes after redirect; tokens sync in OAuthSessionSync.
+   * Optional `callbackUrl` defaults to `/dashboard`.
+   */
+  const signInWithGoogle = async (callbackUrl = '/dashboard') => {
+    try {
+      await nextAuthSignIn('google', { callbackUrl })
+      return { data: null, error: null }
+    } catch (e) {
+      const msg =
+        e instanceof Error && e.message
+          ? e.message
+          : 'Google sign-in could not start. Check NEXTAUTH_URL and Google OAuth credentials.'
+      return { data: null, error: { message: msg } }
     }
   }
 
@@ -199,6 +207,11 @@ export function AuthProvider({ children }) {
       }
     } catch {
       // still clear local session
+    }
+    try {
+      await nextAuthSignOut({ redirect: false })
+    } catch {
+      /* ignore */
     }
     void logoutOneSignal()
     useAuthStore.getState().clearAuth()

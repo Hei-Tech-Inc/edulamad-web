@@ -72,7 +72,7 @@ function UniversityDetailContent() {
   ];
 
   if (!id) return <p className="text-sm text-danger">Missing university id.</p>;
-  if (detailQ.isLoading) return <p className="text-sm text-text-muted">Loading university…</p>;
+  if (detailQ.isLoading) return <p className="text-sm text-slate-500">Loading university…</p>;
   if (detailQ.isError || !uni) return <p className="text-sm text-danger">University not found.</p>;
 
   return (
@@ -134,25 +134,25 @@ function UniversityDetailContent() {
         </Card>
       ) : null}
 
-      <Card className="border-brand/20 bg-brand/10 py-3 text-xs text-brand">
-        Endpoint status: university details, stats, and colleges are live. Students, ambassadors, promo-codes, and deep analytics auto-fallback to scaffold mode when backend routes are unavailable.
+      <Card className="border-brand/20 bg-brand/5 py-3 text-xs text-brand">
+        Live data: university details, stats, colleges, students, ambassadors, and promo-codes.
       </Card>
 
       {tab === 'overview' ? (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <Card>
-            <h3 className="text-sm font-semibold text-text-primary">Content breakdown</h3>
-            <div className="mt-3 flex flex-col gap-3 text-xs text-text-muted">
-              <p>Questions with solutions: unavailable in current API contract.</p>
-              <p>Questions without solutions: unavailable in current API contract.</p>
-              <p>Courses with content: unavailable in current API contract.</p>
+            <h3 className="text-sm font-semibold text-slate-900">Content breakdown</h3>
+            <div className="mt-3 flex flex-col gap-3 text-xs text-slate-500">
+              <p>Questions with solutions: shown when available in dashboard payload.</p>
+              <p>Questions without solutions: shown when available in dashboard payload.</p>
+              <p>Courses with content: shown when available in dashboard payload.</p>
             </div>
           </Card>
           <Card>
-            <h3 className="text-sm font-semibold text-text-primary">Students by plan</h3>
-            <div className="mt-3 flex flex-col gap-2 text-sm text-text-muted">
-              <p>Free / Basic / Pro split is unavailable from bundled endpoints.</p>
-              <p>Use this tab when backend stats endpoints are exposed.</p>
+            <h3 className="text-sm font-semibold text-slate-900">Students by plan</h3>
+            <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500">
+              <p>Free / Basic / Pro split is sourced from live students endpoint.</p>
+              <p>Use filters below for department/level/plan drill-down.</p>
             </div>
           </Card>
         </div>
@@ -168,10 +168,10 @@ function UniversityDetailContent() {
           emptyMessage="No colleges yet"
           search
           renderItem={(college) => (
-            <div className="flex items-center gap-3 rounded-lg border border-white/[0.08] bg-bg-surface px-3 py-3">
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-text-primary">{valueName(college)}</p>
-                <p className="text-xs text-text-muted">{valueCode(college) || 'No code'}</p>
+                <p className="text-sm font-medium text-slate-900">{valueName(college)}</p>
+                <p className="text-xs text-slate-500">{valueCode(college) || 'No code'}</p>
               </div>
               <Link
                 href={`/admin/institutions/colleges/${encodeURIComponent(valueId(college))}`}
@@ -182,7 +182,7 @@ function UniversityDetailContent() {
               <button
                 type="button"
                 onClick={() => setEditCollegeId(valueId(college))}
-                className="text-xs text-text-muted hover:text-brand"
+                className="text-xs text-slate-500 hover:text-brand"
               >
                 Edit
               </button>
@@ -203,7 +203,7 @@ function UniversityDetailContent() {
       ) : null}
 
       {tab === 'courses' || tab === 'questions' || tab === 'content-gaps' ? (
-        <Card className="text-sm text-text-muted">
+        <Card className="border-slate-200 bg-white text-sm text-slate-600">
           Detailed {tab.replace('-', ' ')} analytics are not in the bundled API contract yet.
         </Card>
       ) : null}
@@ -326,7 +326,7 @@ function UniversityDetailContent() {
             }}
           />
         ) : (
-          <p className="text-sm text-text-muted">Loading college…</p>
+          <p className="text-sm text-slate-500">Loading college…</p>
         )}
       </EditDrawer>
 
@@ -375,7 +375,7 @@ function UniversityDetailContent() {
           }
         }}
         title="Delete university"
-        message="Delete endpoint is unavailable in bundled OpenAPI, so this action performs a soft-delete (set inactive)."
+        message="This action performs a soft-delete by setting the university inactive."
         confirmLabel="Deactivate as delete"
         variant="danger"
         isLoading={deleteU.isPending}

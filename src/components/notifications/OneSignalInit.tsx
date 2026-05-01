@@ -10,7 +10,9 @@ export function OneSignalInit() {
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
-    void initOneSignal(user.id);
+    void initOneSignal(user.id).catch(() => {
+      // OneSignal is optional; do not crash UI on SDK load failures.
+    });
   }, [isAuthenticated, user?.id]);
 
   return null;

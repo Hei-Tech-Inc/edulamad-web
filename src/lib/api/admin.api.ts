@@ -119,59 +119,58 @@ export const adminApi = {
     }
   },
   collegeStats: async (id: string, signal?: AbortSignal) => {
-    const { data: deptData } = await apiClient.get<unknown>(
-      API.institutions.colleges.departments(id),
-      { signal, params: { activeOnly: true } },
-    );
-    const departments = asRows(deptData);
-    const courses = await listCoursesForDepartments(departments, signal);
+    const { data } = await apiClient.get<unknown>(`/admin/colleges/${id}/dashboard`, { signal });
+    const dashboard = asRow(data) ?? {};
+    const content = asRow(dashboard.content) ?? {};
+    const students = asRow(dashboard.students) ?? {};
+    const gaps = asRow(dashboard.contentGaps) ?? {};
     return {
-      deptCount: departments.length,
-      courseCount: courses.length,
-      questionCount: 0,
-      studentCount: 0,
-      gapCount: 0,
+      deptCount: Number(content.departmentCount ?? content.deptCount ?? 0),
+      courseCount: Number(content.courseCount ?? 0),
+      questionCount: Number(content.questionCount ?? 0),
+      studentCount: Number(students.total ?? students.studentCount ?? 0),
+      gapCount: Number(gaps.total ?? gaps.gapCount ?? 0),
     };
   },
   departmentStats: async (id: string, signal?: AbortSignal) => {
-    const { data: courseData } = await apiClient.get<unknown>(
-      API.institutions.departments.courses(id),
-      { signal, params: { activeOnly: true } },
-    );
-    const courses = asRows(courseData);
+    const { data } = await apiClient.get<unknown>(`/admin/departments/${id}/dashboard`, {
+      signal,
+    });
+    const dashboard = asRow(data) ?? {};
+    const content = asRow(dashboard.content) ?? {};
+    const students = asRow(dashboard.students) ?? {};
+    const gaps = asRow(dashboard.contentGaps) ?? {};
     return {
-      courseCount: courses.length,
-      questionCount: 0,
-      studentCount: 0,
-      coursesWithContent: 0,
-      gapCount: 0,
+      courseCount: Number(content.courseCount ?? 0),
+      questionCount: Number(content.questionCount ?? 0),
+      studentCount: Number(students.total ?? students.studentCount ?? 0),
+      coursesWithContent: Number(content.coursesWithContent ?? 0),
+      gapCount: Number(gaps.total ?? gaps.gapCount ?? 0),
     };
   },
   courseStats: async (id: string, signal?: AbortSignal) => {
-    const { data: offeringsData } = await apiClient.get<unknown>(API.content.courseOfferings(id), {
+    const { data } = await apiClient.get<unknown>(`/admin/courses/${id}/dashboard`, {
       signal,
     });
-    const offerings = asRows(offeringsData);
+    const dashboard = asRow(data) ?? {};
+    const content = asRow(dashboard.content) ?? {};
+    const students = asRow(dashboard.students) ?? {};
     return {
-      offeringCount: offerings.length,
-      questionCount: 0,
-      solutionCount: 0,
-      flashcardDeckCount: 0,
-      enrolledCount: 0,
-      avgScore: null as number | null,
+      offeringCount: Number(content.offeringCount ?? 0),
+      questionCount: Number(content.questionCount ?? 0),
+      solutionCount: Number(content.solutionCount ?? 0),
+      flashcardDeckCount: Number(content.flashcardDeckCount ?? 0),
+      enrolledCount: Number(students.enrolledCount ?? students.total ?? 0),
+      avgScore:
+        typeof students.avgScore === 'number' ? students.avgScore : (null as number | null),
     };
   },
   contentGaps: async (universityId?: string, signal?: AbortSignal) => {
-    // Fallback report from available catalog endpoints when dedicated reports are unavailable.
-    if (!universityId) return [] as Row[];
-    const departments = await listDepartmentsForUniversity(universityId, signal);
-    const courses = await listCoursesForDepartments(departments, signal);
-    return courses.map((c) => ({
-      ...c,
-      questionCount: 0,
-      latestYear: null,
-      hasRecentContent: false,
-    }));
+    if (!universityId) return [];
+    const { data } = await apiClient.get<unknown>(`/admin/universities/${universityId}/content-gaps`, {
+      signal,
+    });
+    return asRows(data);
   },
   listUniversityColleges: async (universityId: string, signal?: AbortSignal) => {
     const { data } = await apiClient.get<unknown>(

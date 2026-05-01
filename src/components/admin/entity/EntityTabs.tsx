@@ -17,7 +17,7 @@ export function EntityTabs({
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="scrollbar-none -mx-4 flex items-center gap-1 overflow-x-auto border-b border-white/[0.06] px-4 sm:mx-0 sm:px-0">
+    <div className="scrollbar-none -mx-4 flex items-center gap-1 overflow-x-auto border-b border-slate-200 px-4 sm:mx-0 sm:px-0">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -25,7 +25,7 @@ export function EntityTabs({
           className={`flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-all ${
             active === tab.id
               ? 'border-brand text-brand'
-              : 'border-transparent text-text-muted hover:text-text-primary'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
           }`}
         >
           {tab.icon ? <span className="text-base">{tab.icon}</span> : null}
@@ -35,7 +35,7 @@ export function EntityTabs({
               className={`rounded-full px-1.5 py-0.5 font-mono text-xs ${
                 active === tab.id
                   ? 'bg-brand/15 text-brand'
-                  : 'bg-bg-raised text-text-muted'
+                  : 'bg-slate-100 text-slate-500'
               }`}
             >
               {tab.count}
