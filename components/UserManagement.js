@@ -7,21 +7,10 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '../contexts/AuthContext'
 import { getAppName } from '@/lib/app-brand'
 import { SkeletonNotificationRow } from '@/components/ui/skeleton'
-
-function mapMemberToRow(m) {
-  const u = m.user || {}
-  const r = m.role || {}
-  return {
-    id: m.userId,
-    memberId: m.id,
-    email: u.email || '',
-    full_name: u.name || u.email || '—',
-    role: r.name || '—',
-    roleId: r.id || m.roleId,
-    created_at: m.joinedAt || m.createdAt,
-    isActive: m.isActive !== false,
-  }
-}
+import {
+  extractOrgMembersList,
+  mapOrgMembersToRows,
+} from '@/lib/admin-org-members'
 
 /** API response shapes differ by deployment — normalize to an array of hits. */
 function asArrayFromSearchPayload(data) {
@@ -77,6 +66,22 @@ function mapSearchHitsForPicker(data) {
     .filter(Boolean)
 }
 
+/** GET /search/users — OpenAPI: limit (max 100), offset pagination */
+const USER_SEARCH_LIMIT = 20
+
+function mergeInviteHitsDedupe(prev, next) {
+  const seen = new Set(prev.map((h) => String(h.id)))
+  const merged = [...prev]
+  for (const h of next) {
+    const id = String(h.id)
+    if (!seen.has(id)) {
+      seen.add(id)
+      merged.push(h)
+    }
+  }
+  return merged
+}
+
 const UserManagement = () => {
   const { user: currentUser } = useAuth()
   const orgId = useAuthStore((s) => s.user?.orgId)
@@ -97,6 +102,10 @@ const UserManagement = () => {
   const [selectedInviteUser, setSelectedInviteUser] = useState(null)
   const [manualUserId, setManualUserId] = useState('')
   const [showUuidFallback, setShowUuidFallback] = useState(false)
+  const [inviteSearchNextOffset, setInviteSearchNextOffset] = useState(0)
+  const [inviteSearchHasMore, setInviteSearchHasMore] = useState(false)
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(25)
 
   const fetchUsers = useCallback(async () => {
     if (!orgId) {
@@ -111,8 +120,8 @@ const UserManagement = () => {
       const { data } = await apiClient.get(
         API.admin.organizations.members(orgId),
       )
-      const list = Array.isArray(data) ? data : []
-      setUsers(list.map(mapMemberToRow))
+      const list = extractOrgMembersList(data)
+      setUsers(mapOrgMembersToRows(list))
     } catch (e) {
       console.error('Error fetching users:', e)
       setError(
@@ -130,15 +139,23 @@ const UserManagement = () => {
     void fetchUsers()
   }, [fetchUsers])
 
+  useEffect(() => {
+    setPage(0)
+  }, [searchQuery])
+
+  useEffect(() => {
+    setPage(0)
+  }, [pageSize])
+
   const roles = useMemo(() => {
     const byId = new Map()
     users.forEach((u) => {
       const id = String(u.roleId || '').trim()
-      const name = String(u.role || '').trim()
       if (!id) return
+      const name = String(u.role || '').trim()
       byId.set(id, {
         id,
-        name: name || 'Role',
+        name: name && name !== '—' ? name : 'Role',
       })
     })
     return Array.from(byId.values())
@@ -159,10 +176,12 @@ const UserManagement = () => {
     setSelectedInviteUser(null)
     setManualUserId('')
     setShowUuidFallback(false)
+    setInviteSearchNextOffset(0)
+    setInviteSearchHasMore(false)
     setFormData({ roleId: '' })
   }, [])
 
-  const runUserSearch = async () => {
+  const runUserSearch = async (loadMore = false) => {
     const q = inviteQuery.trim()
     setSearchHint(null)
     setSearchUnavailable(false)
@@ -170,25 +189,44 @@ const UserManagement = () => {
       setSearchHint('Type at least 2 letters or part of an email address.')
       return
     }
+    const offset = loadMore ? inviteSearchNextOffset : 0
+    if (!loadMore) {
+      setSearchHits([])
+      setInviteSearchNextOffset(0)
+      setInviteSearchHasMore(false)
+      setSelectedInviteUser(null)
+    }
     setSearchLoading(true)
-    setSearchHits([])
-    setSelectedInviteUser(null)
     try {
       const { data } = await apiClient.get(API.search.users, {
-        params: { q, limit: 20 },
+        params: { q, limit: USER_SEARCH_LIMIT, offset },
       })
+      const rawList = asArrayFromSearchPayload(data)
+      const rawCount = rawList.length
+      setInviteSearchHasMore(rawCount >= USER_SEARCH_LIMIT)
+      setInviteSearchNextOffset(offset + rawCount)
+
       const mapped = mapSearchHitsForPicker(data)
       const existingIds = new Set(users.map((m) => String(m.id)))
       const next = mapped.filter((h) => !existingIds.has(String(h.id)))
-      setSearchHits(next)
-      if (next.length === 0) {
+      if (loadMore) {
+        setSearchHits((prev) => mergeInviteHitsDedupe(prev, next))
+      } else {
+        setSearchHits(next)
+      }
+      if (!loadMore && next.length === 0) {
         setSearchHint('No users found who are not already in this organisation.')
+      }
+      if (loadMore && next.length === 0 && rawCount >= USER_SEARCH_LIMIT) {
+        setSearchHint(
+          'More matches exist from the directory; try narrowing your search if everyone shown is already a member.',
+        )
       }
     } catch (e) {
       const status = e?.response?.status
       if (status === 503) {
         setSearchUnavailable(true)
-        setSearchHits([])
+        if (!loadMore) setSearchHits([])
         setSearchHint(
           'Directory search is not enabled on this server. Use “User ID” below, or ask your team to enable search.',
         )
@@ -282,6 +320,17 @@ const UserManagement = () => {
     )
   })
 
+  const pageCount = Math.max(1, Math.ceil(filteredUsers.length / pageSize))
+  const safePage = Math.min(page, pageCount - 1)
+  const pagedUsers = filteredUsers.slice(
+    safePage * pageSize,
+    safePage * pageSize + pageSize,
+  )
+
+  useEffect(() => {
+    if (page >= pageCount) setPage(Math.max(0, pageCount - 1))
+  }, [page, pageCount])
+
   return (
     <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] dark:border-neutral-800 dark:bg-neutral-950/80">
       {message && (
@@ -296,9 +345,37 @@ const UserManagement = () => {
         </div>
       )}
 
+      {!loading && !error && orgId ? (
+        <div className="mx-4 mt-4 rounded-xl border border-slate-200/90 bg-slate-50/90 px-4 py-3 text-sm text-slate-600 dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-slate-400">
+          <strong className="font-semibold text-slate-800 dark:text-slate-200">
+            Roles & search:
+          </strong>{' '}
+          Change a member&apos;s access with the <strong>Role</strong> dropdown in each row (
+          <kbd className="rounded bg-white px-1 font-mono text-xs shadow-sm dark:bg-neutral-950">
+            PUT …/members/:userId/role
+          </kbd>
+          ). Use the box above the table to filter this list.{' '}
+          <strong>Add member</strong> searches existing accounts (
+          <kbd className="rounded bg-white px-1 font-mono text-xs shadow-sm dark:bg-neutral-950">
+            GET /search/users
+          </kbd>{' '}
+          (<span className="font-mono text-[0.7rem]">q</span>,{' '}
+          <span className="font-mono text-[0.7rem]">limit</span>,{' '}
+          <span className="font-mono text-[0.7rem]">offset</span>) — use{' '}
+          <strong>Load more results</strong> when the directory returns a full page. Role choices come from roles already present on members until the API exposes a role catalog.
+        </div>
+      ) : null}
+
       <div className="flex items-center justify-between border-b border-slate-200/80 px-6 py-4 dark:border-neutral-800">
-        <div className="flex items-center space-x-4">
-          <h2 className="font-semibold text-slate-800 dark:text-slate-100">Organisation members</h2>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h2 className="font-semibold text-slate-800 dark:text-slate-100">
+            Organisation members
+            {!loading && users.length > 0 ? (
+              <span className="ml-2 font-normal text-slate-500 dark:text-slate-400">
+                ({users.length})
+              </span>
+            ) : null}
+          </h2>
           <div className="relative">
             <input
               type="text"
@@ -419,6 +496,16 @@ const UserManagement = () => {
                     )
                   })}
                 </ul>
+                {inviteSearchHasMore ? (
+                  <button
+                    type="button"
+                    onClick={() => void runUserSearch(true)}
+                    disabled={searchLoading}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-200 dark:hover:bg-neutral-800"
+                  >
+                    {searchLoading ? 'Loading…' : 'Load more results'}
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
@@ -553,7 +640,7 @@ const UserManagement = () => {
                 </td>
               </tr>
             ) : filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
+              pagedUsers.map((user) => (
                 <tr key={user.memberId || user.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -631,13 +718,69 @@ const UserManagement = () => {
                   colSpan="4"
                   className="px-6 py-4 text-center text-sm text-gray-500"
                 >
-                  No members loaded. Check permissions or organisation ID.
+                  {users.length === 0
+                    ? 'No members returned by the server. Confirm your account has an organisation and admin access to list members.'
+                    : 'No members match this search.'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {!loading && filteredUsers.length > 0 && pageCount > 1 ? (
+        <div className="flex flex-col gap-3 border-t border-slate-200/80 px-6 py-4 text-sm text-slate-600 dark:border-neutral-800 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            Showing{' '}
+            <span className="font-medium text-slate-800 dark:text-slate-200">
+              {filteredUsers.length === 0
+                ? 0
+                : safePage * pageSize + 1}
+              –
+              {Math.min((safePage + 1) * pageSize, filteredUsers.length)}
+            </span>{' '}
+            of {filteredUsers.length}
+            {searchQuery.trim() ? ' (filtered)' : ''}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2">
+              <span className="sr-only">Rows per page</span>
+              <span className="text-xs uppercase tracking-wide text-slate-500">
+                Per page
+              </span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value) || 25)}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              disabled={safePage <= 0}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-800 transition enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:enabled:hover:bg-neutral-800"
+            >
+              Previous
+            </button>
+            <span className="tabular-nums text-slate-500 dark:text-slate-400">
+              Page {safePage + 1} of {pageCount}
+            </span>
+            <button
+              type="button"
+              disabled={safePage >= pageCount - 1}
+              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-800 transition enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-slate-100 dark:enabled:hover:bg-neutral-800"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

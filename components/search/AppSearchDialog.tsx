@@ -254,7 +254,8 @@ export default function AppSearchDialog({ open, onClose }: AppSearchDialogProps)
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<unknown>(API.search.users, {
         signal,
-        params: { q: catalogQuery, limit: 8 },
+        /** OpenAPI: `offset` for pagination; omnibar uses first page only. */
+        params: { q: catalogQuery, limit: 8, offset: 0 },
       });
       return normalizeUserSearchHits(data);
     },

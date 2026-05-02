@@ -30,6 +30,7 @@ import {
   CreditCard,
   FileJson2,
   LayoutGrid,
+  Users,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthStore } from '@/stores/auth.store'
@@ -209,6 +210,11 @@ const Sidebar = ({
         title: 'Admin portal',
         path: '/admin',
         icon: LayoutGrid,
+      },
+      {
+        title: 'Organisation members',
+        path: '/users',
+        icon: Users,
       },
       {
         title: 'Admin overview',

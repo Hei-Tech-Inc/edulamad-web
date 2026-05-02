@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import API from '@/api/endpoints';
 import { queryKeys } from '@/api/query-keys';
+import { extractOrgMembersList } from '@/lib/admin-org-members';
 
 export interface AdminOrgMemberRow {
   id: string;
@@ -15,8 +16,10 @@ export interface AdminOrgMemberRow {
 }
 
 function normalizeMembers(raw: unknown): AdminOrgMemberRow[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((r) => r && typeof r === 'object') as AdminOrgMemberRow[];
+  const list = extractOrgMembersList(raw);
+  return list.filter(
+    (r) => r && typeof r === 'object',
+  ) as AdminOrgMemberRow[];
 }
 
 /** GET /admin/organizations/:id/members — OpenAPI OrganizationsController_getMembers */
