@@ -26,6 +26,10 @@
     "/content/slides/bundle/{slideId}/extracted-content": {},
     "/content/slides/bundle/{slideId}/summary-inline": {},
     "/content/slides/bundle/{slideId}/publish": {},
-    "/content/questions/bulk-upload": {}
+    "/content/questions/bulk-upload": {},
+    "/search": {},
+    "/search/questions": {},
+    "/search/courses": {},
+    "/search/practice": {}
   }
 }

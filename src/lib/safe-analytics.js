@@ -39,3 +39,18 @@ export function safePosthogCaptureException(err) {
     /* ignore */
   }
 }
+
+/**
+ * Super-properties for all subsequent events (e.g. first-touch UTM). Never throws.
+ */
+export function safePosthogRegister(props) {
+  if (typeof window === 'undefined') return
+  if (!props || typeof props !== 'object') return
+  try {
+    if (typeof posthog.register === 'function') {
+      posthog.register(props)
+    }
+  } catch {
+    /* ignore */
+  }
+}

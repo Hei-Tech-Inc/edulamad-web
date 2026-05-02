@@ -31,6 +31,8 @@ import { AppErrorBoundary } from '@/components/providers/AppErrorBoundary'
 import { PushPermissionPrompt } from '@/components/notifications/PushPermissionPrompt'
 import { OneSignalInit } from '@/components/notifications/OneSignalInit'
 import { OAuthSessionSync } from '@/components/auth/OAuthSessionSync'
+import { IdleLogoutWatcher } from '@/components/auth/IdleLogoutWatcher'
+import { UtmCapture } from '@/components/analytics/UtmCapture'
 import '../styles/globals.css'
 
 const ReactQueryDevtools = dynamic(
@@ -95,6 +97,7 @@ function AppWrapper({ Component, pageProps }) {
             />
           </Head>
           {loadingBarEnabled ? <TopLoadingBar /> : null}
+          <UtmCapture />
           <ThemeProvider>
             <SettingsProvider>
               <AuthProvider>
@@ -261,6 +264,7 @@ function AuthWrapper({ children }) {
   return (
     <>
       <OAuthSessionSync />
+      <IdleLogoutWatcher />
       <OneSignalInit />
       {children}
       <PushPermissionPrompt enabled={Boolean(user && onboardingComplete && !onOnboardingRoute)} />

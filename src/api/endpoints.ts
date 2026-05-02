@@ -151,7 +151,17 @@ const API = {
     detail: (key: string) => `/files/${key}`,
   },
   search: {
+    /**
+     * Convex full-text catalog — `@Public()` on API: **no JWT** (CORS + throttler only).
+     * Query: `q` (required), optional `universityId`, `courseId`, `limit` (default 10).
+     */
+    catalog: '/search',
+    catalogQuestions: '/search/questions',
+    catalogCourses: '/search/courses',
+    catalogPractice: '/search/practice',
+    /** Directory search — JWT + `FEATURE_SEARCH_ENABLED` (Meilisearch). */
     users: '/search/users',
+    /** Legacy name; JWT + Meilisearch (users-only). */
     global: '/search/global',
     /** OpenAPI `SearchController_searchTasks` (may return empty in MVP). */
     tasks: '/search/tasks',
